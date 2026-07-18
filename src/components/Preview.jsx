@@ -17,29 +17,6 @@ function wrapGLSL(code) {
 ${code}`
 }
 
-function createPlaceholderTexture(gl) {
-  const size = 256
-  const data = new Uint8Array(size * size * 4)
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const i = (y * size + x) * 4
-      const t = x / size
-      data[i]     = Math.floor(60 + 140 * t)
-      data[i + 1] = Math.floor(40 + 60 * Math.sin(t * Math.PI))
-      data[i + 2] = Math.floor(180 - 80 * t)
-      data[i + 3] = 255
-    }
-  }
-  const tex = gl.createTexture()
-  gl.bindTexture(gl.TEXTURE_2D, tex)
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, data)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-  return tex
-}
-
 function createPlaceholderImage() {
   const canvas = document.createElement('canvas')
   canvas.width = 256
@@ -68,12 +45,23 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
   const fxChainRef = useRef(fxChain)
   const sourceTypeRef = useRef(sourceType)
   const sourceElementRef = useRef(sourceElement)
+  const sourceVersionRef = useRef(0)
 
   codeRef.current = code
   uniformValuesRef.current = uniformValues
   fxChainRef.current = fxChain
   sourceTypeRef.current = sourceType
   sourceElementRef.current = sourceElement
+
+  // Track source changes - increment version when source changes
+  const prevSourceRef = useRef(null)
+  useEffect(() => {
+    const key = `${sourceType}:${sourceElement?.src || sourceElement?.width || 'none'}`
+    if (key !== prevSourceRef.current) {
+      prevSourceRef.current = key
+      sourceVersionRef.current++
+    }
+  }, [sourceType, sourceElement])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -119,7 +107,7 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
       const c = canvasRef.current
       const ic = isfCanvasRef.current
       const gl = mainGL
-      if (!r || !c || !ic || !fx) {
+      if (!r || !c || !ic || !fx || !r.valid) {
         rafRef.current = requestAnimationFrame(render)
         return
       }
@@ -131,17 +119,6 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
       if (ic.width !== c.width || ic.height !== c.height) {
         ic.width = c.width
         ic.height = c.height
-      }
-
-      // Pass source image to ISF renderer via setValue
-      const srcType = sourceTypeRef.current
-      const srcEl = sourceElementRef.current
-      if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
-        try { r.setValue('inputImage', srcEl) } catch (_) {}
-      } else if (srcType === 'image' && srcEl && srcEl.complete) {
-        try { r.setValue('inputImage', srcEl) } catch (_) {}
-      } else {
-        try { r.setValue('inputImage', placeholderRef.current) } catch (_) {}
       }
 
       try {
@@ -200,6 +177,20 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
       })
 
       renderer.loadSource(input)
+
+      // Set source image after shader is loaded
+      const srcType = sourceTypeRef.current
+      const srcEl = sourceElementRef.current
+      const ph = placeholderRef.current
+
+      if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
+        try { renderer.setValue('inputImage', srcEl) } catch (_) {}
+      } else if (srcType === 'image' && srcEl && srcEl.complete) {
+        try { renderer.setValue('inputImage', srcEl) } catch (_) {}
+      } else if (ph) {
+        try { renderer.setValue('inputImage', ph) } catch (_) {}
+      }
+
       onError?.(null)
     } catch (e) {
       onError?.(e.message || String(e))
@@ -209,6 +200,26 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
   useEffect(() => {
     if (code) loadCode(code)
   }, [code, loadCode])
+
+  // Update source when sourceType/sourceElement changes
+  useEffect(() => {
+    const renderer = isfRendererRef.current
+    if (!renderer || !renderer.valid) return
+
+    const srcType = sourceTypeRef.current
+    const srcEl = sourceElementRef.current
+    const ph = placeholderRef.current
+
+    try {
+      if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
+        renderer.setValue('inputImage', srcEl)
+      } else if (srcType === 'image' && srcEl && srcEl.complete) {
+        renderer.setValue('inputImage', srcEl)
+      } else if (ph) {
+        renderer.setValue('inputImage', ph)
+      }
+    } catch (_) {}
+  }, [sourceType, sourceElement])
 
   const prevUniformsRef = useRef('')
   useEffect(() => {
