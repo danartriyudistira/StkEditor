@@ -285,6 +285,18 @@ export default function App() {
     URL.revokeObjectURL(url)
   }, [code, fileName])
 
+  const handleSave = useCallback(() => {
+    // Save .fs file - overwrite if already has content, else download
+    const blob = new Blob([code], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName || 'untitled.fs'
+    a.click()
+    URL.revokeObjectURL(url)
+    updateActiveTab({ modified: false })
+  }, [code, fileName, updateActiveTab])
+
   const handleLoadFromLibrary = useCallback(() => {
     setShowLibrary(true)
   }, [])
@@ -505,9 +517,8 @@ export default function App() {
                 onClose={handleCloseTab}
                 onNew={handleNewTab}
                 onOpen={handleOpen}
+                onSave={handleSave}
                 onDownload={handleDownload}
-                onSave={handleSavePreset}
-                onLoad={handleLoadPreset}
               />
               <ShaderEditor value={code} onChange={(v) => updateActiveTab({ code: v, modified: true })} />
               {error && <div className="error-bar">{error}</div>}

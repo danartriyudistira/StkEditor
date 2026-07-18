@@ -1,6 +1,6 @@
 ﻿import { useRef, useEffect } from 'react'
 
-export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, onOpen, onDownload, onSave, onLoad }) {
+export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, onOpen, onSave, onDownload }) {
   const scrollRef = useRef(null)
 
   useEffect(() => {
@@ -12,12 +12,9 @@ export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, on
   return (
     <div className="tabbar">
       <div className="tabbar-actions">
-        <button className="tabbar-action" onClick={onNew} title="New shader">New</button>
-        <button className="tabbar-action" onClick={onOpen} title="Open shader (.fs)">Open</button>
-        <button className="tabbar-action" onClick={onDownload} title="Download shader (.fs)">Download</button>
-        <div className="tabbar-sep" />
-        <button className="tabbar-action" onClick={onSave} title="Save preset (.stk)">Save</button>
-        <button className="tabbar-action" onClick={onLoad} title="Load preset (.stk)">Load</button>
+        <button className="tabbar-action" onClick={onOpen} title="Open .fs file">Open</button>
+        <button className="tabbar-action" onClick={onSave} title="Save (overwrite)">Save</button>
+        <button className="tabbar-action" onClick={onDownload} title="Download .fs (Save As)">Download</button>
         <div className="tabbar-sep" />
       </div>
       <div className="tabbar-scroll" ref={scrollRef}>
@@ -41,7 +38,7 @@ export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, on
           </div>
         ))}
       </div>
-      <button className="tabbar-new" onClick={onNew} title="New tab (Ctrl+T)">
+      <button className="tabbar-new" onClick={onNew} title="New tab">
         {'\u2795'}
       </button>
     </div>
