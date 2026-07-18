@@ -5,6 +5,7 @@ import Controls from './components/Controls.jsx'
 import CcPanel from './components/CcPanel.jsx'
 import FxPanel from './components/FxPanel.jsx'
 import MidiPanel from './components/MidiPanel.jsx'
+import RandomGenPanel from './components/RandomGenPanel.jsx'
 import Toolbar from './components/Toolbar.jsx'
 import ISFLibrary from './components/ISFLibrary.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
@@ -419,6 +420,10 @@ export default function App() {
               triggers={triggers}
               onTrigger={handleTrigger}
               fxChain={fxChain}
+            />
+            <RandomGenPanel
+              onTrigger={handleTrigger}
+              noteMapping={{}}
             />
           </div>
 

@@ -1088,3 +1088,96 @@
   color: #ff4444 !important;
   background: rgba(255, 68, 68, 0.1) !important;
 }
+
+/* Random Note Generator Panel */
+.rndgen-panel {
+  border-top: 1px solid #333;
+}
+
+.rndgen-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.rndgen-toggle {
+  background: #333;
+  border: 1px solid #555;
+  color: #ccc;
+  padding: 3px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.rndgen-toggle.active {
+  background: #007acc;
+  border-color: #007acc;
+  color: white;
+}
+
+.rndgen-toggle:hover {
+  background: #444;
+}
+
+.rndgen-toggle.active:hover {
+  background: #006ab3;
+}
+
+.rndgen-label {
+  font-size: 12px;
+  color: #999;
+}
+
+.rndgen-body {
+  padding: 0 10px 10px;
+}
+
+.rndgen-active {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: rgba(0, 122, 204, 0.1);
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.rndgen-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.rndgen-control label {
+  font-size: 11px;
+  color: #999;
+  min-width: 48px;
+}
+
+.rndgen-control input[type="range"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.rndgen-control select {
+  background: #1e1e1e;
+  border: 1px solid #555;
+  color: #ccc;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.rndgen-value {
+  font-size: 11px;
+  color: #ccc;
+  min-width: 30px;
+  text-align: right;
+  font-family: monospace;
+}

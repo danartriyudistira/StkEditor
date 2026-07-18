@@ -1,0 +1,130 @@
+﻿import { useState, useEffect, useRef, useCallback } from 'react'
+import RandomNoteGenerator from '../audio/randomGen.js'
+
+function noteName(note) {
+  const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
+  return names[note % 12] + Math.floor(note / 12 - 1)
+}
+
+export default function RandomGenPanel({ onTrigger, noteMapping }) {
+  const [enabled, setEnabled] = useState(false)
+  const [bpm, setBpm] = useState(120)
+  const [noteDivider, setNoteDivider] = useState(1)
+  const [activeNote, setActiveNote] = useState(null)
+  const genRef = useRef(null)
+
+  useEffect(() => {
+    const gen = new RandomNoteGenerator()
+    gen.onNote = (pitch, velocity) => {
+      setActiveNote(pitch)
+
+      const mapping = noteMapping?.[pitch]
+      if (mapping) {
+        onTrigger?.({ note: pitch, velocity: velocity / 127, type: 'noteOn', effectId: mapping.effectId || null, ccChannel: mapping.channel || null })
+      } else {
+        onTrigger?.({ note: pitch, velocity: velocity / 127, type: 'noteOn' })
+      }
+    }
+    gen.onNoteOff = (pitch) => {
+      setActiveNote(null)
+      const mapping = noteMapping?.[pitch]
+      if (mapping) {
+        onTrigger?.({ note: pitch, velocity: 0, type: 'noteOff', effectId: mapping.effectId || null, ccChannel: mapping.channel || null })
+      } else {
+        onTrigger?.({ note: pitch, velocity: 0, type: 'noteOff' })
+      }
+    }
+    genRef.current = gen
+    return () => gen.stop()
+  }, [])
+
+  useEffect(() => {
+    genRef.current.onNote = (pitch, velocity) => {
+      setActiveNote(pitch)
+      const mapping = noteMapping?.[pitch]
+      if (mapping) {
+        onTrigger?.({ note: pitch, velocity: velocity / 127, type: 'noteOn', effectId: mapping.effectId || null, ccChannel: mapping.channel || null })
+      } else {
+        onTrigger?.({ note: pitch, velocity: velocity / 127, type: 'noteOn' })
+      }
+    }
+    genRef.current.onNoteOff = (pitch) => {
+      setActiveNote(null)
+      const mapping = noteMapping?.[pitch]
+      if (mapping) {
+        onTrigger?.({ note: pitch, velocity: 0, type: 'noteOff', effectId: mapping.effectId || null, ccChannel: mapping.channel || null })
+      } else {
+        onTrigger?.({ note: pitch, velocity: 0, type: 'noteOff' })
+      }
+    }
+  }, [noteMapping, onTrigger])
+
+  const toggle = useCallback(() => {
+    const gen = genRef.current
+    if (enabled) {
+      gen.stop()
+      setEnabled(false)
+    } else {
+      gen.start()
+      setEnabled(true)
+    }
+  }, [enabled])
+
+  const handleBpm = useCallback((val) => {
+    const v = parseInt(val)
+    setBpm(v)
+    genRef.current?.setBpm(v)
+  }, [])
+
+  const handleDivider = useCallback((val) => {
+    const v = parseInt(val)
+    setNoteDivider(v)
+    genRef.current?.setNoteDivider(v)
+  }, [])
+
+  return (
+    <div className="rndgen-panel">
+      <div className="rndgen-header">
+        <button
+          className={`rndgen-toggle ${enabled ? 'active' : ''}`}
+          onClick={toggle}
+        >
+          {enabled ? 'RND \u25BC' : 'RND \u25B6'}
+        </button>
+        <span className="rndgen-label">Random Gen</span>
+      </div>
+
+      {enabled && (
+        <div className="rndgen-body">
+          {activeNote !== null && (
+            <div className="rndgen-active">
+              <span className="midi-note-badge">{noteName(activeNote)}</span>
+            </div>
+          )}
+
+          <div className="rndgen-control">
+            <label>BPM</label>
+            <input
+              type="range"
+              min={40}
+              max={240}
+              value={bpm}
+              onChange={e => handleBpm(e.target.value)}
+            />
+            <span className="rndgen-value">{bpm}</span>
+          </div>
+
+          <div className="rndgen-control">
+            <label>Divider</label>
+            <select value={noteDivider} onChange={e => handleDivider(e.target.value)}>
+              <option value={1}>1/4</option>
+              <option value={2}>1/8</option>
+              <option value={4}>1/16</option>
+              <option value={8}>1/32</option>
+            </select>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
