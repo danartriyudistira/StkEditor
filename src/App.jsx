@@ -108,8 +108,8 @@ export default function App() {
     const handler = (e) => {
       if (e.ctrlKey && e.key === 'b') { e.preventDefault(); setLeftOpen(v => !v) }
       if (e.ctrlKey && e.key === '.') { e.preventDefault(); setRightOpen(v => !v) }
-      if (e.ctrlKey && e.key === 's') { e.preventDefault(); handleSavePreset() }
-      if (e.ctrlKey && e.key === 'o') { e.preventDefault(); handleLoadPreset() }
+      if (e.ctrlKey && e.key === 's') { e.preventDefault(); handleExportStk() }
+      if (e.ctrlKey && e.key === 'o') { e.preventDefault(); handleImportStk() }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
@@ -416,6 +416,57 @@ export default function App() {
     input.click()
   }, [])
 
+  const handleExportStk = useCallback(async () => {
+    try {
+      const blob = await exportStk({
+        projectName,
+        tabs,
+        fxChain: fxChain || [],
+        ccValues,
+        ccMapping,
+        console: consoleConfig,
+        audio: { presetIndex: synthRef.current?.presetIndex || 0 },
+      })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = (projectName || 'untitled') + '.stk'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      setError('Failed to export: ' + e.message)
+    }
+  }, [projectName, tabs, ccValues, ccMapping, fxChain, consoleConfig])
+
+  const handleImportStk = useCallback(() => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.stk,.zip'
+    input.onchange = async (e) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+      try {
+        const project = await importStk(file)
+        setProjectName(project.projectName)
+        setTabs(project.tabs.length > 0 ? project.tabs : [{ id: 1, name: 'untitled.fs', code: DEFAULT_SHADER, modified: false }])
+        if (project.ccValues) setCcValues(prev => ({ ...prev, ...project.ccValues }))
+        if (project.ccMapping) setCcMapping(project.ccMapping)
+        if (project.fxChain) setFxChain(project.fxChain)
+        if (project.console) {
+          setConsoleConfig(project.console)
+          localStorage.setItem('consoleConfig', JSON.stringify(project.console))
+        }
+        if (project.audio?.presetIndex !== undefined) {
+          synthRef.current?.setPreset(project.audio.presetIndex)
+        }
+        setError(null)
+      } catch (err) {
+        setError('Failed to import: ' + err.message)
+      }
+    }
+    input.click()
+  }, [])
+
   const handleSynthReady = useCallback((synth) => {
     synthRef.current = synth
   }, [])
@@ -489,8 +540,7 @@ export default function App() {
           onSendToConsole={handleSendToConsole}
           consoleConfig={consoleConfig}
           onConsoleConfigChange={handleConsoleConfigChange}
-          onSavePreset={handleSavePreset}
-          onLoadPreset={handleLoadPreset}
+          onImportStk={handleImportStk}
           sourceType={sourceType}
           onSourceChange={handleSourceChange}
           onSourceUpload={handleSourceUpload}
