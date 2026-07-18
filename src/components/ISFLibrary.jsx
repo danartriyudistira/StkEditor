@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 
 export default function ISFLibrary({ files, onSelect, onClose }) {
   const [search, setSearch] = useState('')
@@ -18,21 +18,14 @@ export default function ISFLibrary({ files, onSelect, onClose }) {
   }
 
   const loadFile = useCallback(async (name) => {
+    const base = import.meta.env.BASE_URL || '/'
     try {
-      const res = await fetch(`/ISF/${name}`)
+      const res = await fetch(`${base}ISF/${name}`)
       if (!res.ok) throw new Error('Not found')
       const text = await res.text()
       onSelect?.(text, name)
     } catch (e) {
-      // fallback: try loading as raw
-      try {
-        const res = await fetch(name)
-        if (!res.ok) throw new Error('Not found')
-        const text = await res.text()
-        onSelect?.(text, name)
-      } catch (_) {
-        alert(`Could not load ${name}`)
-      }
+      alert(`Could not load ${name}`)
     }
   }, [onSelect])
 
