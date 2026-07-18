@@ -142,7 +142,10 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
     }
 
     // Attach to selected input device or all devices
-    if (selectedInput === 'all' || selectedInput === '' || !selectedInput) {
+    if (!selectedInput) {
+      // No input selected — don't listen to any device
+      return
+    } else if (selectedInput === 'all') {
       // Listen to all devices
       for (const input of midiAccess.inputs.values()) {
         input.onmidimessage = handleMessage
