@@ -541,6 +541,7 @@ export default function App() {
           consoleConfig={consoleConfig}
           onConsoleConfigChange={handleConsoleConfigChange}
           onImportStk={handleImportStk}
+          onExportStk={handleExportStk}
           sourceType={sourceType}
           onSourceChange={handleSourceChange}
           onSourceUpload={handleSourceUpload}

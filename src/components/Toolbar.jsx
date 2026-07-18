@@ -9,6 +9,7 @@ export default function Toolbar({
   projectName,
   onProjectNameChange,
   onImportStk,
+  onExportStk,
   consoleConnected,
   libraryFiles,
   sourceType,
@@ -44,6 +45,7 @@ export default function Toolbar({
 
       <div className="toolbar-actions">
         <button className="toolbar-btn" onClick={onImportStk} title="Import .stk project">Import</button>
+        <button className="toolbar-btn" onClick={onExportStk} title="Export .stk project">Export</button>
 
         {libraryFiles && libraryFiles.length > 0 && (
           <button onClick={onLoadFromLibrary} title="Browse ISF library">

@@ -78,7 +78,6 @@ export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, on
       <div className="tabbar-actions">
         <button className="tabbar-action" onClick={onOpen} title="Open .fs file">Open</button>
         <button className="tabbar-action" onClick={onDownload} title="Download .fs (Save As)">Download</button>
-        <button className="tabbar-action" onClick={onExport} title="Export .stk project (ZIP)">Export</button>
         <button className="tabbar-new" onClick={onNew} title="New tab">{'\u2795'}</button>
       </div>
     </div>
