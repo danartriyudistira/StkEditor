@@ -1,13 +1,3 @@
-/*{
-  "DESCRIPTION": "Key Frame Artifacts",
-  "CREDIT": "",
-  "ISFVSN": "2",
-  "INPUTS": [],
-  "CATEGORIES": [
-    "Custom"
-  ]
-}*/
-
 /*
 {
   "CATEGORIES" : [

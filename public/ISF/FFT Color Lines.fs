@@ -1,13 +1,3 @@
-/*{
-  "DESCRIPTION": "FFT Color Lines",
-  "CREDIT": "",
-  "ISFVSN": "2",
-  "INPUTS": [],
-  "CATEGORIES": [
-    "Custom"
-  ]
-}*/
-
 /*
 {
   "CATEGORIES" : [

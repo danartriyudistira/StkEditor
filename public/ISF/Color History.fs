@@ -1,13 +1,3 @@
-/*{
-  "DESCRIPTION": "Color History",
-  "CREDIT": "",
-  "ISFVSN": "2",
-  "INPUTS": [],
-  "CATEGORIES": [
-    "Custom"
-  ]
-}*/
-
 /*
 {
   "CATEGORIES" : [

@@ -1,22 +1,3 @@
-/*{
-  "DESCRIPTION": "Wipe Up",
-  "CREDIT": "",
-  "ISFVSN": "2",
-  "INPUTS": [
-    {
-      "NAME": "startImage",
-      "TYPE": "image"
-    },
-    {
-      "NAME": "endImage",
-      "TYPE": "image"
-    }
-  ],
-  "CATEGORIES": [
-    "Custom"
-  ]
-}*/
-
 /*
 {
   "CATEGORIES" : [

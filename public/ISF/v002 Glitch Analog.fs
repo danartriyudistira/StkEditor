@@ -1,18 +1,3 @@
-/*{
-  "DESCRIPTION": "v002 Glitch Analog",
-  "CREDIT": "",
-  "ISFVSN": "2",
-  "INPUTS": [
-    {
-      "NAME": "inputImage",
-      "TYPE": "image"
-    }
-  ],
-  "CATEGORIES": [
-    "Custom"
-  ]
-}*/
-
 /*
 {
   "CATEGORIES" : [
