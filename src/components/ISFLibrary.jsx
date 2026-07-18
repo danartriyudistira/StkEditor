@@ -2,7 +2,6 @@
 
 export default function ISFLibrary({ files, onSelect, onClose }) {
   const [search, setSearch] = useState('')
-  const [contents, setContents] = useState({})
 
   const filtered = files.filter(f =>
     f.toLowerCase().includes(search.toLowerCase())
@@ -20,12 +19,14 @@ export default function ISFLibrary({ files, onSelect, onClose }) {
   const loadFile = useCallback(async (name) => {
     const base = import.meta.env.BASE_URL || '/'
     try {
-      const res = await fetch(`${base}ISF/${name}`)
-      if (!res.ok) throw new Error('Not found')
+      const url = `${base}ISF/${encodeURIComponent(name)}`
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const text = await res.text()
       onSelect?.(text, name)
     } catch (e) {
-      alert(`Could not load ${name}`)
+      console.error('Failed to load shader:', name, e)
+      alert(`Could not load ${name}: ${e.message}`)
     }
   }, [onSelect])
 
