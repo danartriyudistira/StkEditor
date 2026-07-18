@@ -40,13 +40,18 @@ function createPlaceholderTexture(gl) {
   return tex
 }
 
-function updateTextureFromSource(gl, texture, source) {
-  gl.bindTexture(gl.TEXTURE_2D, texture)
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+function createPlaceholderImage() {
+  const canvas = document.createElement('canvas')
+  canvas.width = 256
+  canvas.height = 256
+  const ctx = canvas.getContext('2d')
+  const gradient = ctx.createLinearGradient(0, 0, 256, 256)
+  gradient.addColorStop(0, '#3c28a0')
+  gradient.addColorStop(0.5, '#b432b4')
+  gradient.addColorStop(1, '#ff69b4')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, 256, 256)
+  return canvas
 }
 
 export default function Preview({ code, uniformValues, fxChain, onMetadata, onError, sourceType, sourceElement }) {
@@ -55,7 +60,7 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
   const isfRendererRef = useRef(null)
   const fxProcessorRef = useRef(null)
   const isfTextureRef = useRef(null)
-  const sourceTextureRef = useRef(null)
+  const placeholderRef = useRef(null)
   const parserRef = useRef(null)
   const rafRef = useRef(null)
   const codeRef = useRef(code)
@@ -106,7 +111,7 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
     fxProcessorRef.current = fxProcessor
 
     isfTextureRef.current = mainGL.createTexture()
-    sourceTextureRef.current = createPlaceholderTexture(mainGL)
+    placeholderRef.current = createPlaceholderImage()
 
     function render() {
       const r = isfRendererRef.current
@@ -128,17 +133,19 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
         ic.height = c.height
       }
 
-      // Update source texture based on current source type
+      // Pass source image to ISF renderer via setValue
       const srcType = sourceTypeRef.current
       const srcEl = sourceElementRef.current
       if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
-        updateTextureFromSource(gl, sourceTextureRef.current, srcEl)
+        try { r.setValue('inputImage', srcEl) } catch (_) {}
       } else if (srcType === 'image' && srcEl && srcEl.complete) {
-        updateTextureFromSource(gl, sourceTextureRef.current, srcEl)
+        try { r.setValue('inputImage', srcEl) } catch (_) {}
+      } else {
+        try { r.setValue('inputImage', placeholderRef.current) } catch (_) {}
       }
 
       try {
-        r.draw(ic, sourceTextureRef.current)
+        r.draw(ic)
       } catch (_) {}
 
       try {
