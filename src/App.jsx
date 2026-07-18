@@ -68,6 +68,8 @@ export default function App() {
     const handler = (e) => {
       if (e.ctrlKey && e.key === 'b') { e.preventDefault(); setLeftOpen(v => !v) }
       if (e.ctrlKey && e.key === '.') { e.preventDefault(); setRightOpen(v => !v) }
+      if (e.ctrlKey && e.key === 's') { e.preventDefault(); handleSavePreset() }
+      if (e.ctrlKey && e.key === 'o') { e.preventDefault(); handleLoadPreset() }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
@@ -300,6 +302,71 @@ export default function App() {
     input.click()
   }, [])
 
+  const handleSavePreset = useCallback(() => {
+    const preset = {
+      version: 1,
+      shader: { code, fileName },
+      cc: ccValues,
+      ccMapping,
+      fxChain: fxChain || [],
+      audio: {
+        presetIndex: synthRef.current?.presetIndex || 0,
+      },
+      midi: {
+        ccMapping: {},
+      },
+      console: consoleConfig,
+    }
+    const blob = new Blob([JSON.stringify(preset, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName.replace(/\\.[\\w]+$/, '.stk') || 'preset.stk'
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [code, fileName, ccValues, ccMapping, fxChain, consoleConfig])
+
+  const handleLoadPreset = useCallback(() => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.stk,.stkfx,.json'
+    input.onchange = (e) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result)
+          // Full preset (.stk)
+          if (data.version === 1) {
+            if (data.shader?.code) setCode(data.shader.code)
+            if (data.shader?.fileName) setFileName(data.shader.fileName)
+            if (data.cc) setCcValues(prev => ({ ...prev, ...data.cc }))
+            if (data.ccMapping) setCcMapping(data.ccMapping)
+            if (data.fxChain) setFxChain(data.fxChain)
+            if (data.console) {
+              setConsoleConfig(data.console)
+              localStorage.setItem('consoleConfig', JSON.stringify(data.console))
+            }
+            if (data.audio?.presetIndex !== undefined) {
+              synthRef.current?.setPreset(data.audio.presetIndex)
+            }
+          }
+          // Legacy stkfx (.stkfx)
+          else {
+            if (data.fxChain) setFxChain(data.fxChain)
+          }
+          setFileName(file.name.replace(/\\.[\\w]+$/, '.fs'))
+          setError(null)
+        } catch (err) {
+          setError('Failed to parse preset file')
+        }
+      }
+      reader.readAsText(file)
+    }
+    input.click()
+  }, [])
+
   const handleSynthReady = useCallback((synth) => {
     synthRef.current = synth
   }, [])
@@ -427,6 +494,8 @@ export default function App() {
               ccValues={ccValues}
               onSaveStkfx={handleSaveStkfx}
               onLoadStkfx={handleLoadStkfx}
+              onSavePreset={handleSavePreset}
+              onLoadPreset={handleLoadPreset}
             />
             <MidiPanel
               ccValues={ccValues}

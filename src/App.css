@@ -1462,3 +1462,9 @@
   border-radius: 3px;
   font-size: 10px;
 }
+.fx-footer-sep {
+  width: 1px;
+  height: 20px;
+  background: #444;
+  margin: 0 4px;
+}
