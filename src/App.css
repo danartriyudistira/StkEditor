@@ -1625,3 +1625,53 @@
 .toolbar-btn:hover {
   background: #444;
 }
+
+/* MIDI Output */
+.midi-section {
+  margin-bottom: 8px;
+}
+
+.midi-section-title {
+  font-size: 10px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.midi-output-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.midi-output-select {
+  flex: 1;
+  background: #1e1e1e;
+  border: 1px solid #444;
+  color: #ccc;
+  padding: 4px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.midi-output-select:focus {
+  outline: none;
+  border-color: #007acc;
+}
+
+.midi-channel-select {
+  width: 60px;
+  background: #1e1e1e;
+  border: 1px solid #444;
+  color: #ccc;
+  padding: 4px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.midi-output-status {
+  font-size: 10px;
+  color: #2ea043;
+  padding: 2px 0;
+}

@@ -20,6 +20,9 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
   const [expanded, setExpanded] = useState(false)
   const [midiAccess, setMidiAccess] = useState(null)
   const [inputs, setInputs] = useState([])
+  const [outputs, setOutputs] = useState([])
+  const [selectedOutput, setSelectedOutput] = useState(null)
+  const [midiChannel, setMidiChannel] = useState(0)
   const [ccMapping, setCcMapping] = useState(() => {
     const m = {}
     for (const [ccNum, config] of Object.entries(CC_NUMBERS)) {
@@ -29,26 +32,65 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
   })
   const [noteMapping, setNoteMapping] = useState({})
   const activeNotesRef = useRef({})
+  const outputRef = useRef(null)
 
   useEffect(() => {
     if (!navigator.requestMIDIAccess) return
     navigator.requestMIDIAccess()
       .then(access => {
         setMidiAccess(access)
-        updateInputs(access)
-        access.onstatechange = () => updateInputs(access)
+        updateDevices(access)
+        access.onstatechange = () => updateDevices(access)
       })
       .catch(() => {})
   }, [])
 
-  function updateInputs(access) {
-    const list = []
+  function updateDevices(access) {
+    const inList = []
     for (const input of access.inputs.values()) {
-      list.push({ id: input.id, name: input.name, manufacturer: input.manufacturer })
+      inList.push({ id: input.id, name: input.name, manufacturer: input.manufacturer })
     }
-    setInputs(list)
+    setInputs(inList)
+    const outList = []
+    for (const output of access.outputs.values()) {
+      outList.push({ id: output.id, name: output.name, manufacturer: output.manufacturer })
+    }
+    setOutputs(outList)
   }
 
+  // Track output device
+  useEffect(() => {
+    if (!midiAccess || !selectedOutput) {
+      outputRef.current = null
+      return
+    }
+    outputRef.current = midiAccess.outputs.get(selectedOutput)
+  }, [midiAccess, selectedOutput])
+
+  // Send CC when ccValues change
+  useEffect(() => {
+    if (!outputRef.current) return
+    for (const [key, val] of Object.entries(ccValues || {})) {
+      const ccNum = parseInt(key.replace('u_cc', ''))
+      if (!isNaN(ccNum) && ccNum >= 1 && ccNum <= 8) {
+        outputRef.current.send([0xB0 | midiChannel, ccNum, Math.round(val * 127)])
+      }
+    }
+  }, [ccValues, midiChannel])
+
+  // Send note triggers to output
+  useEffect(() => {
+    if (!outputRef.current || !triggers || triggers.length === 0) return
+    const latest = triggers[triggers.length - 1]
+    if (!latest) return
+    if (latest.type === 'noteOn') {
+      outputRef.current.send([0x90 | midiChannel, latest.note, Math.round(latest.velocity * 127)])
+    } else if (latest.type === 'noteOff') {
+      outputRef.current.send([0x80 | midiChannel, latest.note, 0])
+    }
+  }, [triggers, midiChannel])
+
+  // Input message handler
   useEffect(() => {
     if (!midiAccess) return
     if (!expanded) return
@@ -57,45 +99,38 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
       const [status, data1, data2] = e.data
       const msgType = status & 0xF0
 
-      // Note On (0x90) with velocity > 0
       if (msgType === 0x90 && data2 > 0) {
         const note = data1
         const velocity = data2 / 127
         activeNotesRef.current[note] = { velocity, startTime: Date.now() }
-
         const mapping = noteMapping[note]
         if (mapping) {
           if (mapping.type === 'cc') {
-            onCcChange?.(`u_cc${mapping.channel}`, velocity)
+            onCcChange?.('u_cc' + mapping.channel, velocity)
           } else if (mapping.type === 'effect') {
             onTrigger?.({ note, velocity, type: 'noteOn', effectId: mapping.effectId })
           }
         } else {
           onTrigger?.({ note, velocity, type: 'noteOn' })
         }
-      }
-      // Note Off (0x80) or Note On with velocity 0
-      else if (msgType === 0x80 || (msgType === 0x90 && data2 === 0)) {
+      } else if (msgType === 0x80 || (msgType === 0x90 && data2 === 0)) {
         const note = data1
         delete activeNotesRef.current[note]
-
         const mapping = noteMapping[note]
         if (mapping) {
           if (mapping.type === 'cc') {
-            onCcChange?.(`u_cc${mapping.channel}`, 0)
+            onCcChange?.('u_cc' + mapping.channel, 0)
           } else if (mapping.type === 'effect') {
             onTrigger?.({ note, velocity: 0, type: 'noteOff', effectId: mapping.effectId })
           }
         } else {
           onTrigger?.({ note, velocity: 0, type: 'noteOff' })
         }
-      }
-      // CC message
-      else if (msgType === 0xB0) {
+      } else if (msgType === 0xB0) {
         const ccNum = data1
         const channel = ccMapping[ccNum]
         if (channel !== undefined) {
-          onCcChange?.(`u_cc${channel}`, data2 / 127)
+          onCcChange?.('u_cc' + channel, data2 / 127)
         }
       }
     }
@@ -134,103 +169,141 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
       <div className="midi-header" onClick={() => setExpanded(!expanded)}>
         <span>MIDI {expanded ? '\u25BE' : '\u25B8'}</span>
         <span className="midi-header-label">
-          {inputs.length > 0 ? `${inputs.length} device(s)` : 'No device'}
+          {inputs.length > 0 ? inputs.length + ' in' : ''}
+          {inputs.length > 0 && outputs.length > 0 ? ' / ' : ''}
+          {outputs.length > 0 ? outputs.length + ' out' : ''}
+          {inputs.length === 0 && outputs.length === 0 ? 'No device' : ''}
         </span>
       </div>
 
       {expanded && (
         <div className="midi-body">
-          {inputs.length === 0 && (
+          {inputs.length === 0 && outputs.length === 0 && (
             <div className="midi-empty">No MIDI devices detected</div>
           )}
 
+          {/* Input Devices */}
           {inputs.length > 0 && (
-            <>
+            <div className="midi-section">
+              <div className="midi-section-title">Input</div>
               <div className="midi-devices">
                 {inputs.map(dev => (
                   <div key={dev.id} className="midi-device">{dev.name}</div>
                 ))}
               </div>
+            </div>
+          )}
 
-              {/* Active Notes Display */}
-              {activeNotes.length > 0 && (
-                <div className="midi-active-notes">
-                  <span className="midi-active-label">Active: </span>
-                  {activeNotes.map(n => (
-                    <span key={n} className="midi-note-badge">{noteName(n)}</span>
+          {/* Output Devices */}
+          {outputs.length > 0 && (
+            <div className="midi-section">
+              <div className="midi-section-title">Output</div>
+              <div className="midi-output-row">
+                <select
+                  className="midi-output-select"
+                  value={selectedOutput || ''}
+                  onChange={e => setSelectedOutput(e.target.value || null)}
+                >
+                  <option value="">None</option>
+                  {outputs.map(dev => (
+                    <option key={dev.id} value={dev.id}>{dev.name}</option>
                   ))}
+                </select>
+                <select
+                  className="midi-channel-select"
+                  value={midiChannel}
+                  onChange={e => setMidiChannel(parseInt(e.target.value))}
+                >
+                  {[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(ch => (
+                    <option key={ch} value={ch}>Ch {ch + 1}</option>
+                  ))}
+                </select>
+              </div>
+              {selectedOutput && (
+                <div className="midi-output-status">
+                  Sending to: {outputs.find(o => o.id === selectedOutput)?.name} (Ch {midiChannel + 1})
                 </div>
               )}
-
-              {/* CC Mapping */}
-              <div className="midi-mapping">
-                <div className="midi-mapping-title">MIDI CC {'\u2192'} CC Channel</div>
-                {Object.entries(CC_NUMBERS).map(([ccNum, config]) => (
-                  <div key={ccNum} className="midi-mapping-row">
-                    <span className="midi-cc-label">CC {ccNum} ({config.name})</span>
-                    <span className="midi-arrow">{'\u2192'}</span>
-                    <select
-                      value={ccMapping[ccNum] || ''}
-                      onChange={e => handleCcMappingChange(ccNum, parseInt(e.target.value))}
-                    >
-                      <option value="">{'\u2014'}</option>
-                      {[1,2,3,4,5,6,7,8].map(ch => (
-                        <option key={ch} value={ch}>CC{ch}</option>
-                      ))}
-                    </select>
-                  </div>
-                ))}
-              </div>
-
-              {/* Note Trigger Mapping */}
-              <div className="midi-mapping">
-                <div className="midi-mapping-title">Note Trigger {'\u2192'} Target</div>
-                <div className="midi-note-map-hint">
-                  Click a key on your MIDI keyboard, then map it below
-                </div>
-                {Object.keys(noteMapping).sort((a, b) => Number(a) - Number(b)).map(note => (
-                  <div key={note} className="midi-mapping-row">
-                    <span className="midi-cc-label">{noteName(Number(note))}</span>
-                    <span className="midi-arrow">{'\u2192'}</span>
-                    <select
-                      value={noteMapping[note]?.type === 'cc' ? `cc${noteMapping[note].channel}` : noteMapping[note]?.type === 'effect' ? `fx:${noteMapping[note].effectId}` : ''}
-                      onChange={e => {
-                        const val = e.target.value
-                        if (val.startsWith('cc')) {
-                          handleNoteMappingChange(note, 'cc', { channel: parseInt(val.replace('cc', '')) })
-                        } else if (val.startsWith('fx:')) {
-                          handleNoteMappingChange(note, 'effect', { effectId: val.replace('fx:', '') })
-                        } else {
-                          handleNoteMappingChange(note, '', {})
-                        }
-                      }}
-                    >
-                      <option value="">{'\u2014'}</option>
-                      <optgroup label="CC Channel">
-                        {[1,2,3,4,5,6,7,8].map(ch => (
-                          <option key={ch} value={`cc${ch}`}>CC{ch}</option>
-                        ))}
-                      </optgroup>
-                      {(fxChain || []).length > 0 && (
-                        <optgroup label="Effect Toggle">
-                          {fxChain.map(fx => (
-                            <option key={fx.id} value={`fx:${fx.id}`}>{fx.label}</option>
-                          ))}
-                        </optgroup>
-                      )}
-                    </select>
-                    <button
-                      className="midi-remove-btn"
-                      onClick={() => handleNoteMappingChange(note, '', {})}
-                      title="Remove mapping"
-                    >
-                      {'\u2715'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </>
+            </div>
           )}
+
+          {/* Active Notes Display */}
+          {activeNotes.length > 0 && (
+            <div className="midi-active-notes">
+              <span className="midi-active-label">Active: </span>
+              {activeNotes.map(n => (
+                <span key={n} className="midi-note-badge">{noteName(n)}</span>
+              ))}
+            </div>
+          )}
+
+          {/* CC Mapping */}
+          <div className="midi-mapping">
+            <div className="midi-mapping-title">MIDI CC {'\u2192'} CC Channel</div>
+            {Object.entries(CC_NUMBERS).map(([ccNum, config]) => (
+              <div key={ccNum} className="midi-mapping-row">
+                <span className="midi-cc-label">CC {ccNum} ({config.name})</span>
+                <span className="midi-arrow">{'\u2192'}</span>
+                <select
+                  value={ccMapping[ccNum] || ''}
+                  onChange={e => handleCcMappingChange(ccNum, parseInt(e.target.value))}
+                >
+                  <option value="">{'\u2014'}</option>
+                  {[1,2,3,4,5,6,7,8].map(ch => (
+                    <option key={ch} value={ch}>CC{ch}</option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+
+          {/* Note Trigger Mapping */}
+          <div className="midi-mapping">
+            <div className="midi-mapping-title">Note Trigger {'\u2192'} Target</div>
+            <div className="midi-note-map-hint">
+              Click a key on your MIDI keyboard, then map it below
+            </div>
+            {Object.keys(noteMapping).sort((a, b) => Number(a) - Number(b)).map(note => (
+              <div key={note} className="midi-mapping-row">
+                <span className="midi-cc-label">{noteName(Number(note))}</span>
+                <span className="midi-arrow">{'\u2192'}</span>
+                <select
+                  value={noteMapping[note]?.type === 'cc' ? 'cc' + noteMapping[note].channel : noteMapping[note]?.type === 'effect' ? 'fx:' + noteMapping[note].effectId : ''}
+                  onChange={e => {
+                    const val = e.target.value
+                    if (val.startsWith('cc')) {
+                      handleNoteMappingChange(note, 'cc', { channel: parseInt(val.replace('cc', '')) })
+                    } else if (val.startsWith('fx:')) {
+                      handleNoteMappingChange(note, 'effect', { effectId: val.replace('fx:', '') })
+                    } else {
+                      handleNoteMappingChange(note, '', {})
+                    }
+                  }}
+                >
+                  <option value="">{'\u2014'}</option>
+                  <optgroup label="CC Channel">
+                    {[1,2,3,4,5,6,7,8].map(ch => (
+                      <option key={ch} value={'cc' + ch}>CC{ch}</option>
+                    ))}
+                  </optgroup>
+                  {(fxChain || []).length > 0 && (
+                    <optgroup label="Effect Toggle">
+                      {fxChain.map(fx => (
+                        <option key={fx.id} value={'fx:' + fx.id}>{fx.label}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+                <button
+                  className="midi-remove-btn"
+                  onClick={() => handleNoteMappingChange(note, '', {})}
+                  title="Remove mapping"
+                >
+                  {'\u2715'}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
