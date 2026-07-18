@@ -98,6 +98,10 @@ export default function App() {
     setActiveTabId(tabId)
   }, [])
 
+  const handleRename = useCallback((tabId, newName) => {
+    setTabs(prev => prev.map(t => t.id === tabId ? { ...t, name: newName } : t))
+  }, [])
+
   useEffect(() => {
     const handler = (e) => {
       if (e.ctrlKey && e.key === 'b') { e.preventDefault(); setLeftOpen(v => !v) }
@@ -519,6 +523,7 @@ export default function App() {
                 onOpen={handleOpen}
                 onSave={handleSave}
                 onDownload={handleDownload}
+                onRename={handleRename}
               />
               <ShaderEditor value={code} onChange={(v) => updateActiveTab({ code: v, modified: true })} />
               {error && <div className="error-bar">{error}</div>}

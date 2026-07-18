@@ -1584,4 +1584,14 @@
 .tabbar-new:hover {
   background: #383838;
   color: #ccc;
+}.tabbar-rename-input {
+  background: #1e1e1e;
+  border: 1px solid #007acc;
+  color: #ccc;
+  font-size: 12px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  outline: none;
+  width: 100px;
+  font-family: inherit;
 }
