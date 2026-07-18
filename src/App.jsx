@@ -7,6 +7,7 @@ import FxPanel from './components/FxPanel.jsx'
 import MidiPanel from './components/MidiPanel.jsx'
 import RandomGenPanel from './components/RandomGenPanel.jsx'
 import AudioPanel from './components/AudioPanel.jsx'
+import OscPanel from './components/OscPanel.jsx'
 import Toolbar from './components/Toolbar.jsx'
 import ISFLibrary from './components/ISFLibrary.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
@@ -440,6 +441,9 @@ export default function App() {
             />
             <AudioPanel
               onSynthReady={handleSynthReady}
+            />
+            <OscPanel
+              onCcChange={handleCcValueChange}
             />
           </div>
 
