@@ -1579,6 +1579,7 @@
   height: 32px;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .tabbar-new:hover {
