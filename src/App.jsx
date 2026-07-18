@@ -70,6 +70,8 @@ export default function App() {
   const wsRef = useRef(null)
   const webcamStreamRef = useRef(null)
   const synthRef = useRef(null)
+  const midiOutputRef = useRef(null)
+  const midiChannelRef = useRef(0)
 
   // Tab helpers
   const updateActiveTab = useCallback((updates) => {
@@ -186,6 +188,24 @@ export default function App() {
       synthRef.current?.noteOn(trigger.note, Math.round(trigger.velocity * 127))
     } else if (trigger.type === 'noteOff') {
       synthRef.current?.noteOff(trigger.note)
+    }
+
+    // Send MIDI output directly
+    const output = midiOutputRef.current
+    if (output) {
+      const ch = midiChannelRef.current
+      const sendToChannel = (channel) => {
+        if (trigger.type === 'noteOn' && trigger.velocity > 0) {
+          output.send([0x90 | channel, trigger.note, Math.round(trigger.velocity * 127)])
+        } else if (trigger.type === 'noteOff') {
+          output.send([0x80 | channel, trigger.note, 0])
+        }
+      }
+      if (ch === -1) {
+        for (let c = 0; c < 16; c++) sendToChannel(c)
+      } else {
+        sendToChannel(ch)
+      }
     }
 
     setTriggers(prev => {
@@ -616,6 +636,8 @@ export default function App() {
               triggers={triggers}
               onTrigger={handleTrigger}
               fxChain={fxChain}
+              midiOutputRef={midiOutputRef}
+              midiChannelRef={midiChannelRef}
             />
             <RandomGenPanel
               onTrigger={handleTrigger}

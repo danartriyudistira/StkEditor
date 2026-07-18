@@ -16,7 +16,7 @@ function noteName(note) {
   return names[note % 12] + Math.floor(note / 12 - 1)
 }
 
-export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, fxChain }) {
+export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, fxChain, midiOutputRef, midiChannelRef }) {
   const [expanded, setExpanded] = useState(false)
   const [midiAccess, setMidiAccess] = useState(null)
   const [inputs, setInputs] = useState([])
@@ -34,7 +34,6 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
   })
   const [noteMapping, setNoteMapping] = useState({})
   const activeNotesRef = useRef({})
-  const outputRef = useRef(null)
 
   useEffect(() => {
     if (!navigator.requestMIDIAccess) return
@@ -65,51 +64,33 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
   // Track output device
   useEffect(() => {
     if (!midiAccess || !selectedOutput) {
-      outputRef.current = null
+      midiOutputRef.current = null
       return
     }
     const device = midiAccess.outputs.get(selectedOutput)
     console.log('Selected output device:', device)
-    outputRef.current = device
-  }, [midiAccess, selectedOutput])
+    midiOutputRef.current = device
+  }, [midiAccess, selectedOutput, midiOutputRef])
+
+  // Track output channel
+  useEffect(() => {
+    midiChannelRef.current = outputChannel
+  }, [outputChannel, midiChannelRef])
 
   // Send CC when ccValues change
   useEffect(() => {
-    if (!outputRef.current) return
+    if (!midiOutputRef.current) return
     for (const [key, val] of Object.entries(ccValues || {})) {
       const ccNum = parseInt(key.replace('u_cc', ''))
       if (!isNaN(ccNum) && ccNum >= 1 && ccNum <= 8) {
         if (outputChannel === -1) {
-          for (let ch = 0; ch < 16; ch++) outputRef.current.send([0xB0 | ch, ccNum, Math.round(val * 127)])
+          for (let ch = 0; ch < 16; ch++) midiOutputRef.current.send([0xB0 | ch, ccNum, Math.round(val * 127)])
         } else {
-          outputRef.current.send([0xB0 | outputChannel, ccNum, Math.round(val * 127)])
+          midiOutputRef.current.send([0xB0 | outputChannel, ccNum, Math.round(val * 127)])
         }
       }
     }
-  }, [ccValues, outputChannel])
-
-  // Send note triggers to output
-  useEffect(() => {
-    if (!outputRef.current || !triggers || triggers.length === 0) {
-      if (triggers && triggers.length > 0) console.log('MIDI OUT: no output device selected')
-      return
-    }
-    const latest = triggers[triggers.length - 1]
-    if (!latest) return
-    console.log('MIDI OUT:', latest.type, 'note:', latest.note, 'vel:', latest.velocity)
-    const sendNote = (ch) => {
-      if (latest.type === 'noteOn') {
-        outputRef.current.send([0x90 | ch, latest.note, Math.round(latest.velocity * 127)])
-      } else if (latest.type === 'noteOff') {
-        outputRef.current.send([0x80 | ch, latest.note, 0])
-      }
-    }
-    if (outputChannel === -1) {
-      for (let ch = 0; ch < 16; ch++) sendNote(ch)
-    } else {
-      sendNote(outputChannel)
-    }
-  }, [triggers, outputChannel])
+  }, [ccValues, outputChannel, midiOutputRef])
 
   // Input message handler - listen to selected input device
   useEffect(() => {
@@ -267,9 +248,6 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
                   {outputs.map(dev => (
                     <option key={dev.id} value={dev.id}>{dev.name}</option>
                   ))}
-                  {inputs.filter(i => !outputs.find(o => o.id === i.id)).map(dev => (
-                    <option key={dev.id} value={dev.id}>{dev.name} (input)</option>
-                  ))}
                 </select>
                 <select
                   className="midi-channel-select"
@@ -284,7 +262,7 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
               </div>
               {selectedOutput && (
                 <div className="midi-output-status">
-                  Sending to: {outputs.find(o => o.id === selectedOutput)?.name || inputs.find(i => i.id === selectedOutput)?.name} (Ch {outputChannel === -1 ? 'All' : outputChannel + 1})
+                  Sending to: {outputs.find(o => o.id === selectedOutput)?.name} (Ch {outputChannel === -1 ? 'All' : outputChannel + 1})
                 </div>
               )}
             </div>
