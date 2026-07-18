@@ -54,17 +54,20 @@ function createPlaceholderImage() {
   return canvas
 }
 
+const flipCanvas = document.createElement('canvas')
+const flipCtx = flipCanvas.getContext('2d')
+
 function flipSourceVertically(source) {
   const w = source.videoWidth || source.naturalWidth || source.width || 256
   const h = source.videoHeight || source.naturalHeight || source.height || 256
-  const canvas = document.createElement('canvas')
-  canvas.width = w
-  canvas.height = h
-  const ctx = canvas.getContext('2d')
-  ctx.translate(0, h)
-  ctx.scale(1, -1)
-  ctx.drawImage(source, 0, 0, w, h)
-  return canvas
+  if (flipCanvas.width !== w || flipCanvas.height !== h) {
+    flipCanvas.width = w
+    flipCanvas.height = h
+  }
+  flipCtx.setTransform(1, 0, 0, -1, 0, h)
+  flipCtx.drawImage(source, 0, 0, w, h)
+  flipCtx.setTransform(1, 0, 0, 1, 0, 0)
+  return flipCanvas
 }
 
 export default function Preview({ code, uniformValues, fxChain, onMetadata, onError, sourceType, sourceElement }) {
