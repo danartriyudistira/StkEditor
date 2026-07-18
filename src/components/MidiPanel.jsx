@@ -75,7 +75,11 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
     for (const [key, val] of Object.entries(ccValues || {})) {
       const ccNum = parseInt(key.replace('u_cc', ''))
       if (!isNaN(ccNum) && ccNum >= 1 && ccNum <= 8) {
-        outputRef.current.send([0xB0 | outputChannel, ccNum, Math.round(val * 127)])
+        if (outputChannel === -1) {
+          for (let ch = 0; ch < 16; ch++) outputRef.current.send([0xB0 | ch, ccNum, Math.round(val * 127)])
+        } else {
+          outputRef.current.send([0xB0 | outputChannel, ccNum, Math.round(val * 127)])
+        }
       }
     }
   }, [ccValues, outputChannel])
@@ -85,10 +89,17 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
     if (!outputRef.current || !triggers || triggers.length === 0) return
     const latest = triggers[triggers.length - 1]
     if (!latest) return
-    if (latest.type === 'noteOn') {
-      outputRef.current.send([0x90 | outputChannel, latest.note, Math.round(latest.velocity * 127)])
-    } else if (latest.type === 'noteOff') {
-      outputRef.current.send([0x80 | outputChannel, latest.note, 0])
+    const sendNote = (ch) => {
+      if (latest.type === 'noteOn') {
+        outputRef.current.send([0x90 | ch, latest.note, Math.round(latest.velocity * 127)])
+      } else if (latest.type === 'noteOff') {
+        outputRef.current.send([0x80 | ch, latest.note, 0])
+      }
+    }
+    if (outputChannel === -1) {
+      for (let ch = 0; ch < 16; ch++) sendNote(ch)
+    } else {
+      sendNote(outputChannel)
     }
   }, [triggers, outputChannel])
 
@@ -254,6 +265,7 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
                   value={outputChannel}
                   onChange={e => setOutputChannel(parseInt(e.target.value))}
                 >
+                  <option value={-1}>All Ch</option>
                   {[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(ch => (
                     <option key={ch} value={ch}>Ch {ch + 1}</option>
                   ))}
@@ -261,7 +273,7 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
               </div>
               {selectedOutput && (
                 <div className="midi-output-status">
-                  Sending to: {outputs.find(o => o.id === selectedOutput)?.name || inputs.find(i => i.id === selectedOutput)?.name} (Ch {outputChannel + 1})
+                  Sending to: {outputs.find(o => o.id === selectedOutput)?.name || inputs.find(i => i.id === selectedOutput)?.name} (Ch {outputChannel === -1 ? 'All' : outputChannel + 1})
                 </div>
               )}
             </div>
