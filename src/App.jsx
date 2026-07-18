@@ -143,7 +143,7 @@ export default function App() {
   }, [])
 
   const handleError = useCallback((err) => {
-    setError(typeof err === 'string' ? err : err?.message || String(err))
+    if (err === null || err === undefined) { setError(null) } else { setError(typeof err === 'string' ? err : err?.message || String(err)) }
   }, [])
 
   const handleControlChange = useCallback((name, value) => {
