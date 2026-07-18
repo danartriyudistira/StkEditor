@@ -21,8 +21,10 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
   const [midiAccess, setMidiAccess] = useState(null)
   const [inputs, setInputs] = useState([])
   const [outputs, setOutputs] = useState([])
+  const [selectedInput, setSelectedInput] = useState(null)
   const [selectedOutput, setSelectedOutput] = useState(null)
-  const [midiChannel, setMidiChannel] = useState(0)
+  const [inputChannel, setInputChannel] = useState(0) // 0 = all channels
+  const [outputChannel, setOutputChannel] = useState(0)
   const [ccMapping, setCcMapping] = useState(() => {
     const m = {}
     for (const [ccNum, config] of Object.entries(CC_NUMBERS)) {
@@ -73,10 +75,10 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
     for (const [key, val] of Object.entries(ccValues || {})) {
       const ccNum = parseInt(key.replace('u_cc', ''))
       if (!isNaN(ccNum) && ccNum >= 1 && ccNum <= 8) {
-        outputRef.current.send([0xB0 | midiChannel, ccNum, Math.round(val * 127)])
+        outputRef.current.send([0xB0 | outputChannel, ccNum, Math.round(val * 127)])
       }
     }
-  }, [ccValues, midiChannel])
+  }, [ccValues, outputChannel])
 
   // Send note triggers to output
   useEffect(() => {
@@ -84,13 +86,13 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
     const latest = triggers[triggers.length - 1]
     if (!latest) return
     if (latest.type === 'noteOn') {
-      outputRef.current.send([0x90 | midiChannel, latest.note, Math.round(latest.velocity * 127)])
+      outputRef.current.send([0x90 | outputChannel, latest.note, Math.round(latest.velocity * 127)])
     } else if (latest.type === 'noteOff') {
-      outputRef.current.send([0x80 | midiChannel, latest.note, 0])
+      outputRef.current.send([0x80 | outputChannel, latest.note, 0])
     }
-  }, [triggers, midiChannel])
+  }, [triggers, outputChannel])
 
-  // Input message handler
+  // Input message handler - listen to selected input device
   useEffect(() => {
     if (!midiAccess) return
     if (!expanded) return
@@ -98,6 +100,10 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
     function handleMessage(e) {
       const [status, data1, data2] = e.data
       const msgType = status & 0xF0
+      const msgChannel = status & 0x0F
+
+      // Filter by input channel (0 = all channels)
+      if (inputChannel !== 0 && msgChannel !== inputChannel - 1) return
 
       if (msgType === 0x90 && data2 > 0) {
         const note = data1
@@ -135,15 +141,24 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
       }
     }
 
-    for (const input of midiAccess.inputs.values()) {
-      input.onmidimessage = handleMessage
-    }
-    return () => {
+    // Attach to selected input device or all devices
+    if (selectedInput) {
+      const device = midiAccess.inputs.get(selectedInput)
+      if (device) {
+        device.onmidimessage = handleMessage
+        return () => { device.onmidimessage = null }
+      }
+    } else {
       for (const input of midiAccess.inputs.values()) {
-        input.onmidimessage = null
+        input.onmidimessage = handleMessage
+      }
+      return () => {
+        for (const input of midiAccess.inputs.values()) {
+          input.onmidimessage = null
+        }
       }
     }
-  }, [midiAccess, expanded, ccMapping, noteMapping, onCcChange, onTrigger])
+  }, [midiAccess, expanded, selectedInput, inputChannel, ccMapping, noteMapping, onCcChange, onTrigger])
 
   const handleCcMappingChange = useCallback((ccNum, channel) => {
     setCcMapping(prev => ({ ...prev, [ccNum]: channel }))
@@ -182,19 +197,41 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
             <div className="midi-empty">No MIDI devices detected</div>
           )}
 
-          {/* Input Devices */}
+          {/* Input Section */}
           {inputs.length > 0 && (
             <div className="midi-section">
               <div className="midi-section-title">Input</div>
-              <div className="midi-devices">
-                {inputs.map(dev => (
-                  <div key={dev.id} className="midi-device">{dev.name}</div>
-                ))}
+              <div className="midi-output-row">
+                <select
+                  className="midi-output-select"
+                  value={selectedInput || ''}
+                  onChange={e => setSelectedInput(e.target.value || null)}
+                >
+                  <option value="">All Devices</option>
+                  {inputs.map(dev => (
+                    <option key={dev.id} value={dev.id}>{dev.name}</option>
+                  ))}
+                </select>
+                <select
+                  className="midi-channel-select"
+                  value={inputChannel}
+                  onChange={e => setInputChannel(parseInt(e.target.value))}
+                >
+                  <option value={0}>All Ch</option>
+                  {[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16].map(ch => (
+                    <option key={ch} value={ch}>Ch {ch}</option>
+                  ))}
+                </select>
               </div>
+              {selectedInput && (
+                <div className="midi-output-status">
+                  Listening: {inputs.find(i => i.id === selectedInput)?.name} (Ch {inputChannel === 0 ? 'All' : inputChannel})
+                </div>
+              )}
             </div>
           )}
 
-          {/* Output Devices */}
+          {/* Output Section */}
           {outputs.length > 0 && (
             <div className="midi-section">
               <div className="midi-section-title">Output</div>
@@ -214,8 +251,8 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
                 </select>
                 <select
                   className="midi-channel-select"
-                  value={midiChannel}
-                  onChange={e => setMidiChannel(parseInt(e.target.value))}
+                  value={outputChannel}
+                  onChange={e => setOutputChannel(parseInt(e.target.value))}
                 >
                   {[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(ch => (
                     <option key={ch} value={ch}>Ch {ch + 1}</option>
@@ -224,7 +261,7 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
               </div>
               {selectedOutput && (
                 <div className="midi-output-status">
-                  Sending to: {outputs.find(o => o.id === selectedOutput)?.name} (Ch {midiChannel + 1})
+                  Sending to: {outputs.find(o => o.id === selectedOutput)?.name || inputs.find(i => i.id === selectedOutput)?.name} (Ch {outputChannel + 1})
                 </div>
               )}
             </div>
