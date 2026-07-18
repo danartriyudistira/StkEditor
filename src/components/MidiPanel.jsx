@@ -58,6 +58,8 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
       outList.push({ id: output.id, name: output.name, manufacturer: output.manufacturer })
     }
     setOutputs(outList)
+    console.log('MIDI Inputs:', inList.length, inList.map(d => d.name))
+    console.log('MIDI Outputs:', outList.length, outList.map(d => d.name))
   }
 
   // Track output device
@@ -66,7 +68,9 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
       outputRef.current = null
       return
     }
-    outputRef.current = midiAccess.outputs.get(selectedOutput)
+    const device = midiAccess.outputs.get(selectedOutput)
+    console.log('Selected output device:', device)
+    outputRef.current = device
   }, [midiAccess, selectedOutput])
 
   // Send CC when ccValues change
@@ -86,9 +90,13 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
 
   // Send note triggers to output
   useEffect(() => {
-    if (!outputRef.current || !triggers || triggers.length === 0) return
+    if (!outputRef.current || !triggers || triggers.length === 0) {
+      if (triggers && triggers.length > 0) console.log('MIDI OUT: no output device selected')
+      return
+    }
     const latest = triggers[triggers.length - 1]
     if (!latest) return
+    console.log('MIDI OUT:', latest.type, 'note:', latest.note, 'vel:', latest.velocity)
     const sendNote = (ch) => {
       if (latest.type === 'noteOn') {
         outputRef.current.send([0x90 | ch, latest.note, Math.round(latest.velocity * 127)])
