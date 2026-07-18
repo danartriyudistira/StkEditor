@@ -1,7 +1,6 @@
-﻿import { useRef, useState } from 'react'
+﻿import { useRef, useState, useEffect } from 'react'
 
 export default function Toolbar({
-
   onLoadFromLibrary,
   onSendToConsole,
   consoleConfig,
@@ -21,6 +20,16 @@ export default function Toolbar({
   const fileInputRef = useRef(null)
   const [showConfig, setShowConfig] = useState(false)
   const [configDraft, setConfigDraft] = useState({ host: '', port: '' })
+  const [editing, setEditing] = useState(false)
+  const [editValue, setEditValue] = useState('')
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [editing])
 
   function openConfig() {
     setConfigDraft({ host: consoleConfig.host, port: String(consoleConfig.port) })
@@ -34,14 +43,35 @@ export default function Toolbar({
     setShowConfig(false)
   }
 
+  function handleSubmit() {
+    if (editValue.trim()) {
+      onProjectNameChange?.(editValue.trim())
+    }
+    setEditing(false)
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter') handleSubmit()
+    if (e.key === 'Escape') setEditing(false)
+  }
+
   return (
     <div className="toolbar">
-      <input
-        className="toolbar-project-name"
-        value={projectName}
-        onChange={e => onProjectNameChange?.(e.target.value)}
-        title="Project name"
-      />
+      <div className="toolbar-project-name" onDoubleClick={() => { setEditing(true); setEditValue(projectName) }}>
+        {editing ? (
+          <input
+            ref={inputRef}
+            className="toolbar-rename-input"
+            value={editValue}
+            onChange={e => setEditValue(e.target.value)}
+            onBlur={handleSubmit}
+            onKeyDown={handleKeyDown}
+            onClick={e => e.stopPropagation()}
+          />
+        ) : (
+          projectName
+        )}
+      </div>
 
       <div className="toolbar-actions">
         <button className="toolbar-btn" onClick={onImportStk} title="Import .stk project">Import</button>

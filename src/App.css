@@ -1597,20 +1597,30 @@
   font-family: inherit;
 }
 .toolbar-project-name {
-  background: #1e1e1e;
-  border: 1px solid #444;
   color: #ccc;
   padding: 4px 8px;
-  border-radius: 3px;
   font-size: 13px;
   font-family: monospace;
-  min-width: 100px;
-  max-width: 200px;
+  cursor: default;
+  white-space: nowrap;
+  user-select: none;
+  border-radius: 3px;
 }
 
-.toolbar-project-name:focus {
+.toolbar-project-name:hover {
+  background: #383838;
+}
+
+.toolbar-rename-input {
+  background: #1e1e1e;
+  border: 1px solid #007acc;
+  color: #ccc;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 13px;
+  font-family: monospace;
   outline: none;
-  border-color: #007acc;
+  width: 120px;
 }
 
 .toolbar-btn {
