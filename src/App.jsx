@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+﻿import { useState, useCallback, useEffect, useRef } from 'react'
 import ShaderEditor from './components/Editor.jsx'
 import Preview from './components/Preview.jsx'
 import Controls from './components/Controls.jsx'
@@ -51,7 +51,10 @@ export default function App() {
   const [leftOpen, setLeftOpen] = useState(true)
   const [rightOpen, setRightOpen] = useState(true)
   const [panelOpacity, setPanelOpacity] = useState(0.92)
+  const [sourceType, setSourceType] = useState('placeholder')
+  const [sourceElement, setSourceElement] = useState(null)
   const wsRef = useRef(null)
+  const webcamStreamRef = useRef(null)
 
   useEffect(() => {
     const handler = (e) => {
@@ -68,6 +71,15 @@ export default function App() {
       .then(r => r.json())
       .then(files => setLibraryFiles(Array.isArray(files) ? files : []))
       .catch(() => setLibraryFiles([]))
+  }, [])
+
+  // Cleanup webcam on unmount
+  useEffect(() => {
+    return () => {
+      if (webcamStreamRef.current) {
+        webcamStreamRef.current.getTracks().forEach(t => t.stop())
+      }
+    }
   }, [])
 
   const handleMetadata = useCallback((meta) => {
@@ -116,6 +128,47 @@ export default function App() {
 
   const handleCcMappingChange = useCallback((inputName, channel) => {
     setCcMapping(prev => ({ ...prev, [inputName]: channel }))
+  }, [])
+
+  const handleSourceChange = useCallback((type) => {
+    // Stop webcam if switching away
+    if (type !== 'webcam' && webcamStreamRef.current) {
+      webcamStreamRef.current.getTracks().forEach(t => t.stop())
+      webcamStreamRef.current = null
+    }
+
+    if (type === 'webcam') {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          webcamStreamRef.current = stream
+          const video = document.createElement('video')
+          video.srcObject = stream
+          video.autoplay = true
+          video.playsInline = true
+          video.muted = true
+          video.play()
+          setSourceType('webcam')
+          setSourceElement(video)
+        })
+        .catch(err => {
+          console.error('Webcam error:', err)
+          setError('Could not access webcam')
+        })
+    } else if (type === 'image') {
+      // Handled by file upload
+    } else {
+      setSourceType('placeholder')
+      setSourceElement(null)
+    }
+  }, [])
+
+  const handleSourceUpload = useCallback((file) => {
+    const img = new Image()
+    img.onload = () => {
+      setSourceType('image')
+      setSourceElement(img)
+    }
+    img.src = URL.createObjectURL(file)
   }, [])
 
   const handleNew = useCallback(() => {
@@ -267,6 +320,9 @@ export default function App() {
           onDownload={handleDownload}
           onLoadFromLibrary={handleLoadFromLibrary}
           onSendToTV={handleSendToTV}
+          sourceType={sourceType}
+          onSourceChange={handleSourceChange}
+          onSourceUpload={handleSourceUpload}
         />
 
         <div className="main">
@@ -278,6 +334,8 @@ export default function App() {
               fxChain={fxChain}
               onMetadata={handleMetadata}
               onError={handleError}
+              sourceType={sourceType}
+              sourceElement={sourceElement}
             />
           </div>
 

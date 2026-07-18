@@ -1,3 +1,5 @@
+﻿import { useRef } from 'react'
+
 export default function Toolbar({
   onNew,
   onOpen,
@@ -7,7 +9,12 @@ export default function Toolbar({
   fileName,
   tvConnected,
   libraryFiles,
+  sourceType,
+  onSourceChange,
+  onSourceUpload,
 }) {
+  const fileInputRef = useRef(null)
+
   return (
     <div className="toolbar">
       <span className="toolbar-title">
@@ -32,6 +39,49 @@ export default function Toolbar({
             Library
           </button>
         )}
+
+        <div className="toolbar-separator" />
+
+        {/* Source Input Picker */}
+        <div className="source-picker">
+          <button
+            className={`source-btn ${sourceType !== 'placeholder' ? 'active' : ''}`}
+            title="Source input for ISF shaders"
+          >
+            {sourceType === 'webcam' ? '📷' : sourceType === 'image' ? '🖼️' : '🎨'} Source
+          </button>
+          <div className="source-dropdown">
+            <button
+              className={sourceType === 'placeholder' ? 'active' : ''}
+              onClick={() => onSourceChange('placeholder')}
+            >
+              🎨 Placeholder
+            </button>
+            <button
+              className={sourceType === 'image' ? 'active' : ''}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              🖼️ Upload Image
+            </button>
+            <button
+              className={sourceType === 'webcam' ? 'active' : ''}
+              onClick={() => onSourceChange('webcam')}
+            >
+              📷 Webcam
+            </button>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) onSourceUpload(file)
+              e.target.value = ''
+            }}
+          />
+        </div>
 
         <div className="toolbar-separator" />
 

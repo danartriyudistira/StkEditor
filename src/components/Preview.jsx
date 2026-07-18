@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react'
+﻿import { useRef, useEffect, useCallback } from 'react'
 import { Renderer, Parser } from 'interactive-shader-format'
 import FxProcessor from '../fx/FxProcessor.js'
 
@@ -17,21 +17,58 @@ function wrapGLSL(code) {
 ${code}`
 }
 
-export default function Preview({ code, uniformValues, fxChain, onMetadata, onError }) {
+function createPlaceholderTexture(gl) {
+  const size = 256
+  const data = new Uint8Array(size * size * 4)
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4
+      const t = x / size
+      data[i]     = Math.floor(60 + 140 * t)
+      data[i + 1] = Math.floor(40 + 60 * Math.sin(t * Math.PI))
+      data[i + 2] = Math.floor(180 - 80 * t)
+      data[i + 3] = 255
+    }
+  }
+  const tex = gl.createTexture()
+  gl.bindTexture(gl.TEXTURE_2D, tex)
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, data)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+  return tex
+}
+
+function updateTextureFromSource(gl, texture, source) {
+  gl.bindTexture(gl.TEXTURE_2D, texture)
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+}
+
+export default function Preview({ code, uniformValues, fxChain, onMetadata, onError, sourceType, sourceElement }) {
   const canvasRef = useRef(null)
   const isfCanvasRef = useRef(null)
   const isfRendererRef = useRef(null)
   const fxProcessorRef = useRef(null)
   const isfTextureRef = useRef(null)
+  const sourceTextureRef = useRef(null)
   const parserRef = useRef(null)
   const rafRef = useRef(null)
   const codeRef = useRef(code)
   const uniformValuesRef = useRef(uniformValues)
   const fxChainRef = useRef(fxChain)
+  const sourceTypeRef = useRef(sourceType)
+  const sourceElementRef = useRef(sourceElement)
 
   codeRef.current = code
   uniformValuesRef.current = uniformValues
   fxChainRef.current = fxChain
+  sourceTypeRef.current = sourceType
+  sourceElementRef.current = sourceElement
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -69,6 +106,7 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
     fxProcessorRef.current = fxProcessor
 
     isfTextureRef.current = mainGL.createTexture()
+    sourceTextureRef.current = createPlaceholderTexture(mainGL)
 
     function render() {
       const r = isfRendererRef.current
@@ -90,8 +128,17 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
         ic.height = c.height
       }
 
+      // Update source texture based on current source type
+      const srcType = sourceTypeRef.current
+      const srcEl = sourceElementRef.current
+      if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
+        updateTextureFromSource(gl, sourceTextureRef.current, srcEl)
+      } else if (srcType === 'image' && srcEl && srcEl.complete) {
+        updateTextureFromSource(gl, sourceTextureRef.current, srcEl)
+      }
+
       try {
-        r.draw(ic)
+        r.draw(ic, sourceTextureRef.current)
       } catch (_) {}
 
       try {
