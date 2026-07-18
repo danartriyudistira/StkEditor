@@ -80,11 +80,13 @@ export default function RandomGenPanel({ onTrigger, noteMapping }) {
 
       {enabled && (
         <div className="rndgen-body">
-          {activeNote !== null && (
-            <div className="rndgen-active">
+          <div className="rndgen-active">
+            {activeNote !== null ? (
               <span className="midi-note-badge">{noteName(activeNote)}</span>
-            </div>
-          )}
+            ) : (
+              <span className="midi-note-badge midi-note-idle">-</span>
+            )}
+          </div>
 
           <div className="rndgen-control">
             <label>BPM</label>

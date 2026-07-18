@@ -1181,3 +1181,7 @@
   text-align: right;
   font-family: monospace;
 }
+.midi-note-idle {
+  background: #333;
+  color: #555;
+}
