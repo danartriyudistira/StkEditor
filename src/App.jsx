@@ -504,6 +504,10 @@ export default function App() {
                 onSwitch={handleSwitchTab}
                 onClose={handleCloseTab}
                 onNew={handleNewTab}
+                onOpen={handleOpen}
+                onDownload={handleDownload}
+                onSave={handleSavePreset}
+                onLoad={handleLoadPreset}
               />
               <ShaderEditor value={code} onChange={(v) => updateActiveTab({ code: v, modified: true })} />
               {error && <div className="error-bar">{error}</div>}

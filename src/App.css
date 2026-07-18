@@ -1560,3 +1560,35 @@
   background: #383838;
   color: #ccc;
 }
+
+/* Tab Bar Actions */
+.tabbar-actions {
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  gap: 2px;
+  border-right: 1px solid #333;
+}
+
+.tabbar-action {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.tabbar-action:hover {
+  background: #383838;
+  color: #ccc;
+}
+
+.tabbar-sep {
+  width: 1px;
+  height: 16px;
+  background: #444;
+  margin: 0 4px;
+}

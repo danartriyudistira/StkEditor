@@ -1,9 +1,7 @@
 ﻿import { useRef, useState } from 'react'
 
 export default function Toolbar({
-  onNew,
-  onOpen,
-  onDownload,
+
   onLoadFromLibrary,
   onSendToConsole,
   consoleConfig,
@@ -40,26 +38,6 @@ export default function Toolbar({
       </span>
 
       <div className="toolbar-actions">
-        <button onClick={onNew} title="New shader">
-          New
-        </button>
-
-        <button onClick={onOpen} title="Open shader file (.stk)">
-          Open
-        </button>
-
-        <button onClick={onDownload} title="Download shader (.fs)">
-          Download
-        </button>
-
-        <button onClick={onSavePreset} title="Save preset (.stk) - Ctrl+S">
-          Save
-        </button>
-
-        <button onClick={onLoadPreset} title="Load preset (.stk) - Ctrl+O">
-          Load
-        </button>
-
         {libraryFiles && libraryFiles.length > 0 && (
           <button onClick={onLoadFromLibrary} title="Browse ISF library">
             Library

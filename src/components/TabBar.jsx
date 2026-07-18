@@ -1,6 +1,6 @@
 ﻿import { useRef, useEffect } from 'react'
 
-export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew }) {
+export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, onOpen, onDownload, onSave, onLoad }) {
   const scrollRef = useRef(null)
 
   useEffect(() => {
