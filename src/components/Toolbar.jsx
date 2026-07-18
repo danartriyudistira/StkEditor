@@ -6,7 +6,9 @@ export default function Toolbar({
   onSendToConsole,
   consoleConfig,
   onConsoleConfigChange,
-  fileName,
+  projectName,
+  onProjectNameChange,
+  onImportStk,
   consoleConnected,
   libraryFiles,
   sourceType,
@@ -33,11 +35,16 @@ export default function Toolbar({
 
   return (
     <div className="toolbar">
-      <span className="toolbar-title">
-        {fileName || 'untitled.fs'}
-      </span>
+      <input
+        className="toolbar-project-name"
+        value={projectName}
+        onChange={e => onProjectNameChange?.(e.target.value)}
+        title="Project name"
+      />
 
       <div className="toolbar-actions">
+        <button className="toolbar-btn" onClick={onImportStk} title="Import .stk project">Import</button>
+
         {libraryFiles && libraryFiles.length > 0 && (
           <button onClick={onLoadFromLibrary} title="Browse ISF library">
             Library

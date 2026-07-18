@@ -1595,3 +1595,33 @@
   width: 100px;
   font-family: inherit;
 }
+.toolbar-project-name {
+  background: #1e1e1e;
+  border: 1px solid #444;
+  color: #ccc;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: monospace;
+  min-width: 100px;
+  max-width: 200px;
+}
+
+.toolbar-project-name:focus {
+  outline: none;
+  border-color: #007acc;
+}
+
+.toolbar-btn {
+  background: #333;
+  border: 1px solid #555;
+  color: #ccc;
+  padding: 4px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.toolbar-btn:hover {
+  background: #444;
+}

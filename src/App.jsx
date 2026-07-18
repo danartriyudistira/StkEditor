@@ -12,6 +12,7 @@ import Toolbar from './components/Toolbar.jsx'
 import ISFLibrary from './components/ISFLibrary.jsx'
 import TabBar from './components/TabBar.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import { exportStk, importStk } from './lib/stkArchive.js'
 import './App.css'
 
 const DEFAULT_SHADER = `/*{
@@ -40,6 +41,7 @@ const defaultCcValues = Object.fromEntries(
 )
 
 export default function App() {
+  const [projectName, setProjectName] = useState('untitled')
   const [tabs, setTabs] = useState([{ id: 1, name: 'untitled.fs', code: DEFAULT_SHADER, modified: false }])
   const [activeTabId, setActiveTabId] = useState(1)
   const nextTabIdRef = useRef(2)
@@ -521,7 +523,7 @@ export default function App() {
                 onClose={handleCloseTab}
                 onNew={handleNewTab}
                 onOpen={handleOpen}
-                onSave={handleSave}
+                onExport={handleExportStk}
                 onDownload={handleDownload}
                 onRename={handleRename}
               />
@@ -554,6 +556,8 @@ export default function App() {
               ccValues={ccValues}
               onSaveStkfx={handleSaveStkfx}
               onLoadStkfx={handleLoadStkfx}
+              onExportStk={handleExportStk}
+              onImportStk={handleImportStk}
             />
             <MidiPanel
               ccValues={ccValues}

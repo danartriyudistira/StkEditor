@@ -1,6 +1,6 @@
 ﻿import { useRef, useEffect, useState } from 'react'
 
-export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, onOpen, onSave, onDownload, onRename }) {
+export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, onOpen, onExport, onDownload, onRename }) {
   const scrollRef = useRef(null)
   const [editingId, setEditingId] = useState(null)
   const [editValue, setEditValue] = useState('')
@@ -77,8 +77,8 @@ export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, on
       </div>
       <div className="tabbar-actions">
         <button className="tabbar-action" onClick={onOpen} title="Open .fs file">Open</button>
-        <button className="tabbar-action" onClick={onSave} title="Save (overwrite)">Save</button>
         <button className="tabbar-action" onClick={onDownload} title="Download .fs (Save As)">Download</button>
+        <button className="tabbar-action" onClick={onExport} title="Export .stk project (ZIP)">Export</button>
         <button className="tabbar-new" onClick={onNew} title="New tab">{'\u2795'}</button>
       </div>
     </div>
