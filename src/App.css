@@ -1,4 +1,4 @@
-.app {
+﻿.app {
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -1480,10 +1480,44 @@
   overflow: hidden;
 }
 
+.tabbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  order: 0;
+  flex-shrink: 0;
+}
+
+.tabbar-action {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.tabbar-action:hover {
+  background: #383838;
+  color: #ccc;
+}
+
+.tabbar-sep {
+  width: 1px;
+  height: 16px;
+  background: #444;
+  flex-shrink: 0;
+  order: 1;
+}
+
 .tabbar-scroll {
   display: flex;
   overflow-x: auto;
   flex: 1;
+  order: 2;
   scrollbar-width: none;
 }
 
@@ -1504,7 +1538,7 @@
   font-size: 12px;
   white-space: nowrap;
   user-select: none;
-  transition: background 0.1s;
+  flex-shrink: 0;
 }
 
 .tabbar-tab:hover {
@@ -1554,13 +1588,14 @@
   height: 32px;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
+  order: 3;
 }
 
 .tabbar-new:hover {
   background: #383838;
   color: #ccc;
 }
-
 /* Tab Bar Actions */
 .tabbar-actions {
   display: flex;
