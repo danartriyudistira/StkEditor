@@ -1,19 +1,35 @@
-﻿import { useRef } from 'react'
+﻿import { useRef, useState } from 'react'
 
 export default function Toolbar({
   onNew,
   onOpen,
   onDownload,
   onLoadFromLibrary,
-  onSendToTV,
+  onSendToConsole,
+  consoleConfig,
+  onConsoleConfigChange,
   fileName,
-  tvConnected,
+  consoleConnected,
   libraryFiles,
   sourceType,
   onSourceChange,
   onSourceUpload,
 }) {
   const fileInputRef = useRef(null)
+  const [showConfig, setShowConfig] = useState(false)
+  const [configDraft, setConfigDraft] = useState({ host: '', port: '' })
+
+  function openConfig() {
+    setConfigDraft({ host: consoleConfig.host, port: String(consoleConfig.port) })
+    setShowConfig(true)
+  }
+
+  function saveConfig() {
+    const host = configDraft.host.trim() || 'localhost'
+    const port = parseInt(configDraft.port) || 8765
+    onConsoleConfigChange?.({ host, port })
+    setShowConfig(false)
+  }
 
   return (
     <div className="toolbar">
@@ -48,26 +64,26 @@ export default function Toolbar({
             className={`source-btn ${sourceType !== 'placeholder' ? 'active' : ''}`}
             title="Source input for ISF shaders"
           >
-            {sourceType === 'webcam' ? '📷' : sourceType === 'image' ? '🖼️' : '🎨'} Source
+            {sourceType === 'webcam' ? '\uD83D\uDCF7' : sourceType === 'image' ? '\uD83D\uDDBC\uFE0F' : '\uD83C\uDFA8'} Source
           </button>
           <div className="source-dropdown">
             <button
               className={sourceType === 'placeholder' ? 'active' : ''}
               onClick={() => onSourceChange('placeholder')}
             >
-              🎨 Placeholder
+              Placeholder
             </button>
             <button
               className={sourceType === 'image' ? 'active' : ''}
               onClick={() => fileInputRef.current?.click()}
             >
-              🖼️ Upload Image
+              Upload Image
             </button>
             <button
               className={sourceType === 'webcam' ? 'active' : ''}
               onClick={() => onSourceChange('webcam')}
             >
-              📷 Webcam
+              Webcam
             </button>
           </div>
           <input
@@ -85,14 +101,56 @@ export default function Toolbar({
 
         <div className="toolbar-separator" />
 
-        <button
-          onClick={onSendToTV}
-          title="Send to TV"
-          className={tvConnected ? 'tv-connected' : ''}
-        >
-          {tvConnected ? 'TV ✓' : 'Send to TV'}
-        </button>
+        {/* Send to Console */}
+        <div className="console-picker">
+          <button
+            onClick={onSendToConsole}
+            title={`Send to Console (${consoleConfig.host}:${consoleConfig.port})`}
+            className={consoleConnected ? 'tv-connected' : ''}
+          >
+            {consoleConnected ? 'Console \u2713' : 'Send to Console'}
+          </button>
+          <button
+            className="console-config-btn"
+            onClick={openConfig}
+            title="Console connection settings"
+          >
+            \u2699
+          </button>
+        </div>
       </div>
+
+      {/* Console Config Dialog */}
+      {showConfig && (
+        <div className="console-config-overlay" onClick={() => setShowConfig(false)}>
+          <div className="console-config-dialog" onClick={e => e.stopPropagation()}>
+            <h3>Console Connection</h3>
+            <div className="console-config-field">
+              <label>Host</label>
+              <input
+                type="text"
+                value={configDraft.host}
+                onChange={e => setConfigDraft(p => ({ ...p, host: e.target.value }))}
+                placeholder="localhost"
+                autoFocus
+              />
+            </div>
+            <div className="console-config-field">
+              <label>Port</label>
+              <input
+                type="number"
+                value={configDraft.port}
+                onChange={e => setConfigDraft(p => ({ ...p, port: e.target.value }))}
+                placeholder="8765"
+              />
+            </div>
+            <div className="console-config-actions">
+              <button onClick={() => setShowConfig(false)}>Cancel</button>
+              <button onClick={saveConfig} className="primary">Save</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

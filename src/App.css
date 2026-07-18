@@ -929,3 +929,111 @@
   background: #094771;
   color: #fff;
 }
+
+/* Console Picker */
+.console-picker {
+  display: flex;
+  gap: 2px;
+}
+
+.console-config-btn {
+  background: #333 !important;
+  border: 1px solid #555 !important;
+  color: #ccc !important;
+  padding: 4px 6px !important;
+  border-radius: 3px !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+}
+
+.console-config-btn:hover {
+  background: #444 !important;
+}
+
+/* Console Config Dialog */
+.console-config-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.console-config-dialog {
+  background: #2d2d2d;
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 20px;
+  min-width: 280px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.console-config-dialog h3 {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: #ccc;
+}
+
+.console-config-field {
+  margin-bottom: 12px;
+}
+
+.console-config-field label {
+  display: block;
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.console-config-field input {
+  width: 100%;
+  padding: 6px 10px;
+  background: #1e1e1e;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #ccc;
+  font-size: 13px;
+  font-family: monospace;
+  box-sizing: border-box;
+}
+
+.console-config-field input:focus {
+  outline: none;
+  border-color: #007acc;
+}
+
+.console-config-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.console-config-actions button {
+  padding: 6px 16px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #333;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.console-config-actions button:hover {
+  background: #444;
+}
+
+.console-config-actions button.primary {
+  background: #007acc;
+  border-color: #007acc;
+  color: white;
+}
+
+.console-config-actions button.primary:hover {
+  background: #006ab3;
+}

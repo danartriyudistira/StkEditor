@@ -47,7 +47,11 @@ export default function App() {
   const [stkfxName, setStkfxName] = useState('')
   const [libraryFiles, setLibraryFiles] = useState([])
   const [showLibrary, setShowLibrary] = useState(false)
-  const [tvConnected, setTvConnected] = useState(false)
+  const [consoleConnected, setConsoleConnected] = useState(false)
+  const [consoleConfig, setConsoleConfig] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('consoleConfig')) || { host: 'localhost', port: 8765 } } catch { return { host: 'localhost', port: 8765 } }
+  })
+  const [triggers, setTriggers] = useState([])
   const [leftOpen, setLeftOpen] = useState(true)
   const [rightOpen, setRightOpen] = useState(true)
   const [panelOpacity, setPanelOpacity] = useState(0.92)
@@ -259,12 +263,18 @@ export default function App() {
     input.click()
   }, [])
 
-  const handleSendToTV = useCallback(() => {
+  const handleConsoleConfigChange = useCallback((newConfig) => {
+    setConsoleConfig(newConfig)
+    localStorage.setItem('consoleConfig', JSON.stringify(newConfig))
+  }, [])
+
+  const handleSendToConsole = useCallback(() => {
     const payload = JSON.stringify({
       type: 'shader',
       code,
-      uniforms: uniformValues,
       cc: ccValues,
+      uniforms: uniformValues,
+      triggers,
     })
 
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -272,21 +282,21 @@ export default function App() {
       return
     }
 
-    const ws = new WebSocket('ws://localhost:8765')
+    const ws = new WebSocket(`ws://${consoleConfig.host}:${consoleConfig.port}`)
     ws.onopen = () => {
-      setTvConnected(true)
+      setConsoleConnected(true)
       ws.send(payload)
     }
     ws.onclose = () => {
-      setTvConnected(false)
+      setConsoleConnected(false)
       wsRef.current = null
     }
     ws.onerror = () => {
-      setTvConnected(false)
+      setConsoleConnected(false)
       wsRef.current = null
     }
     wsRef.current = ws
-  }, [code, uniformValues, ccValues])
+  }, [code, ccValues, uniformValues, triggers, consoleConfig])
 
   const allUniformValues = { ...uniformValues, ...ccValues }
 
@@ -313,13 +323,15 @@ export default function App() {
       <div className="app">
         <Toolbar
           fileName={fileName}
-          tvConnected={tvConnected}
+          consoleConnected={consoleConnected}
           libraryFiles={libraryFiles}
           onNew={handleNew}
           onOpen={handleOpen}
           onDownload={handleDownload}
           onLoadFromLibrary={handleLoadFromLibrary}
-          onSendToTV={handleSendToTV}
+          onSendToConsole={handleSendToConsole}
+          consoleConfig={consoleConfig}
+          onConsoleConfigChange={handleConsoleConfigChange}
           sourceType={sourceType}
           onSourceChange={handleSourceChange}
           onSourceUpload={handleSourceUpload}
