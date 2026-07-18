@@ -11,7 +11,7 @@ export default defineConfig({
       languageWorkers: ['editorWorkerService', 'typescript', 'json'],
     }),
   ],
-  base: '/shadereditor/',
+  base: '/editor/',
   server: {
     fs: {
       allow: [
