@@ -272,14 +272,14 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
           )}
 
           {/* Active Notes Display */}
-          {activeNotes.length > 0 && (
-            <div className="midi-active-notes">
-              <span className="midi-active-label">Active: </span>
-              {activeNotes.map(n => (
-                <span key={n} className="midi-note-badge">{noteName(n)}</span>
-              ))}
-            </div>
-          )}
+          <div className="midi-active-notes">
+            <span className="midi-active-label">Active: </span>
+            {activeNotes.length > 0 ? activeNotes.map(n => (
+              <span key={n} className="midi-note-badge">{noteName(n)}</span>
+            )) : (
+              <span className="midi-note-badge midi-note-idle">-</span>
+            )}
+          </div>
 
           {/* CC Mapping */}
           <div className="midi-mapping">
