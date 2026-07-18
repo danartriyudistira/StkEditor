@@ -12,52 +12,36 @@ export default function RandomGenPanel({ onTrigger, noteMapping }) {
   const [noteDivider, setNoteDivider] = useState(1)
   const [activeNote, setActiveNote] = useState(null)
   const genRef = useRef(null)
+  const onTriggerRef = useRef(onTrigger)
+  const noteMappingRef = useRef(noteMapping)
+
+  // Keep refs fresh without re-running the generator useEffect
+  onTriggerRef.current = onTrigger
+  noteMappingRef.current = noteMapping
 
   useEffect(() => {
     const gen = new RandomNoteGenerator()
     gen.onNote = (pitch, velocity) => {
       setActiveNote(pitch)
-
-      const mapping = noteMapping?.[pitch]
+      const mapping = noteMappingRef.current?.[pitch]
       if (mapping) {
-        onTrigger?.({ note: pitch, velocity: velocity / 127, type: 'noteOn', effectId: mapping.effectId || null, ccChannel: mapping.channel || null })
+        onTriggerRef.current?.({ note: pitch, velocity: velocity / 127, type: 'noteOn', effectId: mapping.effectId || null, ccChannel: mapping.channel || null })
       } else {
-        onTrigger?.({ note: pitch, velocity: velocity / 127, type: 'noteOn' })
+        onTriggerRef.current?.({ note: pitch, velocity: velocity / 127, type: 'noteOn' })
       }
     }
     gen.onNoteOff = (pitch) => {
       setActiveNote(null)
-      const mapping = noteMapping?.[pitch]
+      const mapping = noteMappingRef.current?.[pitch]
       if (mapping) {
-        onTrigger?.({ note: pitch, velocity: 0, type: 'noteOff', effectId: mapping.effectId || null, ccChannel: mapping.channel || null })
+        onTriggerRef.current?.({ note: pitch, velocity: 0, type: 'noteOff', effectId: mapping.effectId || null, ccChannel: mapping.channel || null })
       } else {
-        onTrigger?.({ note: pitch, velocity: 0, type: 'noteOff' })
+        onTriggerRef.current?.({ note: pitch, velocity: 0, type: 'noteOff' })
       }
     }
     genRef.current = gen
     return () => gen.stop()
   }, [])
-
-  useEffect(() => {
-    genRef.current.onNote = (pitch, velocity) => {
-      setActiveNote(pitch)
-      const mapping = noteMapping?.[pitch]
-      if (mapping) {
-        onTrigger?.({ note: pitch, velocity: velocity / 127, type: 'noteOn', effectId: mapping.effectId || null, ccChannel: mapping.channel || null })
-      } else {
-        onTrigger?.({ note: pitch, velocity: velocity / 127, type: 'noteOn' })
-      }
-    }
-    genRef.current.onNoteOff = (pitch) => {
-      setActiveNote(null)
-      const mapping = noteMapping?.[pitch]
-      if (mapping) {
-        onTrigger?.({ note: pitch, velocity: 0, type: 'noteOff', effectId: mapping.effectId || null, ccChannel: mapping.channel || null })
-      } else {
-        onTrigger?.({ note: pitch, velocity: 0, type: 'noteOff' })
-      }
-    }
-  }, [noteMapping, onTrigger])
 
   const toggle = useCallback(() => {
     const gen = genRef.current
