@@ -1,89 +1,85 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Film",
     "Blur"
   ],
-  "DESCRIPTION" : "Blurs parts of an image as if the lens is smudged",
-  "INPUTS" : [
+  "DESCRIPTION": "Blurs parts of an image as if the lens is smudged",
+  "INPUTS": [
     {
-      "NAME" : "inputImage",
-      "TYPE" : "image"
+      "NAME": "inputImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "scale",
-      "TYPE" : "float",
-      "MAX" : 100,
-      "DEFAULT" : 6,
-      "MIN" : 0,
-      "LABEL" : "Dirt Size"
+      "NAME": "scale",
+      "TYPE": "float",
+      "MAX": 100,
+      "DEFAULT": 6,
+      "MIN": 0,
+      "LABEL": "Dirt Size"
     },
     {
-      "NAME" : "brightness",
-      "TYPE" : "float",
-      "MAX" : 4,
-      "DEFAULT" : 4,
-      "MIN" : 0,
-      "LABEL" : "Dirt Thickness"
+      "NAME": "brightness",
+      "TYPE": "float",
+      "MAX": 4,
+      "DEFAULT": 4,
+      "MIN": 0,
+      "LABEL": "Dirt Thickness"
     },
     {
-      "NAME" : "brightnessCurve",
-      "TYPE" : "float",
-      "MAX" : 4,
-      "DEFAULT" : 4,
-      "LABEL" : "Dirt Shape",
-      "MIN" : 1
+      "NAME": "brightnessCurve",
+      "TYPE": "float",
+      "MAX": 4,
+      "DEFAULT": 4,
+      "LABEL": "Dirt Shape",
+      "MIN": 1
     },
     {
-      "NAME" : "radius",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0.5,
-      "LABEL" : "Dirt Spread",
-      "MIN" : 0
+      "NAME": "radius",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0.5,
+      "LABEL": "Dirt Spread",
+      "MIN": 0
     },
     {
-      "NAME" : "noiseSeed",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0.49379485845565796,
-      "MIN" : 0,
-      "LABEL" : "Dirt Seed"
+      "NAME": "noiseSeed",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0.49379485845565796,
+      "MIN": 0,
+      "LABEL": "Dirt Seed"
     },
     {
-      "NAME" : "blurLevel",
-      "TYPE" : "float",
-      "MAX" : 0.5,
-      "DEFAULT" : 0.5,
-      "MIN" : 0
+      "NAME": "blurLevel",
+      "TYPE": "float",
+      "MAX": 0.5,
+      "DEFAULT": 0.5,
+      "MIN": 0
     },
     {
-      "NAME" : "blurDepth",
-      "TYPE" : "float",
-      "MAX" : 10,
-      "DEFAULT" : 3.75,
-      "MIN" : 1
+      "NAME": "blurDepth",
+      "TYPE": "float",
+      "MAX": 10,
+      "DEFAULT": 3.75,
+      "MIN": 1
     }
   ],
-  "ISFVSN" : "2",
-  "PASSES" : [
+  "ISFVSN": "2",
+  "PASSES": [
     {
-      "TARGET" : "smaller",
-      "WIDTH" : "max(floor($WIDTH*0.02),1.0)",
-      "HEIGHT" : "max(floor($HEIGHT*0.02),1.0)"
+      "TARGET": "smaller",
+      "WIDTH": "max(floor($WIDTH*0.02),1.0)",
+      "HEIGHT": "max(floor($HEIGHT*0.02),1.0)"
     },
     {
-      "TARGET" : "small",
-      "WIDTH" : "max(floor($WIDTH*0.25),1.0)",
-      "HEIGHT" : "max(floor($HEIGHT*0.25),1.0)"
+      "TARGET": "small",
+      "WIDTH": "max(floor($WIDTH*0.25),1.0)",
+      "HEIGHT": "max(floor($HEIGHT*0.25),1.0)"
     },
-    {
-
-    }
+    {}
   ],
-  "CREDIT" : "Inigo Quilez ported by @colin_movecraft and VIDVOX"
-}
-*/
+  "CREDIT": "Inigo Quilez ported by @colin_movecraft and VIDVOX"
+}*/
 
 #if __VERSION__ <= 120
 varying vec2 left_coord;

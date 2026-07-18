@@ -1,13 +1,12 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Color"
   ],
-  "DESCRIPTION" : "",
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "DESCRIPTION": "",
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "LABELS" : [
+      "LABELS": [
         "Comparison Mode",
         "Newton",
         "Castel",
@@ -23,11 +22,11 @@
         "Belmont",
         "Zieverink"
       ],
-      "NAME" : "iAuthor",
-      "TYPE" : "long",
-      "DEFAULT" : 0,
-      "LABEL" : "Author",
-      "VALUES" : [
+      "NAME": "iAuthor",
+      "TYPE": "long",
+      "DEFAULT": 0,
+      "LABEL": "Author",
+      "VALUES": [
         0,
         1,
         2,
@@ -45,23 +44,21 @@
       ]
     },
     {
-      "NAME" : "iNote",
-      "TYPE" : "float",
-      "MAX" : 11,
-      "DEFAULT" : 0,
-      "MIN" : 0,
-      "LABEL" : "Note"
+      "NAME": "iNote",
+      "TYPE": "float",
+      "MAX": 11,
+      "DEFAULT": 0,
+      "MIN": 0,
+      "LABEL": "Note"
     },
     {
-      "NAME" : "iPreviewMode",
-      "TYPE" : "bool",
-      "DEFAULT" : 0
+      "NAME": "iPreviewMode",
+      "TYPE": "bool",
+      "DEFAULT": 0
     }
   ],
-  "CREDIT" : "VIDVOX"
-}
-*/
-
+  "CREDIT": "VIDVOX"
+}*/
 
 /*
 //	Color Scales via http://rhythmiclight.com/archives/ideas/colorscales.html

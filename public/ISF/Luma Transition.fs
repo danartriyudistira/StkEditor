@@ -1,36 +1,32 @@
-/*
-{
-  "ISFVSN" : "2",
-  "CATEGORIES" : [
+/*{
+  "ISFVSN": "2",
+  "CATEGORIES": [
     "Dissolve"
   ],
-  "INPUTS" : [
+  "INPUTS": [
     {
-      "TYPE" : "image",
-      "NAME" : "startImage"
+      "TYPE": "image",
+      "NAME": "startImage"
     },
     {
-      "NAME" : "endImage",
-      "TYPE" : "image"
+      "NAME": "endImage",
+      "TYPE": "image"
     },
     {
-      "TYPE" : "float",
-      "MIN" : 0,
-      "DEFAULT" : 0,
-      "NAME" : "progress",
-      "MAX" : 1
+      "TYPE": "float",
+      "MIN": 0,
+      "DEFAULT": 0,
+      "NAME": "progress",
+      "MAX": 1
     },
     {
-      "NAME" : "luma",
-      "TYPE" : "image"
+      "NAME": "luma",
+      "TYPE": "image"
     }
   ],
   "CREDIT": "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/luma.glsl",
-  "DESCRIPTION" : "Automatically converted from https://gl-transitions.com/"
-}
-*/
-
-
+  "DESCRIPTION": "Automatically converted from https://gl-transitions.com/"
+}*/
 
 vec4 getFromColor(vec2 inUV)	{
 	return IMG_NORM_PIXEL(startImage, inUV);

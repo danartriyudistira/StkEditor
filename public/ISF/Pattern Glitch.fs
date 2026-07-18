@@ -1,69 +1,65 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Glitch"
   ],
-  "DESCRIPTION" : "Applies randomized effects to different parts of the image.",
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "DESCRIPTION": "Applies randomized effects to different parts of the image.",
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "NAME" : "inputImage",
-      "TYPE" : "image"
+      "NAME": "inputImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "maxGlitchSize",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0.1,
-      "LABEL" : "Glitch Level",
-      "MIN" : 0
+      "NAME": "maxGlitchSize",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0.1,
+      "LABEL": "Glitch Level",
+      "MIN": 0
     },
     {
-      "NAME" : "glitchRate",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0.25,
-      "LABEL" : "Glitch Rate",
-      "MIN" : 0
+      "NAME": "glitchRate",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0.25,
+      "LABEL": "Glitch Rate",
+      "MIN": 0
     },
-	{
-		"NAME": "patternMode",
-		"LABEL": "Pattern Mode",
-		"VALUES": [
-			0,
-			1,
-			2,
-			3,
-			4,
-			5,
-			6,
-			7
-		],
-		"LABELS": [
-			"Random",
-			"Black",
-			"Checkerboard",
-			"Horizontal Stripes",
-			"Vertical Stripes",
-			"Color Bars",
-			"Noise (B&W)",
-			"Noise (Color)"
-		],
-		"DEFAULT": 0,
-		"TYPE": "long"
-	}
-  ],
-  "PASSES" : [
     {
-      "TARGET" : "lastState",
-      "PERSISTENT" : true
+      "NAME": "patternMode",
+      "LABEL": "Pattern Mode",
+      "VALUES": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "LABELS": [
+        "Random",
+        "Black",
+        "Checkerboard",
+        "Horizontal Stripes",
+        "Vertical Stripes",
+        "Color Bars",
+        "Noise (B&W)",
+        "Noise (Color)"
+      ],
+      "DEFAULT": 0,
+      "TYPE": "long"
     }
   ],
-  "CREDIT" : "VIDVOX"
-}
-*/
-
-
+  "PASSES": [
+    {
+      "TARGET": "lastState",
+      "PERSISTENT": true
+    }
+  ],
+  "CREDIT": "VIDVOX"
+}*/
 
 const float pi = 3.14159265359;
 

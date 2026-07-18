@@ -1,60 +1,57 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Distortion Effect"
   ],
-  "DESCRIPTION" : "Wraps the video into a circular shape",
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "DESCRIPTION": "Wraps the video into a circular shape",
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "NAME" : "inputImage",
-      "TYPE" : "image"
+      "NAME": "inputImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "inputAngle",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0.5,
-      "MIN" : 0
+      "NAME": "inputAngle",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0.5,
+      "MIN": 0
     },
     {
-      "NAME" : "inputRadius",
-      "TYPE" : "float",
-      "MAX" : 2,
-      "DEFAULT" : 1,
-      "MIN" : 0
+      "NAME": "inputRadius",
+      "TYPE": "float",
+      "MAX": 2,
+      "DEFAULT": 1,
+      "MIN": 0
     },
     {
-      "NAME" : "inputCenter",
-      "TYPE" : "point2D",
-      "MAX" : [
+      "NAME": "inputCenter",
+      "TYPE": "point2D",
+      "MAX": [
         1,
         1
       ],
-      "DEFAULT" : [
+      "DEFAULT": [
         0.5,
         0.5
       ],
-      "MIN" : [
+      "MIN": [
         0,
         0
       ]
     },
     {
-      "NAME" : "mirror",
-      "TYPE" : "bool",
-      "DEFAULT" : false
+      "NAME": "mirror",
+      "TYPE": "bool",
+      "DEFAULT": false
     },
     {
-      "NAME" : "correctAspect",
-      "TYPE" : "bool",
-      "DEFAULT" : true
+      "NAME": "correctAspect",
+      "TYPE": "bool",
+      "DEFAULT": true
     }
   ],
-  "CREDIT" : "VIDVOX"
-}
-*/
-
+  "CREDIT": "VIDVOX"
+}*/
 
 const float tau = 6.28318530718;
 const float pi = 3.14159265359;

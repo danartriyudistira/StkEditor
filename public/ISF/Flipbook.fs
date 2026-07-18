@@ -1,38 +1,37 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Stylize"
   ],
-  "DESCRIPTION" : "Creates a flipbook like effect",
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "DESCRIPTION": "Creates a flipbook like effect",
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "NAME" : "inputImage",
-      "TYPE" : "image"
+      "NAME": "inputImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "flipRate",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0.1,
-      "MIN" : 0
+      "NAME": "flipRate",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0.1,
+      "MIN": 0
     },
     {
-      "NAME" : "stretchMode",
-      "TYPE" : "bool",
-      "DEFAULT" : 1
+      "NAME": "stretchMode",
+      "TYPE": "bool",
+      "DEFAULT": 1
     },
     {
-      "LABELS" : [
+      "LABELS": [
         "Left",
         "Right",
         "Up",
         "Down"
       ],
-      "NAME" : "flipDirection",
-      "TYPE" : "long",
-      "DEFAULT" : 3,
-      "VALUES" : [
+      "NAME": "flipDirection",
+      "TYPE": "long",
+      "DEFAULT": 3,
+      "VALUES": [
         0,
         1,
         2,
@@ -40,33 +39,32 @@
       ]
     },
     {
-      "NAME" : "holdTime",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0,
-      "MIN" : 0
+      "NAME": "holdTime",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0,
+      "MIN": 0
     }
   ],
-  "PASSES" : [
+  "PASSES": [
     {
-      "FLOAT" : true,
-      "WIDTH" : "1",
-      "HEIGHT" : "1",
-      "TARGET" : "writePos",
-      "PERSISTENT" : true
+      "FLOAT": true,
+      "WIDTH": "1",
+      "HEIGHT": "1",
+      "TARGET": "writePos",
+      "PERSISTENT": true
     },
     {
-      "TARGET" : "frameGrab",
-      "PERSISTENT" : true
+      "TARGET": "frameGrab",
+      "PERSISTENT": true
     },
     {
-      "TARGET" : "lastOutput",
-      "PERSISTENT" : true
+      "TARGET": "lastOutput",
+      "PERSISTENT": true
     }
   ],
-  "CREDIT" : "VIDVOX"
-}
-*/
+  "CREDIT": "VIDVOX"
+}*/
 
 void main()	{
 	vec4		inputPixelColor = vec4(0.0);

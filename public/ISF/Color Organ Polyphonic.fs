@@ -1,14 +1,13 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Color"
   ],
-  "DESCRIPTION" : "",
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "DESCRIPTION": "",
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "LABELS" : [
-      	"Custom Input",
+      "LABELS": [
+        "Custom Input",
         "Newton",
         "Castel",
         "Field",
@@ -23,10 +22,10 @@
         "Belmont",
         "Zieverink"
       ],
-      "NAME" : "iAuthor",
-      "TYPE" : "long",
-      "LABEL" : "Author",
-      "VALUES" : [
+      "NAME": "iAuthor",
+      "TYPE": "long",
+      "LABEL": "Author",
+      "VALUES": [
         0,
         1,
         2,
@@ -43,104 +42,102 @@
         13
       ]
     },
-	{
-		"NAME": "iBaseCustomColor",
-		"TYPE": "color",
-		"DEFAULT": [
-			0.25,
-			0.59,
-			0.9,
-			1.0
-		]
-	},
-	{
-		"NAME": "iColorMode",
-		"TYPE": "long",
-		"VALUES": [
-			0,
-			1,
-			2,
-			3,
-			4,
-			5,
-			6
-		],
-		"LABELS": [
-			"Basic Complementary",
-			"Split Complementary",
-			"Compound Complementary",
-			"Spectrum",
-			"Shades",
-			"Analogous",
-			"Compound Analogous"
-		],
-		"DEFAULT": 0
-	},
     {
-      "NAME" : "note0",
-      "TYPE" : "bool",
-      "DEFAULT" : 0
+      "NAME": "iBaseCustomColor",
+      "TYPE": "color",
+      "DEFAULT": [
+        0.25,
+        0.59,
+        0.9,
+        1
+      ]
     },
     {
-      "NAME" : "note1",
-      "TYPE" : "bool",
-      "DEFAULT" : 0
+      "NAME": "iColorMode",
+      "TYPE": "long",
+      "VALUES": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "LABELS": [
+        "Basic Complementary",
+        "Split Complementary",
+        "Compound Complementary",
+        "Spectrum",
+        "Shades",
+        "Analogous",
+        "Compound Analogous"
+      ],
+      "DEFAULT": 0
     },
     {
-      "NAME" : "note2",
-      "TYPE" : "bool",
-      "DEFAULT" : 0
+      "NAME": "note0",
+      "TYPE": "bool",
+      "DEFAULT": 0
     },
     {
-      "NAME" : "note3",
-      "TYPE" : "bool",
-      "DEFAULT" : 0
+      "NAME": "note1",
+      "TYPE": "bool",
+      "DEFAULT": 0
     },
     {
-      "NAME" : "note4",
-      "TYPE" : "bool",
-      "DEFAULT" : 0
+      "NAME": "note2",
+      "TYPE": "bool",
+      "DEFAULT": 0
     },
     {
-      "NAME" : "note5",
-      "TYPE" : "bool",
-      "DEFAULT" : 0
+      "NAME": "note3",
+      "TYPE": "bool",
+      "DEFAULT": 0
     },
     {
-      "NAME" : "note6",
-      "TYPE" : "bool",
-      "DEFAULT" : 0
+      "NAME": "note4",
+      "TYPE": "bool",
+      "DEFAULT": 0
     },
     {
-      "NAME" : "note7",
-      "TYPE" : "bool",
-      "DEFAULT" : 0
+      "NAME": "note5",
+      "TYPE": "bool",
+      "DEFAULT": 0
     },
     {
-      "NAME" : "note8",
-      "TYPE" : "bool",
-      "DEFAULT" : 0
+      "NAME": "note6",
+      "TYPE": "bool",
+      "DEFAULT": 0
     },
     {
-      "NAME" : "note9",
-      "TYPE" : "bool",
-      "DEFAULT" : 0
+      "NAME": "note7",
+      "TYPE": "bool",
+      "DEFAULT": 0
     },
     {
-      "NAME" : "note10",
-      "TYPE" : "bool",
-      "DEFAULT" : 0
+      "NAME": "note8",
+      "TYPE": "bool",
+      "DEFAULT": 0
     },
     {
-      "NAME" : "note11",
-      "TYPE" : "bool",
-      "DEFAULT" : 0
+      "NAME": "note9",
+      "TYPE": "bool",
+      "DEFAULT": 0
+    },
+    {
+      "NAME": "note10",
+      "TYPE": "bool",
+      "DEFAULT": 0
+    },
+    {
+      "NAME": "note11",
+      "TYPE": "bool",
+      "DEFAULT": 0
     }
   ],
-  "CREDIT" : "VIDVOX"
-}
-*/
-
+  "CREDIT": "VIDVOX"
+}*/
 
 /*
 //	Color Scales via http://rhythmiclight.com/archives/ideas/colorscales.html

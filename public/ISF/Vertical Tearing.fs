@@ -1,38 +1,34 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Glitch"
   ],
-  "DESCRIPTION" : "This introduces a vertical tearing effect similar to when GL VBL sync is off.",
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "DESCRIPTION": "This introduces a vertical tearing effect similar to when GL VBL sync is off.",
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "NAME" : "inputImage",
-      "TYPE" : "image"
+      "NAME": "inputImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "tearPosition",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0.5,
-      "MIN" : 0
+      "NAME": "tearPosition",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0.5,
+      "MIN": 0
     }
   ],
-  "PASSES" : [
+  "PASSES": [
     {
-      "TARGET" : "oldImage"
+      "TARGET": "oldImage"
     },
     {
-      "TARGET" : "newImage",
-      "PERSISTENT" : true
+      "TARGET": "newImage",
+      "PERSISTENT": true
     },
-    {
-
-    }
+    {}
   ],
-  "CREDIT" : "by VIDVOX"
-}
-*/
+  "CREDIT": "by VIDVOX"
+}*/
 
 void main()
 {

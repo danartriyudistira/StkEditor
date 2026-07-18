@@ -1,32 +1,28 @@
-/*
-{
-  "ISFVSN" : "2",
-  "INPUTS" : [
+/*{
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "TYPE" : "image",
-      "NAME" : "startImage"
+      "TYPE": "image",
+      "NAME": "startImage"
     },
     {
-      "NAME" : "endImage",
-      "TYPE" : "image"
+      "NAME": "endImage",
+      "TYPE": "image"
     },
     {
-      "TYPE" : "float",
-      "NAME" : "progress",
-      "MIN" : 0,
-      "MAX" : 1,
-      "DEFAULT" : 0
+      "TYPE": "float",
+      "NAME": "progress",
+      "MIN": 0,
+      "MAX": 1,
+      "DEFAULT": 0
     }
   ],
-  "CATEGORIES" : [
+  "CATEGORIES": [
     "Distortion"
   ],
   "CREDIT": "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/Dreamy.glsl",
-  "DESCRIPTION" : "Automatically converted from https://gl-transitions.com/"
-}
-*/
-
-
+  "DESCRIPTION": "Automatically converted from https://gl-transitions.com/"
+}*/
 
 vec4 getFromColor(vec2 inUV)	{
 	return IMG_NORM_PIXEL(startImage, inUV);

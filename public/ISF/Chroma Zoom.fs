@@ -1,63 +1,61 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Color Effect",
     "Stylize"
   ],
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "NAME" : "inputImage",
-      "TYPE" : "image"
+      "NAME": "inputImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "master_zoom",
-      "TYPE" : "float",
-      "MAX" : 2,
-      "DEFAULT" : 1,
-      "MIN" : 0.1
+      "NAME": "master_zoom",
+      "TYPE": "float",
+      "MAX": 2,
+      "DEFAULT": 1,
+      "MIN": 0.1
     },
     {
-      "NAME" : "red_zoom",
-      "TYPE" : "float",
-      "MAX" : 1.5,
-      "DEFAULT" : 1,
-      "MIN" : 1
+      "NAME": "red_zoom",
+      "TYPE": "float",
+      "MAX": 1.5,
+      "DEFAULT": 1,
+      "MIN": 1
     },
     {
-      "NAME" : "green_zoom",
-      "TYPE" : "float",
-      "MAX" : 1.5,
-      "DEFAULT" : 1,
-      "MIN" : 1
+      "NAME": "green_zoom",
+      "TYPE": "float",
+      "MAX": 1.5,
+      "DEFAULT": 1,
+      "MIN": 1
     },
     {
-      "NAME" : "blue_zoom",
-      "TYPE" : "float",
-      "MAX" : 1.5,
-      "DEFAULT" : 1,
-      "MIN" : 1
+      "NAME": "blue_zoom",
+      "TYPE": "float",
+      "MAX": 1.5,
+      "DEFAULT": 1,
+      "MIN": 1
     },
     {
-      "NAME" : "center",
-      "TYPE" : "point2D",
-      "MAX" : [
+      "NAME": "center",
+      "TYPE": "point2D",
+      "MAX": [
         1,
         1
       ],
-      "DEFAULT" : [
+      "DEFAULT": [
         0.5,
         0.5
       ],
-      "MIN" : [
+      "MIN": [
         0,
         0
       ]
     }
   ],
-  "CREDIT" : "by toneburst"
-}
-*/
+  "CREDIT": "by toneburst"
+}*/
 
 void main() {
 	vec2		loc;

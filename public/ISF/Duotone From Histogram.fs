@@ -1,87 +1,84 @@
-/*
-{
-  "CATEGORIES" : [
-    "Color Effect", "Histogram"
+/*{
+  "CATEGORIES": [
+    "Color Effect",
+    "Histogram"
   ],
-  "DESCRIPTION" : "Adjusts an image to use colors determined from a histogram",
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "DESCRIPTION": "Adjusts an image to use colors determined from a histogram",
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "NAME" : "inputImage",
-      "TYPE" : "image"
+      "NAME": "inputImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "sourceHistogram",
-      "TYPE" : "image"
+      "NAME": "sourceHistogram",
+      "TYPE": "image"
     },
-	{
-		"NAME": "timeSmoothing",
-		"TYPE": "float",
-		"MIN": 0.0,
-		"MAX": 1.0,
-		"DEFAULT": 0.5
-	},
-	{
-		"NAME": "minStart",
-		"TYPE": "float",
-		"MIN": 0.0,
-		"MAX": 0.25,
-		"DEFAULT": 0.0
-	},
-	{
-		"NAME": "midRange",
-		"TYPE": "float",
-		"MIN": 0.0,
-		"MAX": 0.5,
-		"DEFAULT": 0.0
-	},
-	{
-		"NAME": "averaging",
-		"TYPE": "float",
-		"MIN": 0.0,
-		"MAX": 0.2,
-		"DEFAULT": 0.0
-	},
-	{
-		"NAME": "inThreshold",
-		"TYPE": "float",
-		"MIN": 0.0,
-		"MAX": 0.1,
-		"DEFAULT": 0.0
-	},
-	{
-		"NAME": "outAutoThreshold",
-		"TYPE": "bool",
-		"DEFAULT": 1
-	},
-	{
-		"NAME": "outThreshold",
-		"TYPE": "float",
-		"MIN": 0.0,
-		"MAX": 1.0,
-		"DEFAULT": 0.5
-	}
+    {
+      "NAME": "timeSmoothing",
+      "TYPE": "float",
+      "MIN": 0,
+      "MAX": 1,
+      "DEFAULT": 0.5
+    },
+    {
+      "NAME": "minStart",
+      "TYPE": "float",
+      "MIN": 0,
+      "MAX": 0.25,
+      "DEFAULT": 0
+    },
+    {
+      "NAME": "midRange",
+      "TYPE": "float",
+      "MIN": 0,
+      "MAX": 0.5,
+      "DEFAULT": 0
+    },
+    {
+      "NAME": "averaging",
+      "TYPE": "float",
+      "MIN": 0,
+      "MAX": 0.2,
+      "DEFAULT": 0
+    },
+    {
+      "NAME": "inThreshold",
+      "TYPE": "float",
+      "MIN": 0,
+      "MAX": 0.1,
+      "DEFAULT": 0
+    },
+    {
+      "NAME": "outAutoThreshold",
+      "TYPE": "bool",
+      "DEFAULT": 1
+    },
+    {
+      "NAME": "outThreshold",
+      "TYPE": "float",
+      "MIN": 0,
+      "MAX": 1,
+      "DEFAULT": 0.5
+    }
   ],
-  "PASSES" : [
+  "PASSES": [
     {
-      "WIDTH" : "2",
-      "TARGET" : "minmax",
-      "HEIGHT" : "1"
+      "WIDTH": "2",
+      "TARGET": "minmax",
+      "HEIGHT": "1"
     },
     {
-      "WIDTH" : "2",
-      "TARGET" : "smoothedminmax",
-      "HEIGHT" : "1",
+      "WIDTH": "2",
+      "TARGET": "smoothedminmax",
+      "HEIGHT": "1",
       "PERSISTENT": true,
       "FLOAT": true
     },
-    {
-
-    }
+    {}
   ],
-  "CREDIT" : "VIDVOX"
-}
-*/
+  "CREDIT": "VIDVOX"
+}*/
 
 float brightness(vec3 c)	{
 	return (c.r + c.g + c.b) / 3.0;

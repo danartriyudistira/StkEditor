@@ -1,32 +1,28 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Wipe"
   ],
   "CREDIT": "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/BowTieHorizontal.glsl",
-  "DESCRIPTION" : "Automatically converted from https://gl-transitions.com/",
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "DESCRIPTION": "Automatically converted from https://gl-transitions.com/",
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "NAME" : "startImage",
-      "TYPE" : "image"
+      "NAME": "startImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "endImage",
-      "TYPE" : "image"
+      "NAME": "endImage",
+      "TYPE": "image"
     },
     {
-      "MIN" : 0,
-      "TYPE" : "float",
-      "NAME" : "progress",
-      "MAX" : 1,
-      "DEFAULT" : 0
+      "MIN": 0,
+      "TYPE": "float",
+      "NAME": "progress",
+      "MAX": 1,
+      "DEFAULT": 0
     }
   ]
-}
-*/
-
-
+}*/
 
 vec4 getFromColor(vec2 inUV)	{
 	return IMG_NORM_PIXEL(startImage, inUV);

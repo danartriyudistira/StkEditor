@@ -1,19 +1,18 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Color Effect"
   ],
-  "DESCRIPTION" : "Tints the corners of the image in different colors.",
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "DESCRIPTION": "Tints the corners of the image in different colors.",
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "NAME" : "inputImage",
-      "TYPE" : "image"
+      "NAME": "inputImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "color1",
-      "TYPE" : "color",
-      "DEFAULT" : [
+      "NAME": "color1",
+      "TYPE": "color",
+      "DEFAULT": [
         1,
         0,
         0,
@@ -21,9 +20,9 @@
       ]
     },
     {
-      "NAME" : "color2",
-      "TYPE" : "color",
-      "DEFAULT" : [
+      "NAME": "color2",
+      "TYPE": "color",
+      "DEFAULT": [
         0,
         1,
         0,
@@ -31,9 +30,9 @@
       ]
     },
     {
-      "NAME" : "color3",
-      "TYPE" : "color",
-      "DEFAULT" : [
+      "NAME": "color3",
+      "TYPE": "color",
+      "DEFAULT": [
         0,
         0,
         1,
@@ -41,9 +40,9 @@
       ]
     },
     {
-      "NAME" : "color4",
-      "TYPE" : "color",
-      "DEFAULT" : [
+      "NAME": "color4",
+      "TYPE": "color",
+      "DEFAULT": [
         1,
         1,
         1,
@@ -51,16 +50,15 @@
       ]
     },
     {
-      "NAME" : "rotationAngle",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0,
-      "MIN" : 0
+      "NAME": "rotationAngle",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0,
+      "MIN": 0
     }
   ],
-  "CREDIT" : "VIDVOX"
-}
-*/
+  "CREDIT": "VIDVOX"
+}*/
 
 const float pi = 3.1415926535897932384626433832795;
 

@@ -1,51 +1,46 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Distortion Effect"
   ],
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "NAME" : "inputImage",
-      "TYPE" : "image"
+      "NAME": "inputImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "radius",
-      "TYPE" : "float",
-      "MAX" : 0.75,
-      "DEFAULT" : 0.125,
-      "MIN" : 0
+      "NAME": "radius",
+      "TYPE": "float",
+      "MAX": 0.75,
+      "DEFAULT": 0.125,
+      "MIN": 0
     },
     {
-      "NAME" : "streaks",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0,
-      "MIN" : 0
+      "NAME": "streaks",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0,
+      "MIN": 0
     },
     {
-      "NAME" : "center",
-      "TYPE" : "point2D",
-      "MAX" : [
+      "NAME": "center",
+      "TYPE": "point2D",
+      "MAX": [
         1,
         1
       ],
-      "DEFAULT" : [
+      "DEFAULT": [
         0.5,
         0.5
       ],
-      "MIN" : [
+      "MIN": [
         0,
         0
       ]
     }
   ],
-  "CREDIT" : "by VIDVOX"
-}
-*/
-
-
-
+  "CREDIT": "by VIDVOX"
+}*/
 
 //	Pretty simple ‚Äì¬ if we're inside the radius, draw as normal
 //	If we're outside the circle grab the last color along the angle

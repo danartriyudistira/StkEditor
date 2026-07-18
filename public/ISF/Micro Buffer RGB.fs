@@ -1,94 +1,90 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Glitch"
   ],
-  "DESCRIPTION" : "Buffers 8 recent frames",
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "DESCRIPTION": "Buffers 8 recent frames",
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "NAME" : "inputImage",
-      "TYPE" : "image"
+      "NAME": "inputImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "inputRate",
-      "TYPE" : "float",
-      "MAX" : 20,
-      "DEFAULT" : 1,
-      "LABEL" : "Buffer Lag",
-      "MIN" : 0
+      "NAME": "inputRate",
+      "TYPE": "float",
+      "MAX": 20,
+      "DEFAULT": 1,
+      "LABEL": "Buffer Lag",
+      "MIN": 0
     },
     {
-      "LABELS" : [
+      "LABELS": [
         "Color Picker",
         "Image Input"
       ],
-      "NAME" : "delayMode",
-      "TYPE" : "long",
-      "LABEL" : "Delay Mode",
-      "VALUES" : [
+      "NAME": "delayMode",
+      "TYPE": "long",
+      "LABEL": "Delay Mode",
+      "VALUES": [
         0,
         1
       ]
     },
     {
-      "NAME" : "inputDelay",
-      "LABEL" : "Buffer",
-      "TYPE" : "color"
+      "NAME": "inputDelay",
+      "LABEL": "Buffer",
+      "TYPE": "color"
     },
     {
-      "NAME" : "inputDelayImage",
-      "TYPE" : "image",
-      "LABEL" : "Delay Image"
+      "NAME": "inputDelayImage",
+      "TYPE": "image",
+      "LABEL": "Delay Image"
     }
   ],
-  "PASSES" : [
+  "PASSES": [
     {
-      "WIDTH" : "1",
-      "DESCRIPTION" : "this buffer stores the last frame's odd \/ even state",
-      "HEIGHT" : "1",
-      "TARGET" : "lastRow",
-      "PERSISTENT" : true
+      "WIDTH": "1",
+      "DESCRIPTION": "this buffer stores the last frame's odd / even state",
+      "HEIGHT": "1",
+      "TARGET": "lastRow",
+      "PERSISTENT": true
     },
     {
-      "TARGET" : "buffer8",
-      "PERSISTENT" : true
+      "TARGET": "buffer8",
+      "PERSISTENT": true
     },
     {
-      "TARGET" : "buffer7",
-      "PERSISTENT" : true
+      "TARGET": "buffer7",
+      "PERSISTENT": true
     },
     {
-      "TARGET" : "buffer6",
-      "PERSISTENT" : true
+      "TARGET": "buffer6",
+      "PERSISTENT": true
     },
     {
-      "TARGET" : "buffer5",
-      "PERSISTENT" : true
+      "TARGET": "buffer5",
+      "PERSISTENT": true
     },
     {
-      "TARGET" : "buffer4",
-      "PERSISTENT" : true
+      "TARGET": "buffer4",
+      "PERSISTENT": true
     },
     {
-      "TARGET" : "buffer3",
-      "PERSISTENT" : true
+      "TARGET": "buffer3",
+      "PERSISTENT": true
     },
     {
-      "TARGET" : "buffer2",
-      "PERSISTENT" : true
+      "TARGET": "buffer2",
+      "PERSISTENT": true
     },
     {
-      "TARGET" : "buffer1",
-      "PERSISTENT" : true
+      "TARGET": "buffer1",
+      "PERSISTENT": true
     },
-    {
-
-    }
+    {}
   ],
-  "CREDIT" : "by VIDVOX"
-}
-*/
+  "CREDIT": "by VIDVOX"
+}*/
 
 void main()
 {

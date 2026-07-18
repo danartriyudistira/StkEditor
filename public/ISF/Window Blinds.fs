@@ -1,32 +1,28 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Dissolve"
   ],
-  "INPUTS" : [
+  "INPUTS": [
     {
-      "TYPE" : "image",
-      "NAME" : "startImage"
+      "TYPE": "image",
+      "NAME": "startImage"
     },
     {
-      "NAME" : "endImage",
-      "TYPE" : "image"
+      "NAME": "endImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "progress",
-      "MIN" : 0,
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0
+      "NAME": "progress",
+      "MIN": 0,
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0
     }
   ],
   "CREDIT": "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/windowblinds.glsl",
   "DESCRIPTION": "",
-  "ISFVSN" : "2"
-}
-*/
-
-
+  "ISFVSN": "2"
+}*/
 
 vec4 getFromColor(vec2 inUV)	{
 	return IMG_NORM_PIXEL(startImage, inUV);

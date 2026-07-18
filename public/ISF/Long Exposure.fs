@@ -1,45 +1,43 @@
-/*
-{
-  "CATEGORIES" : [
-    "Color Effect", "Feedback", "Film"
+/*{
+  "CATEGORIES": [
+    "Color Effect",
+    "Feedback",
+    "Film"
   ],
-  "DESCRIPTION" : "Bright objects burn in and optionally decay",
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "DESCRIPTION": "Bright objects burn in and optionally decay",
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "NAME" : "inputImage",
-      "TYPE" : "image"
+      "NAME": "inputImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "absorptionRate",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0.5,
-      "MIN" : -1,
-      "LABEL" : "Absorption Rate"
+      "NAME": "absorptionRate",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0.5,
+      "MIN": -1,
+      "LABEL": "Absorption Rate"
     },
     {
-      "NAME" : "dischargeRate",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0.25,
-      "MIN" : 0,
-      "LABEL" : "Discharge Rate"
+      "NAME": "dischargeRate",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0.25,
+      "MIN": 0,
+      "LABEL": "Discharge Rate"
     }
   ],
-  "PASSES" : [
+  "PASSES": [
     {
-      "TARGET" : "feedbackBuffer",
-      "PERSISTENT" : true,
-      "FLOAT" : true
+      "TARGET": "feedbackBuffer",
+      "PERSISTENT": true,
+      "FLOAT": true
     },
-    {
-
-    }
+    {}
   ],
-  "CREDIT" : "VIDVOX"
-}
-*/
+  "CREDIT": "VIDVOX"
+}*/
 
 void main()
 {

@@ -1,65 +1,59 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Color Effect"
   ],
-  "DESCRIPTION" : "",
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "DESCRIPTION": "",
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "NAME" : "inputImage",
-      "TYPE" : "image"
+      "NAME": "inputImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "strobeRate",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0,
-      "LABEL" : "Strobe Rate",
-      "MIN" : 0
+      "NAME": "strobeRate",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0,
+      "LABEL": "Strobe Rate",
+      "MIN": 0
     },
     {
-      "LABELS" : [
+      "LABELS": [
         "Invert",
         "Color"
       ],
-      "NAME" : "strobeMode",
-      "TYPE" : "long",
-      "LABEL" : "Strobe Mode",
-      "VALUES" : [
+      "NAME": "strobeMode",
+      "TYPE": "long",
+      "LABEL": "Strobe Mode",
+      "VALUES": [
         0,
         1
       ]
     },
     {
-      "NAME" : "strobeColor",
-      "TYPE" : "color",
-      "DEFAULT" : [
+      "NAME": "strobeColor",
+      "TYPE": "color",
+      "DEFAULT": [
         1,
         1,
         1,
         1
       ],
-      "LABEL" : "Strobe Color"
+      "LABEL": "Strobe Color"
     }
   ],
-  "PASSES" : [
+  "PASSES": [
     {
-      "WIDTH" : "1",
-      "DESCRIPTION" : "this buffer stores the last frame's time offset in the first component of its only pixel- note that it's requesting a FLOAT target buffer...",
-      "HEIGHT" : "1",
-      "TARGET" : "lastState",
-      "PERSISTENT" : true
+      "WIDTH": "1",
+      "DESCRIPTION": "this buffer stores the last frame's time offset in the first component of its only pixel- note that it's requesting a FLOAT target buffer...",
+      "HEIGHT": "1",
+      "TARGET": "lastState",
+      "PERSISTENT": true
     },
-    {
-
-    }
+    {}
   ],
-  "CREDIT" : "by VIDVOX"
-}
-*/
-
-
+  "CREDIT": "by VIDVOX"
+}*/
 
 void main()
 {

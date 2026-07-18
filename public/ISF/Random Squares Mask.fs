@@ -1,68 +1,65 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Masking"
   ],
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "NAME" : "width",
-      "TYPE" : "float",
-      "DEFAULT" : 0.125
+      "NAME": "width",
+      "TYPE": "float",
+      "DEFAULT": 0.125
     },
     {
-      "NAME" : "offset",
-      "TYPE" : "point2D",
-      "DEFAULT" : [
+      "NAME": "offset",
+      "TYPE": "point2D",
+      "DEFAULT": [
         0,
         0
       ],
       "MIN": [
-      	0,
-      	0
+        0,
+        0
       ],
       "MAX": [
-      	1,
-      	1
+        1,
+        1
       ]
     },
     {
-      "NAME" : "alpha1",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0,
-      "MIN" : 0
+      "NAME": "alpha1",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0,
+      "MIN": 0
     },
     {
-      "NAME" : "alpha2",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 1,
-      "MIN" : 0
+      "NAME": "alpha2",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 1,
+      "MIN": 0
     },
     {
-      "NAME" : "inputImage",
-      "TYPE" : "image"
+      "NAME": "inputImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "seed1",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0.241,
-      "MIN" : 0
+      "NAME": "seed1",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0.241,
+      "MIN": 0
     },
     {
-      "NAME" : "randomThreshold",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0.5,
-      "MIN" : 0
+      "NAME": "randomThreshold",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0.5,
+      "MIN": 0
     }
   ],
-  "CREDIT" : "by VIDVOX"
-}
-*/
-
+  "CREDIT": "by VIDVOX"
+}*/
 
 //	glsl doesn't include random functions
 //	this is a pseudo-random function

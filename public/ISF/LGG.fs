@@ -1,18 +1,17 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Color Adjustment"
   ],
-  "DESCRIPTION" : "Performs a Lift Gamma Gain Saturation CDL",
-  "INPUTS" : [
+  "DESCRIPTION": "Performs a Lift Gamma Gain Saturation CDL",
+  "INPUTS": [
     {
-      "NAME" : "inputImage",
-      "TYPE" : "image"
+      "NAME": "inputImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "lift",
-      "TYPE" : "color",
-      "DEFAULT" : [
+      "NAME": "lift",
+      "TYPE": "color",
+      "DEFAULT": [
         0.5,
         0.5,
         0.5,
@@ -20,9 +19,9 @@
       ]
     },
     {
-      "NAME" : "gamma",
-      "TYPE" : "color",
-      "DEFAULT" : [
+      "NAME": "gamma",
+      "TYPE": "color",
+      "DEFAULT": [
         0.25,
         0.25,
         0.25,
@@ -30,9 +29,9 @@
       ]
     },
     {
-      "NAME" : "gain",
-      "TYPE" : "color",
-      "DEFAULT" : [
+      "NAME": "gain",
+      "TYPE": "color",
+      "DEFAULT": [
         0.25,
         0.25,
         0.25,
@@ -40,19 +39,16 @@
       ]
     },
     {
-      "NAME" : "saturation",
-      "TYPE" : "float",
-      "MAX" : 2,
-      "DEFAULT" : 1,
-      "MIN" : 0
+      "NAME": "saturation",
+      "TYPE": "float",
+      "MAX": 2,
+      "DEFAULT": 1,
+      "MIN": 0
     }
   ],
-  "ISFVSN" : "2",
-  "CREDIT" : "VIDVOX"
-}
-*/
-
-
+  "ISFVSN": "2",
+  "CREDIT": "VIDVOX"
+}*/
 
 void main()	{
 	vec4		color = IMG_THIS_PIXEL(inputImage);

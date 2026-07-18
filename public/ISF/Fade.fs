@@ -1,32 +1,28 @@
-/*
-{
-  "INPUTS" : [
+/*{
+  "INPUTS": [
     {
-      "TYPE" : "image",
-      "NAME" : "startImage"
+      "TYPE": "image",
+      "NAME": "startImage"
     },
     {
-      "NAME" : "endImage",
-      "TYPE" : "image"
+      "NAME": "endImage",
+      "TYPE": "image"
     },
     {
-      "MAX" : 1,
-      "TYPE" : "float",
-      "MIN" : 0,
-      "NAME" : "progress",
-      "DEFAULT" : 0
+      "MAX": 1,
+      "TYPE": "float",
+      "MIN": 0,
+      "NAME": "progress",
+      "DEFAULT": 0
     }
   ],
   "CREDIT": "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/fade.glsl",
   "DESCRIPTION": "",
-  "CATEGORIES" : [
+  "CATEGORIES": [
     "Dissolve"
   ],
-  "ISFVSN" : "2"
-}
-*/
-
-
+  "ISFVSN": "2"
+}*/
 
 vec4 getFromColor(vec2 inUV)	{
 	return IMG_NORM_PIXEL(startImage, inUV);

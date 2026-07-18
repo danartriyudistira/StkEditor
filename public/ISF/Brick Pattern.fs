@@ -1,45 +1,45 @@
-/*
-{
-  "CATEGORIES" : [
-    "Pattern", "Color"
+/*{
+  "CATEGORIES": [
+    "Pattern",
+    "Color"
   ],
-  "DESCRIPTION" : "Generates a basic brick pattern",
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "DESCRIPTION": "Generates a basic brick pattern",
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "NAME" : "brickSize",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0.2,
-      "MIN" : 0
+      "NAME": "brickSize",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0.2,
+      "MIN": 0
     },
     {
-      "NAME" : "fillSize",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0.9,
-      "MIN" : 0
+      "NAME": "fillSize",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0.9,
+      "MIN": 0
     },
     {
-      "NAME" : "brickOffset",
-      "TYPE" : "point2D",
-      "MAX" : [
+      "NAME": "brickOffset",
+      "TYPE": "point2D",
+      "MAX": [
         1,
         1
       ],
-      "DEFAULT" : [
+      "DEFAULT": [
         0,
         0
       ],
-      "MIN" : [
+      "MIN": [
         0,
         0
       ]
     },
     {
-      "NAME" : "fillColor",
-      "TYPE" : "color",
-      "DEFAULT" : [
+      "NAME": "fillColor",
+      "TYPE": "color",
+      "DEFAULT": [
         0,
         0,
         0,
@@ -47,9 +47,9 @@
       ]
     },
     {
-      "NAME" : "brickColor",
-      "TYPE" : "color",
-      "DEFAULT" : [
+      "NAME": "brickColor",
+      "TYPE": "color",
+      "DEFAULT": [
         1,
         1,
         1,
@@ -57,9 +57,8 @@
       ]
     }
   ],
-  "CREDIT" : "patriciogv"
-}
-*/
+  "CREDIT": "patriciogv"
+}*/
 
 // Based on Brick example from https://thebookofshaders.com/09/
 // Author @patriciogv ( patriciogonzalezvivo.com ) - 2015

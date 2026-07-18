@@ -1,54 +1,53 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Audio Visualizer"
   ],
   "ISFVSN": "2",
-  "DESCRIPTION" : "Visualizes an FFT analysis image with custom set colors for frequency domain",
-  "INPUTS" : [
+  "DESCRIPTION": "Visualizes an FFT analysis image with custom set colors for frequency domain",
+  "INPUTS": [
     {
-      "NAME" : "fftImage",
-      "TYPE" : "audioFFT"
+      "NAME": "fftImage",
+      "TYPE": "audioFFT"
     },
     {
-      "NAME" : "waveImage",
-      "TYPE" : "audio"
+      "NAME": "waveImage",
+      "TYPE": "audio"
     },
     {
-      "NAME" : "gainFFT",
-      "TYPE" : "float",
-      "MAX" : 5,
-      "DEFAULT" : 1,
-      "MIN" : 0
+      "NAME": "gainFFT",
+      "TYPE": "float",
+      "MAX": 5,
+      "DEFAULT": 1,
+      "MIN": 0
     },
     {
-      "NAME" : "rangeFFT",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 1.0,
-      "MIN" : 0
+      "NAME": "rangeFFT",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 1,
+      "MIN": 0
     },
     {
-      "NAME" : "waveSize",
-      "TYPE" : "float",
-      "MAX" : 0.5,
-      "DEFAULT" : 0.05,
-      "MIN" : 0
+      "NAME": "waveSize",
+      "TYPE": "float",
+      "MAX": 0.5,
+      "DEFAULT": 0.05,
+      "MIN": 0
     },
     {
-      "NAME" : "vertical",
-      "TYPE" : "bool",
-      "DEFAULT" : 1
+      "NAME": "vertical",
+      "TYPE": "bool",
+      "DEFAULT": 1
     },
     {
-      "NAME" : "stereo",
-      "TYPE" : "bool",
-      "DEFAULT" : 1
+      "NAME": "stereo",
+      "TYPE": "bool",
+      "DEFAULT": 1
     },
     {
-      "NAME" : "color1",
-      "TYPE" : "color",
-      "DEFAULT" : [
+      "NAME": "color1",
+      "TYPE": "color",
+      "DEFAULT": [
         0.2087394440714313,
         0.9861069917678833,
         0.1871179742814854,
@@ -56,9 +55,9 @@
       ]
     },
     {
-      "NAME" : "color2",
-      "TYPE" : "color",
-      "DEFAULT" : [
+      "NAME": "color2",
+      "TYPE": "color",
+      "DEFAULT": [
         0,
         0.5,
         1,
@@ -66,9 +65,9 @@
       ]
     },
     {
-      "NAME" : "color3",
-      "TYPE" : "color",
-      "DEFAULT" : [
+      "NAME": "color3",
+      "TYPE": "color",
+      "DEFAULT": [
         0,
         1,
         0,
@@ -76,9 +75,9 @@
       ]
     },
     {
-      "NAME" : "wavecolor",
-      "TYPE" : "color",
-      "DEFAULT" : [
+      "NAME": "wavecolor",
+      "TYPE": "color",
+      "DEFAULT": [
         1,
         1,
         1,
@@ -86,11 +85,8 @@
       ]
     }
   ],
-  "CREDIT" : "by VIDVOX"
-}
-*/
-
-
+  "CREDIT": "by VIDVOX"
+}*/
 
 void main() {
 	

@@ -1,32 +1,28 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Wipe"
   ],
   "CREDIT": "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/ZoomInCircles.glsl",
   "DESCRIPTION": "",
-  "INPUTS" : [
+  "INPUTS": [
     {
-      "TYPE" : "image",
-      "NAME" : "startImage"
+      "TYPE": "image",
+      "NAME": "startImage"
     },
     {
-      "TYPE" : "image",
-      "NAME" : "endImage"
+      "TYPE": "image",
+      "NAME": "endImage"
     },
     {
-      "DEFAULT" : 0,
-      "TYPE" : "float",
-      "NAME" : "progress",
-      "MIN" : 0,
-      "MAX" : 1
+      "DEFAULT": 0,
+      "TYPE": "float",
+      "NAME": "progress",
+      "MIN": 0,
+      "MAX": 1
     }
   ],
-  "ISFVSN" : "2"
-}
-*/
-
-
+  "ISFVSN": "2"
+}*/
 
 vec4 getFromColor(vec2 inUV)	{
 	return IMG_NORM_PIXEL(startImage, inUV);

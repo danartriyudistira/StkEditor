@@ -1,32 +1,28 @@
-/*
-{
-  "ISFVSN" : "2",
+/*{
+  "ISFVSN": "2",
   "CREDIT": "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/multiply_blend.glsl",
   "DESCRIPTION": "",
-  "CATEGORIES" : [
+  "CATEGORIES": [
     "Dissolve"
   ],
-  "INPUTS" : [
+  "INPUTS": [
     {
-      "NAME" : "startImage",
-      "TYPE" : "image"
+      "NAME": "startImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "endImage",
-      "TYPE" : "image"
+      "NAME": "endImage",
+      "TYPE": "image"
     },
     {
-      "MAX" : 1,
-      "DEFAULT" : 0,
-      "MIN" : 0,
-      "TYPE" : "float",
-      "NAME" : "progress"
+      "MAX": 1,
+      "DEFAULT": 0,
+      "MIN": 0,
+      "TYPE": "float",
+      "NAME": "progress"
     }
   ]
-}
-*/
-
-
+}*/
 
 vec4 getFromColor(vec2 inUV)	{
 	return IMG_NORM_PIXEL(startImage, inUV);

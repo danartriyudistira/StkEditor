@@ -1,42 +1,39 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Blur",
     "Glitch"
   ],
-  "DESCRIPTION" : "This converts to YIQ and does separate feedback blur on the Y and C channels",
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "DESCRIPTION": "This converts to YIQ and does separate feedback blur on the Y and C channels",
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "NAME" : "inputImage",
-      "TYPE" : "image"
+      "NAME": "inputImage",
+      "TYPE": "image"
     },
     {
-      "NAME" : "yFeedbackLevel",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0,
-      "MIN" : 0
+      "NAME": "yFeedbackLevel",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0,
+      "MIN": 0
     },
     {
-      "NAME" : "cFeedbackLevel",
-      "TYPE" : "float",
-      "MAX" : 1,
-      "DEFAULT" : 0,
-      "MIN" : 0
+      "NAME": "cFeedbackLevel",
+      "TYPE": "float",
+      "MAX": 1,
+      "DEFAULT": 0,
+      "MIN": 0
     }
   ],
-  "PASSES" : [
+  "PASSES": [
     {
-      "TARGET" : "lastFrame",
-      "PERSISTENT" : true,
-      "FLOAT" : true
+      "TARGET": "lastFrame",
+      "PERSISTENT": true,
+      "FLOAT": true
     }
   ],
-  "CREDIT" : "VIDVOX"
-}
-*/
-
+  "CREDIT": "VIDVOX"
+}*/
 
 //	inspired by (but not exactly the same thing as) y/c delay error
 //	https://bavc.github.io/avaa/artifacts/yc_delay_error.html

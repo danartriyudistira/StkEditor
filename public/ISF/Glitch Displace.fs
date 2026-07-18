@@ -1,32 +1,28 @@
-/*
-{
-  "CATEGORIES" : [
+/*{
+  "CATEGORIES": [
     "Distortion"
   ],
   "CREDIT": "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/GlitchDisplace.glsl",
   "DESCRIPTION": "",
-  "ISFVSN" : "2",
-  "INPUTS" : [
+  "ISFVSN": "2",
+  "INPUTS": [
     {
-      "TYPE" : "image",
-      "NAME" : "startImage"
+      "TYPE": "image",
+      "NAME": "startImage"
     },
     {
-      "TYPE" : "image",
-      "NAME" : "endImage"
+      "TYPE": "image",
+      "NAME": "endImage"
     },
     {
-      "DEFAULT" : 0,
-      "MAX" : 1,
-      "NAME" : "progress",
-      "MIN" : 0,
-      "TYPE" : "float"
+      "DEFAULT": 0,
+      "MAX": 1,
+      "NAME": "progress",
+      "MIN": 0,
+      "TYPE": "float"
     }
   ]
-}
-*/
-
-
+}*/
 
 vec4 getFromColor(vec2 inUV)	{
 	return IMG_NORM_PIXEL(startImage, inUV);
