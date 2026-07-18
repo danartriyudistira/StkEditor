@@ -11,6 +11,15 @@ export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, on
 
   return (
     <div className="tabbar">
+      <div className="tabbar-actions">
+        <button className="tabbar-action" onClick={onNew} title="New shader">New</button>
+        <button className="tabbar-action" onClick={onOpen} title="Open shader (.fs)">Open</button>
+        <button className="tabbar-action" onClick={onDownload} title="Download shader (.fs)">Download</button>
+        <div className="tabbar-sep" />
+        <button className="tabbar-action" onClick={onSave} title="Save preset (.stk)">Save</button>
+        <button className="tabbar-action" onClick={onLoad} title="Load preset (.stk)">Load</button>
+        <div className="tabbar-sep" />
+      </div>
       <div className="tabbar-scroll" ref={scrollRef}>
         {tabs.map(tab => (
           <div
