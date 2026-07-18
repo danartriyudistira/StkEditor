@@ -14,6 +14,8 @@ export default function Toolbar({
   sourceType,
   onSourceChange,
   onSourceUpload,
+  onSavePreset,
+  onLoadPreset,
 }) {
   const fileInputRef = useRef(null)
   const [showConfig, setShowConfig] = useState(false)
@@ -46,8 +48,16 @@ export default function Toolbar({
           Open
         </button>
 
-        <button onClick={onDownload} title="Download shader">
+        <button onClick={onDownload} title="Download shader (.fs)">
           Download
+        </button>
+
+        <button onClick={onSavePreset} title="Save preset (.stk) - Ctrl+S">
+          Save
+        </button>
+
+        <button onClick={onLoadPreset} title="Load preset (.stk) - Ctrl+O">
+          Load
         </button>
 
         {libraryFiles && libraryFiles.length > 0 && (

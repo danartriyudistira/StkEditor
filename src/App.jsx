@@ -440,6 +440,8 @@ export default function App() {
           onSendToConsole={handleSendToConsole}
           consoleConfig={consoleConfig}
           onConsoleConfigChange={handleConsoleConfigChange}
+          onSavePreset={handleSavePreset}
+          onLoadPreset={handleLoadPreset}
           sourceType={sourceType}
           onSourceChange={handleSourceChange}
           onSourceUpload={handleSourceUpload}
@@ -494,8 +496,6 @@ export default function App() {
               ccValues={ccValues}
               onSaveStkfx={handleSaveStkfx}
               onLoadStkfx={handleLoadStkfx}
-              onSavePreset={handleSavePreset}
-              onLoadPreset={handleLoadPreset}
             />
             <MidiPanel
               ccValues={ccValues}

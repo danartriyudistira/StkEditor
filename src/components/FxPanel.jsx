@@ -3,7 +3,7 @@ import { effects, getEffectsByCategory } from '../fx/effects.js'
 
 const CC_CHANNELS = [1, 2, 3, 4, 5, 6, 7, 8]
 
-export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkfx, onLoadStkfx, onSavePreset, onLoadPreset }) {
+export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkfx, onLoadStkfx }) {
   const [expanded, setExpanded] = useState(false)
   const categories = getEffectsByCategory()
 
@@ -301,9 +301,6 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
           <div className="fx-footer">
             <button className="fx-footer-btn" onClick={onLoadStkfx}>Load FX</button>
             <button className="fx-footer-btn fx-footer-btn--save" onClick={onSaveStkfx}>Save FX</button>
-            <div className="fx-footer-sep" />
-            <button className="fx-footer-btn" onClick={onLoadPreset} title="Load full preset (Ctrl+O)">Load Preset</button>
-            <button className="fx-footer-btn fx-footer-btn--save" onClick={onSavePreset} title="Save full preset (Ctrl+S)">Save Preset</button>
           </div>
         </div>
       )}
