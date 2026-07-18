@@ -208,6 +208,9 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
                   {outputs.map(dev => (
                     <option key={dev.id} value={dev.id}>{dev.name}</option>
                   ))}
+                  {inputs.filter(i => !outputs.find(o => o.id === i.id)).map(dev => (
+                    <option key={dev.id} value={dev.id}>{dev.name} (input)</option>
+                  ))}
                 </select>
                 <select
                   className="midi-channel-select"
