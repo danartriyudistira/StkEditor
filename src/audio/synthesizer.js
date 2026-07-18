@@ -83,7 +83,7 @@ export default class Synthesizer {
   }
 
   noteOn(note, velocity = 100) {
-    if (!this._started) this.start()
+    if (!this._started) return
     if (this.ctx?.state === 'suspended') this.ctx.resume()
 
     const vel = velocity / 127
