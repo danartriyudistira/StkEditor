@@ -17,6 +17,29 @@ function wrapGLSL(code) {
 ${code}`
 }
 
+function createPlaceholderTexture(gl) {
+  const size = 256
+  const data = new Uint8Array(size * size * 4)
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4
+      const t = x / size
+      data[i]     = Math.floor(60 + 140 * t)
+      data[i + 1] = Math.floor(40 + 60 * Math.sin(t * Math.PI))
+      data[i + 2] = Math.floor(180 - 80 * t)
+      data[i + 3] = 255
+    }
+  }
+  const tex = gl.createTexture()
+  gl.bindTexture(gl.TEXTURE_2D, tex)
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, data)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+  return tex
+}
+
 function createPlaceholderImage() {
   const canvas = document.createElement('canvas')
   canvas.width = 256
@@ -37,7 +60,8 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
   const isfRendererRef = useRef(null)
   const fxProcessorRef = useRef(null)
   const isfTextureRef = useRef(null)
-  const placeholderRef = useRef(null)
+  const sourceTextureRef = useRef(null)
+  const placeholderImageRef = useRef(null)
   const parserRef = useRef(null)
   const rafRef = useRef(null)
   const codeRef = useRef(code)
@@ -45,23 +69,12 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
   const fxChainRef = useRef(fxChain)
   const sourceTypeRef = useRef(sourceType)
   const sourceElementRef = useRef(sourceElement)
-  const sourceVersionRef = useRef(0)
 
   codeRef.current = code
   uniformValuesRef.current = uniformValues
   fxChainRef.current = fxChain
   sourceTypeRef.current = sourceType
   sourceElementRef.current = sourceElement
-
-  // Track source changes - increment version when source changes
-  const prevSourceRef = useRef(null)
-  useEffect(() => {
-    const key = `${sourceType}:${sourceElement?.src || sourceElement?.width || 'none'}`
-    if (key !== prevSourceRef.current) {
-      prevSourceRef.current = key
-      sourceVersionRef.current++
-    }
-  }, [sourceType, sourceElement])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -99,7 +112,8 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
     fxProcessorRef.current = fxProcessor
 
     isfTextureRef.current = mainGL.createTexture()
-    placeholderRef.current = createPlaceholderImage()
+    sourceTextureRef.current = createPlaceholderTexture(mainGL)
+    placeholderImageRef.current = createPlaceholderImage()
 
     function render() {
       const r = isfRendererRef.current
@@ -107,7 +121,7 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
       const c = canvasRef.current
       const ic = isfCanvasRef.current
       const gl = mainGL
-      if (!r || !c || !ic || !fx || !r.valid) {
+      if (!r || !c || !ic || !fx) {
         rafRef.current = requestAnimationFrame(render)
         return
       }
@@ -178,17 +192,26 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
 
       renderer.loadSource(input)
 
-      // Set source image after shader is loaded
-      const srcType = sourceTypeRef.current
-      const srcEl = sourceElementRef.current
-      const ph = placeholderRef.current
+      // Safely set inputImage - fallback to placeholder on any error
+      try {
+        const srcType = sourceTypeRef.current
+        const srcEl = sourceElementRef.current
+        const ph = placeholderImageRef.current
 
-      if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
-        try { renderer.setValue('inputImage', srcEl) } catch (_) {}
-      } else if (srcType === 'image' && srcEl && srcEl.complete) {
-        try { renderer.setValue('inputImage', srcEl) } catch (_) {}
-      } else if (ph) {
-        try { renderer.setValue('inputImage', ph) } catch (_) {}
+        if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
+          renderer.setValue('inputImage', srcEl)
+        } else if (srcType === 'image' && srcEl && srcEl.complete) {
+          renderer.setValue('inputImage', srcEl)
+        } else if (ph) {
+          renderer.setValue('inputImage', ph)
+        }
+      } catch (_) {
+        // Source image failed - try placeholder as last resort
+        try {
+          if (placeholderImageRef.current) {
+            renderer.setValue('inputImage', placeholderImageRef.current)
+          }
+        } catch (_) {}
       }
 
       onError?.(null)
@@ -201,14 +224,14 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
     if (code) loadCode(code)
   }, [code, loadCode])
 
-  // Update source when sourceType/sourceElement changes
+  // Update source when it changes
   useEffect(() => {
     const renderer = isfRendererRef.current
-    if (!renderer || !renderer.valid) return
+    if (!renderer) return
 
     const srcType = sourceTypeRef.current
     const srcEl = sourceElementRef.current
-    const ph = placeholderRef.current
+    const ph = placeholderImageRef.current
 
     try {
       if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
@@ -218,7 +241,11 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
       } else if (ph) {
         renderer.setValue('inputImage', ph)
       }
-    } catch (_) {}
+    } catch (_) {
+      try {
+        if (ph) renderer.setValue('inputImage', ph)
+      } catch (_) {}
+    }
   }, [sourceType, sourceElement])
 
   const prevUniformsRef = useRef('')
