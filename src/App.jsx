@@ -134,6 +134,32 @@ export default function App() {
     setCcMapping(prev => ({ ...prev, [inputName]: channel }))
   }, [])
 
+  const handleTrigger = useCallback((trigger) => {
+    setTriggers(prev => {
+      if (trigger.type === 'noteOn') {
+        const next = [...prev, {
+          note: trigger.note,
+          velocity: trigger.velocity,
+          startTime: Date.now(),
+          effectId: trigger.effectId || null,
+        }]
+        return next.slice(-6) // max 6 active triggers
+      } else {
+        return prev.filter(t => t.note !== trigger.note)
+      }
+    })
+
+    // If mapped to effect, toggle it
+    if (trigger.effectId) {
+      setFxChain(prev => prev.map(fx => {
+        if (fx.id === trigger.effectId) {
+          return { ...fx, enabled: trigger.type === 'noteOn' ? true : fx.enabled }
+        }
+        return fx
+      }))
+    }
+  }, [])
+
   const handleSourceChange = useCallback((type) => {
     // Stop webcam if switching away
     if (type !== 'webcam' && webcamStreamRef.current) {
@@ -390,6 +416,9 @@ export default function App() {
             <MidiPanel
               ccValues={ccValues}
               onCcChange={handleCcValueChange}
+              triggers={triggers}
+              onTrigger={handleTrigger}
+              fxChain={fxChain}
             />
           </div>
 
