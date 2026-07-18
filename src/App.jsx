@@ -597,6 +597,8 @@ export default function App() {
                 onExport={handleExportStk}
                 onDownload={handleDownload}
                 onRename={handleRename}
+                onLoadFromLibrary={handleLoadFromLibrary}
+                libraryFiles={libraryFiles}
               />
               <ShaderEditor value={code} onChange={(v) => updateActiveTab({ code: v, modified: true })} />
               {error && <div className="error-bar">{error}</div>}

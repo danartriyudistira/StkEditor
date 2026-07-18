@@ -47,12 +47,6 @@ export default function Toolbar({
         <button className="toolbar-btn" onClick={onImportStk} title="Import .stk project">Import</button>
         <button className="toolbar-btn" onClick={onExportStk} title="Export .stk project">Export</button>
 
-        {libraryFiles && libraryFiles.length > 0 && (
-          <button onClick={onLoadFromLibrary} title="Browse ISF library">
-            Library
-          </button>
-        )}
-
         <div className="toolbar-separator" />
 
         {/* Source Input Picker */}

@@ -1,6 +1,6 @@
 ﻿import { useRef, useEffect, useState } from 'react'
 
-export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, onOpen, onExport, onDownload, onRename }) {
+export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, onOpen, onExport, onDownload, onRename, onLoadFromLibrary, libraryFiles }) {
   const scrollRef = useRef(null)
   const [editingId, setEditingId] = useState(null)
   const [editValue, setEditValue] = useState('')
@@ -78,6 +78,9 @@ export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, on
       </div>
       <div className="tabbar-actions">
         <button className="tabbar-action" onClick={onOpen} title="Open .fs file">Open</button>
+        {libraryFiles && libraryFiles.length > 0 && (
+          <button className="tabbar-action" onClick={onLoadFromLibrary} title="Browse ISF library">Library</button>
+        )}
         <button className="tabbar-action" onClick={onDownload} title="Download .fs (Save As)">Download</button>
       </div>
     </div>
