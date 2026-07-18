@@ -6,6 +6,7 @@ import CcPanel from './components/CcPanel.jsx'
 import FxPanel from './components/FxPanel.jsx'
 import MidiPanel from './components/MidiPanel.jsx'
 import RandomGenPanel from './components/RandomGenPanel.jsx'
+import AudioPanel from './components/AudioPanel.jsx'
 import Toolbar from './components/Toolbar.jsx'
 import ISFLibrary from './components/ISFLibrary.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
@@ -60,6 +61,7 @@ export default function App() {
   const [sourceElement, setSourceElement] = useState(null)
   const wsRef = useRef(null)
   const webcamStreamRef = useRef(null)
+  const synthRef = useRef(null)
 
   useEffect(() => {
     const handler = (e) => {
@@ -136,6 +138,13 @@ export default function App() {
   }, [])
 
   const handleTrigger = useCallback((trigger) => {
+    // Play sound via synth
+    if (trigger.type === 'noteOn' && trigger.velocity > 0) {
+      synthRef.current?.noteOn(trigger.note, Math.round(trigger.velocity * 127))
+    } else if (trigger.type === 'noteOff') {
+      synthRef.current?.noteOff(trigger.note)
+    }
+
     setTriggers(prev => {
       if (trigger.type === 'noteOn') {
         const next = [...prev, {
@@ -290,6 +299,10 @@ export default function App() {
     input.click()
   }, [])
 
+  const handleSynthReady = useCallback((synth) => {
+    synthRef.current = synth
+  }, [])
+
   const handleConsoleConfigChange = useCallback((newConfig) => {
     setConsoleConfig(newConfig)
     localStorage.setItem('consoleConfig', JSON.stringify(newConfig))
@@ -424,6 +437,9 @@ export default function App() {
             <RandomGenPanel
               onTrigger={handleTrigger}
               noteMapping={{}}
+            />
+            <AudioPanel
+              onSynthReady={handleSynthReady}
             />
           </div>
 
