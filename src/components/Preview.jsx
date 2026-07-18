@@ -54,6 +54,19 @@ function createPlaceholderImage() {
   return canvas
 }
 
+function flipSourceVertically(source) {
+  const w = source.videoWidth || source.naturalWidth || source.width || 256
+  const h = source.videoHeight || source.naturalHeight || source.height || 256
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  ctx.translate(0, h)
+  ctx.scale(1, -1)
+  ctx.drawImage(source, 0, 0, w, h)
+  return canvas
+}
+
 export default function Preview({ code, uniformValues, fxChain, onMetadata, onError, sourceType, sourceElement }) {
   const canvasRef = useRef(null)
   const isfCanvasRef = useRef(null)
@@ -199,9 +212,9 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
         const ph = placeholderImageRef.current
 
         if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
-          renderer.setValue('inputImage', srcEl)
+          renderer.setValue('inputImage', flipSourceVertically(srcEl))
         } else if (srcType === 'image' && srcEl && srcEl.complete) {
-          renderer.setValue('inputImage', srcEl)
+          renderer.setValue('inputImage', flipSourceVertically(srcEl))
         } else if (ph) {
           renderer.setValue('inputImage', ph)
         }
@@ -235,9 +248,9 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
 
     try {
       if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
-        renderer.setValue('inputImage', srcEl)
+        renderer.setValue('inputImage', flipSourceVertically(srcEl))
       } else if (srcType === 'image' && srcEl && srcEl.complete) {
-        renderer.setValue('inputImage', srcEl)
+        renderer.setValue('inputImage', flipSourceVertically(srcEl))
       } else if (ph) {
         renderer.setValue('inputImage', ph)
       }
