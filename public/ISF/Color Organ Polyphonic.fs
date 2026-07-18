@@ -1,3 +1,13 @@
+/*{
+  "DESCRIPTION": "Color Organ Polyphonic",
+  "CREDIT": "",
+  "ISFVSN": "2",
+  "INPUTS": [],
+  "CATEGORIES": [
+    "Custom"
+  ]
+}*/
+
 /*
 {
   "CATEGORIES" : [

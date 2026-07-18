@@ -1,3 +1,13 @@
+/*{
+  "DESCRIPTION": "Multi Gradient",
+  "CREDIT": "",
+  "ISFVSN": "2",
+  "INPUTS": [],
+  "CATEGORIES": [
+    "Custom"
+  ]
+}*/
+
 /*
 {
   "CATEGORIES" : [

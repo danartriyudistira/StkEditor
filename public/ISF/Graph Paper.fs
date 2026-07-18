@@ -1,3 +1,13 @@
+/*{
+  "DESCRIPTION": "Graph Paper",
+  "CREDIT": "",
+  "ISFVSN": "2",
+  "INPUTS": [],
+  "CATEGORIES": [
+    "Custom"
+  ]
+}*/
+
 /*
 {
   "CATEGORIES" : [

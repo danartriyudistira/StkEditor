@@ -1,3 +1,18 @@
+/*{
+  "DESCRIPTION": "Flipbook",
+  "CREDIT": "",
+  "ISFVSN": "2",
+  "INPUTS": [
+    {
+      "NAME": "inputImage",
+      "TYPE": "image"
+    }
+  ],
+  "CATEGORIES": [
+    "Custom"
+  ]
+}*/
+
 /*
 {
   "CATEGORIES" : [
