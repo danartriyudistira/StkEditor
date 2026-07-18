@@ -10,6 +10,7 @@ import AudioPanel from './components/AudioPanel.jsx'
 import OscPanel from './components/OscPanel.jsx'
 import Toolbar from './components/Toolbar.jsx'
 import ISFLibrary from './components/ISFLibrary.jsx'
+import TabBar from './components/TabBar.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import './App.css'
 
@@ -39,14 +40,18 @@ const defaultCcValues = Object.fromEntries(
 )
 
 export default function App() {
-  const [code, setCode] = useState(DEFAULT_SHADER)
+  const [tabs, setTabs] = useState([{ id: 1, name: 'untitled.fs', code: DEFAULT_SHADER, modified: false }])
+  const [activeTabId, setActiveTabId] = useState(1)
+  const nextTabIdRef = useRef(2)
+  const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0]
+  const code = activeTab?.code || ''
+  const fileName = activeTab?.name || 'untitled.fs'
   const [isfMetadata, setIsfMetadata] = useState(null)
   const [uniformValues, setUniformValues] = useState({})
   const [ccValues, setCcValues] = useState(defaultCcValues)
   const [ccMapping, setCcMapping] = useState({})
   const [fxChain, setFxChain] = useState([])
   const [error, setError] = useState(null)
-  const [fileName, setFileName] = useState('untitled.fs')
   const [stkfxName, setStkfxName] = useState('')
   const [libraryFiles, setLibraryFiles] = useState([])
   const [showLibrary, setShowLibrary] = useState(false)
@@ -63,6 +68,35 @@ export default function App() {
   const wsRef = useRef(null)
   const webcamStreamRef = useRef(null)
   const synthRef = useRef(null)
+
+  // Tab helpers
+  const updateActiveTab = useCallback((updates) => {
+    setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, ...updates } : t))
+  }, [activeTabId])
+
+  const handleNewTab = useCallback(() => {
+    const id = nextTabIdRef.current++
+    const newTab = { id, name: 'untitled.fs', code: DEFAULT_SHADER, modified: false }
+    setTabs(prev => [...prev, newTab])
+    setActiveTabId(id)
+  }, [])
+
+  const handleCloseTab = useCallback((tabId) => {
+    setTabs(prev => {
+      if (prev.length <= 1) return prev
+      const idx = prev.findIndex(t => t.id === tabId)
+      const next = prev.filter(t => t.id !== tabId)
+      if (tabId === activeTabId) {
+        const newIdx = Math.min(idx, next.length - 1)
+        setActiveTabId(next[newIdx]?.id || next[0]?.id)
+      }
+      return next
+    })
+  }, [activeTabId])
+
+  const handleSwitchTab = useCallback((tabId) => {
+    setActiveTabId(tabId)
+  }, [])
 
   useEffect(() => {
     const handler = (e) => {
@@ -215,15 +249,14 @@ export default function App() {
   }, [])
 
   const handleNew = useCallback(() => {
-    setCode(DEFAULT_SHADER)
+    updateActiveTab({ code: DEFAULT_SHADER, name: 'untitled.fs', modified: false })
     setIsfMetadata(null)
     setUniformValues({})
     setCcMapping({})
     setFxChain([])
     setError(null)
-    setFileName('untitled.fs')
     setStkfxName('')
-  }, [])
+  }, [updateActiveTab])
 
   const handleOpen = useCallback(() => {
     const input = document.createElement('input')
@@ -234,14 +267,13 @@ export default function App() {
       if (!file) return
       const reader = new FileReader()
       reader.onload = (ev) => {
-        setCode(ev.target.result)
-        setFileName(file.name)
+        updateActiveTab({ code: ev.target.result, name: file.name, modified: false })
         setError(null)
       }
       reader.readAsText(file)
     }
     input.click()
-  }, [])
+  }, [updateActiveTab])
 
   const handleDownload = useCallback(() => {
     const blob = new Blob([code], { type: 'text/plain' })
@@ -258,11 +290,10 @@ export default function App() {
   }, [])
 
   const handleLibrarySelect = useCallback((source, name) => {
-    setCode(source)
-    setFileName(name)
+    updateActiveTab({ code: source, name: name, modified: false })
     setShowLibrary(false)
     setError(null)
-  }, [])
+  }, [updateActiveTab])
 
   const handleSaveStkfx = useCallback(() => {
     const data = {
@@ -467,7 +498,14 @@ export default function App() {
             style={{ background: `rgba(30, 30, 30, ${panelOpacity})` }}
           >
             <div className="editor-pane">
-              <ShaderEditor value={code} onChange={setCode} />
+              <TabBar
+                tabs={tabs}
+                activeTabId={activeTabId}
+                onSwitch={handleSwitchTab}
+                onClose={handleCloseTab}
+                onNew={handleNewTab}
+              />
+              <ShaderEditor value={code} onChange={(v) => updateActiveTab({ code: v, modified: true })} />
               {error && <div className="error-bar">{error}</div>}
             </div>
           </div>
