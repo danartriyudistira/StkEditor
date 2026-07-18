@@ -1480,44 +1480,10 @@
   overflow: hidden;
 }
 
-.tabbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 0 6px;
-  order: 0;
-  flex-shrink: 0;
-}
-
-.tabbar-action {
-  background: none;
-  border: none;
-  color: #999;
-  cursor: pointer;
-  font-size: 11px;
-  padding: 4px 8px;
-  border-radius: 3px;
-  white-space: nowrap;
-}
-
-.tabbar-action:hover {
-  background: #383838;
-  color: #ccc;
-}
-
-.tabbar-sep {
-  width: 1px;
-  height: 16px;
-  background: #444;
-  flex-shrink: 0;
-  order: 1;
-}
-
 .tabbar-scroll {
   display: flex;
   overflow-x: auto;
   flex: 1;
-  order: 2;
   scrollbar-width: none;
 }
 
@@ -1578,31 +1544,13 @@
   color: #ccc;
 }
 
-.tabbar-new {
-  background: none;
-  border: none;
-  color: #999;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 4px 10px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  order: 3;
-}
-
-.tabbar-new:hover {
-  background: #383838;
-  color: #ccc;
-}
-/* Tab Bar Actions */
 .tabbar-actions {
   display: flex;
   align-items: center;
-  padding: 0 4px;
   gap: 2px;
-  border-right: 1px solid #333;
+  padding: 0 6px;
+  flex-shrink: 0;
+  border-left: 1px solid #333;
 }
 
 .tabbar-action {
@@ -1621,9 +1569,19 @@
   color: #ccc;
 }
 
-.tabbar-sep {
-  width: 1px;
-  height: 16px;
-  background: #444;
-  margin: 0 4px;
+.tabbar-new {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 6px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.tabbar-new:hover {
+  background: #383838;
+  color: #ccc;
 }

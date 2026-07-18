@@ -11,12 +11,6 @@ export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, on
 
   return (
     <div className="tabbar">
-      <div className="tabbar-actions">
-        <button className="tabbar-action" onClick={onOpen} title="Open .fs file">Open</button>
-        <button className="tabbar-action" onClick={onSave} title="Save (overwrite)">Save</button>
-        <button className="tabbar-action" onClick={onDownload} title="Download .fs (Save As)">Download</button>
-      </div>
-      <div className="tabbar-sep" />
       <div className="tabbar-scroll" ref={scrollRef}>
         {tabs.map(tab => (
           <div
@@ -38,9 +32,12 @@ export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, on
           </div>
         ))}
       </div>
-      <button className="tabbar-new" onClick={onNew} title="New tab">
-        {'\u2795'}
-      </button>
+      <div className="tabbar-actions">
+        <button className="tabbar-action" onClick={onOpen} title="Open .fs file">Open</button>
+        <button className="tabbar-action" onClick={onSave} title="Save (overwrite)">Save</button>
+        <button className="tabbar-action" onClick={onDownload} title="Download .fs (Save As)">Download</button>
+        <button className="tabbar-new" onClick={onNew} title="New tab">{'\u2795'}</button>
+      </div>
     </div>
   )
 }
