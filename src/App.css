@@ -134,7 +134,7 @@
   justify-content: center;
   cursor: pointer;
   font-size: 12px;
-  transition: background 0.2s;
+  transition: background 0.2s, left 0.3s ease, right 0.3s ease;
   flex-shrink: 0;
 }
 
