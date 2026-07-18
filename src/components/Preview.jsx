@@ -151,6 +151,20 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
         ic.height = c.height
       }
 
+      // Update webcam texture every frame
+      if (r.valid) {
+        const srcType = sourceTypeRef.current
+        const srcEl = sourceElementRef.current
+        try {
+          if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
+            r.setValue('inputImage', flipSourceVertically(srcEl))
+          } else if (srcType === 'image' && srcEl && srcEl.complete && !srcEl._uploaded) {
+            r.setValue('inputImage', flipSourceVertically(srcEl))
+            srcEl._uploaded = true
+          }
+        } catch (_) {}
+      }
+
       try {
         r.draw(ic)
       } catch (_) {}
