@@ -161,13 +161,8 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
     }
 
     // Attach to selected input device or all devices
-    if (selectedInput) {
-      const device = midiAccess.inputs.get(selectedInput)
-      if (device) {
-        device.onmidimessage = handleMessage
-        return () => { device.onmidimessage = null }
-      }
-    } else {
+    if (selectedInput === 'all' || selectedInput === '' || !selectedInput) {
+      // Listen to all devices
       for (const input of midiAccess.inputs.values()) {
         input.onmidimessage = handleMessage
       }
@@ -175,6 +170,13 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
         for (const input of midiAccess.inputs.values()) {
           input.onmidimessage = null
         }
+      }
+    } else {
+      // Listen to specific device
+      const device = midiAccess.inputs.get(selectedInput)
+      if (device) {
+        device.onmidimessage = handleMessage
+        return () => { device.onmidimessage = null }
       }
     }
   }, [midiAccess, expanded, selectedInput, inputChannel, ccMapping, noteMapping, onCcChange, onTrigger])
@@ -226,7 +228,8 @@ export default function MidiPanel({ ccValues, onCcChange, triggers, onTrigger, f
                   value={selectedInput || ''}
                   onChange={e => setSelectedInput(e.target.value || null)}
                 >
-                  <option value="">All Devices</option>
+                  <option value="">None</option>
+                  <option value="all">All Devices</option>
                   {inputs.map(dev => (
                     <option key={dev.id} value={dev.id}>{dev.name}</option>
                   ))}
