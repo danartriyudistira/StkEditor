@@ -6,7 +6,7 @@ function noteName(note) {
   return names[note % 12] + Math.floor(note / 12 - 1)
 }
 
-export default function RandomGenPanel({ onTrigger, noteMapping }) {
+export default function RandomGenPanel({ onTrigger, noteMapping, onToggleRef, onChange }) {
   const [enabled, setEnabled] = useState(false)
   const [bpm, setBpm] = useState(120)
   const [noteDivider, setNoteDivider] = useState(1)
@@ -14,8 +14,29 @@ export default function RandomGenPanel({ onTrigger, noteMapping }) {
   const genRef = useRef(null)
   const onTriggerRef = useRef(onTrigger)
   const noteMappingRef = useRef(noteMapping)
+  const enabledRef = useRef(false)
 
-  // Keep refs fresh without re-running the generator useEffect
+  enabledRef.current = enabled
+
+  // Expose toggle function to parent
+  useEffect(() => {
+    if (onToggleRef) {
+      onToggleRef.current = () => {
+        const gen = genRef.current
+        if (!gen) return
+        if (enabledRef.current) {
+          gen.stop()
+          setEnabled(false)
+          onChange?.(false)
+        } else {
+          gen.start()
+          setEnabled(true)
+          onChange?.(true)
+        }
+      }
+    }
+  }, [onToggleRef, onChange])
+
   onTriggerRef.current = onTrigger
   noteMappingRef.current = noteMapping
 
@@ -48,11 +69,13 @@ export default function RandomGenPanel({ onTrigger, noteMapping }) {
     if (enabled) {
       gen.stop()
       setEnabled(false)
+      onChange?.(false)
     } else {
       gen.start()
       setEnabled(true)
+      onChange?.(true)
     }
-  }, [enabled])
+  }, [enabled, onChange])
 
   const handleBpm = useCallback((val) => {
     const v = parseInt(val)

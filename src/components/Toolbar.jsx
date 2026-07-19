@@ -16,6 +16,8 @@ export default function Toolbar({
   onSourceUpload,
   onSavePreset,
   onLoadPreset,
+  performanceMode,
+  onPerformanceToggle,
 }) {
   const fileInputRef = useRef(null)
   const [showConfig, setShowConfig] = useState(false)
@@ -139,6 +141,17 @@ export default function Toolbar({
             \u2699
           </button>
         </div>
+
+        <div className="toolbar-separator" />
+
+        {/* Performance Mode */}
+        <button
+          className={`toolbar-btn ${performanceMode ? 'performance-active' : ''}`}
+          onClick={onPerformanceToggle}
+          title="Performance Mode (fullscreen, keyboard-only)"
+        >
+          {performanceMode ? 'Exit Perf' : 'Performance'}
+        </button>
       </div>
 
       {/* Console Config Dialog */}

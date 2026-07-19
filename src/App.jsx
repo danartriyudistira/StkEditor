@@ -1,4 +1,4 @@
-﻿import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import ShaderEditor from './components/Editor.jsx'
 import Preview from './components/Preview.jsx'
 import Controls from './components/Controls.jsx'
@@ -9,6 +9,7 @@ import RandomGenPanel from './components/RandomGenPanel.jsx'
 import AudioPanel from './components/AudioPanel.jsx'
 import OscPanel from './components/OscPanel.jsx'
 import Toolbar from './components/Toolbar.jsx'
+import PerformanceOverlay from './components/PerformanceOverlay.jsx'
 import ISFLibrary from './components/ISFLibrary.jsx'
 import TabBar from './components/TabBar.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
@@ -67,11 +68,43 @@ export default function App() {
   const [panelOpacity, setPanelOpacity] = useState(0.92)
   const [sourceType, setSourceType] = useState('placeholder')
   const [sourceElement, setSourceElement] = useState(null)
+  const [performanceMode, setPerformanceMode] = useState(false)
+  const [showOverlay, setShowOverlay] = useState(false)
+  const [showPerfBar, setShowPerfBar] = useState(false)
+  const perfBarTimerRef = useRef(null)
+  const savedPanelsRef = useRef({ left: true, right: true })
+  const [pfRenderQuality, setPfRenderQuality] = useState('Full')
+  const [pfFps, setPfFps] = useState(60)
+  const [pfVolume, setPfVolume] = useState(50)
+  const [pfBpm, setPfBpm] = useState(120)
+  const [pfNoteDivider, setPfNoteDivider] = useState(2)
+  const [pfPresetIndex, setPfPresetIndex] = useState(0)
+  const [pfMidiLearnActive, setPfMidiLearnActive] = useState(false)
+  const [pfMidiChannel, setPfMidiChannel] = useState(0)
+  const [randomGenOn, setRandomGenOn] = useState(false)
+  const randomGenRef = useRef(null)
   const wsRef = useRef(null)
   const webcamStreamRef = useRef(null)
   const synthRef = useRef(null)
   const midiOutputRef = useRef(null)
   const midiChannelRef = useRef(0)
+
+  const handlePerformanceToggle = useCallback(() => {
+    setPerformanceMode(prev => {
+      const next = !prev
+      if (next) {
+        savedPanelsRef.current = { left: leftOpen, right: rightOpen }
+        setShowOverlay(false)
+        setLeftOpen(false)
+        setRightOpen(false)
+      } else {
+        setShowOverlay(false)
+        setLeftOpen(savedPanelsRef.current.left)
+        setRightOpen(savedPanelsRef.current.right)
+      }
+      return next
+    })
+  }, [leftOpen, rightOpen])
 
   // Tab helpers
   const updateActiveTab = useCallback((updates) => {
@@ -112,10 +145,25 @@ export default function App() {
       if (e.ctrlKey && e.key === '.') { e.preventDefault(); setRightOpen(v => !v) }
       if (e.ctrlKey && e.key === 's') { e.preventDefault(); handleExportStk() }
       if (e.ctrlKey && e.key === 'o') { e.preventDefault(); handleImportStk() }
+
+      if (performanceMode && !showOverlay) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          setShowOverlay(true)
+        } else if (e.key === 'Escape') {
+          e.preventDefault()
+          handlePerformanceToggle()
+        }
+      } else if (performanceMode && showOverlay) {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          setShowOverlay(false)
+        }
+      }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [])
+  }, [performanceMode, showOverlay, handlePerformanceToggle])
 
   useEffect(() => {
     const base = import.meta.env.BASE_URL || '/'
@@ -496,6 +544,39 @@ export default function App() {
     localStorage.setItem('consoleConfig', JSON.stringify(newConfig))
   }, [])
 
+  const handleOverlayClose = useCallback(() => {
+    setShowOverlay(false)
+  }, [])
+
+  const handlePerfBarEnter = useCallback(() => {
+    if (perfBarTimerRef.current) clearTimeout(perfBarTimerRef.current)
+    setShowPerfBar(true)
+  }, [])
+
+  const handlePerfBarLeave = useCallback(() => {
+    perfBarTimerRef.current = setTimeout(() => setShowPerfBar(false), 800)
+  }, [])
+
+  const handleOverlaySwitchTab = useCallback((tabId) => {
+    setActiveTabId(tabId)
+  }, [])
+
+  const handleOverlayPresetChange = useCallback((idx) => {
+    setPfPresetIndex(idx)
+    synthRef.current?.setPreset(idx)
+  }, [])
+
+  const handleOverlayToggleRandomGen = useCallback(() => {
+    randomGenRef.current?.()
+  }, [])
+
+  const handleOverlayVolumeChange = useCallback((val) => {
+    setPfVolume(val)
+    if (synthRef.current?.masterGain) {
+      synthRef.current.masterGain.gain.value = val / 100
+    }
+  }, [])
+
   const handleSendToConsole = useCallback(() => {
     const payload = JSON.stringify({
       type: 'shader',
@@ -548,7 +629,18 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div className="app">
+      <div className={`app${performanceMode ? ' performance-mode' : ''}`}>
+        {performanceMode ? (
+          <div
+            className={`perf-bar ${showPerfBar ? 'visible' : ''}`}
+            onMouseEnter={handlePerfBarEnter}
+            onMouseLeave={handlePerfBarLeave}
+          >
+            <button className="toolbar-btn performance-active" onClick={handlePerformanceToggle}>
+              Exit Perf
+            </button>
+          </div>
+        ) : (
         <Toolbar
           fileName={fileName}
           consoleConnected={consoleConnected}
@@ -565,7 +657,10 @@ export default function App() {
           sourceType={sourceType}
           onSourceChange={handleSourceChange}
           onSourceUpload={handleSourceUpload}
+          performanceMode={performanceMode}
+          onPerformanceToggle={handlePerformanceToggle}
         />
+        )}
 
         <div className="main">
           {/* Fullscreen Preview Background */}
@@ -582,6 +677,7 @@ export default function App() {
           </div>
 
           {/* Left Panel - Editor */}
+          {!performanceMode && (
           <div
             className={`left-panel${leftOpen ? '' : ' collapsed'}`}
             style={{ background: `rgba(30, 30, 30, ${panelOpacity})` }}
@@ -604,10 +700,11 @@ export default function App() {
               {error && <div className="error-bar">{error}</div>}
             </div>
           </div>
+          )}
 
           {/* Right Panel - Controls */}
           <div
-            className={`right-panel${rightOpen ? '' : ' collapsed'}`}
+            className={`right-panel${rightOpen ? '' : ' collapsed'}${performanceMode ? ' perf-hidden' : ''}`}
             style={{ background: `rgba(37, 37, 38, ${panelOpacity})` }}
           >
             <Controls
@@ -644,6 +741,8 @@ export default function App() {
             <RandomGenPanel
               onTrigger={handleTrigger}
               noteMapping={{}}
+              onToggleRef={randomGenRef}
+              onChange={setRandomGenOn}
             />
             <AudioPanel
               onSynthReady={handleSynthReady}
@@ -654,6 +753,8 @@ export default function App() {
           </div>
 
           {/* Toggle Buttons - always visible */}
+          {!performanceMode && (
+          <>
           <button
             className={`panel-toggle panel-toggle--left${leftOpen ? ' at-edge' : ''}`}
             onClick={() => setLeftOpen(v => !v)}
@@ -682,6 +783,8 @@ export default function App() {
             />
             <span>{Math.round(panelOpacity * 100)}%</span>
           </div>
+          </>
+          )}
         </div>
 
         {showLibrary && (
@@ -691,6 +794,40 @@ export default function App() {
             onClose={() => setShowLibrary(false)}
           />
         )}
+
+        <PerformanceOverlay
+          visible={performanceMode && showOverlay}
+          onClose={handleOverlayClose}
+          tabs={tabs}
+          activeTabId={activeTabId}
+          onSwitchTab={handleOverlaySwitchTab}
+          ccValues={ccValues}
+          onCcChange={handleCcValueChange}
+          randomGenOn={randomGenOn}
+          onToggleRandomGen={handleOverlayToggleRandomGen}
+          midiDeviceName={null}
+          midiConnected={false}
+          midiChannel={pfMidiChannel}
+          onMidiChannelChange={setPfMidiChannel}
+          presetIndex={pfPresetIndex}
+          onPresetChange={handleOverlayPresetChange}
+          volume={pfVolume}
+          onVolumeChange={handleOverlayVolumeChange}
+          bpm={pfBpm}
+          onBpmChange={setPfBpm}
+          noteDivider={pfNoteDivider}
+          onNoteDividerChange={setPfNoteDivider}
+          isfMetadata={isfMetadata}
+          isfValues={uniformValues}
+          onIsfValueChange={handleControlChange}
+          renderQuality={pfRenderQuality}
+          onRenderQualityChange={setPfRenderQuality}
+          fps={pfFps}
+          onFpsChange={setPfFps}
+          midiLearnActive={pfMidiLearnActive}
+          onToggleMidiLearn={() => setPfMidiLearnActive(v => !v)}
+          onImport={handleOpen}
+        />
       </div>
     </ErrorBoundary>
   )
