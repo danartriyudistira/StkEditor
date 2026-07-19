@@ -833,7 +833,7 @@ export default function App() {
           onFpsChange={setPfFps}
           midiLearnActive={pfMidiLearnActive}
           onToggleMidiLearn={() => setPfMidiLearnActive(v => !v)}
-          onImport={handleOpen}
+          onImport={handleImportStk}
         />
       </div>
     </ErrorBoundary>
