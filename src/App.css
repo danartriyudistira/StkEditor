@@ -866,6 +866,28 @@
   color: #4fc3f7;
 }
 
+.fx-footer-btn--isf {
+  border-color: #bb86fc;
+  color: #bb86fc;
+}
+
+.fx-footer-btn--isf:hover {
+  background: #3d2d4d;
+  color: #fff;
+}
+
+.fx-isf-badge {
+  display: inline-block;
+  background: #bb86fc;
+  color: #1a1a2e;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 2px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
 /* Source Picker */
 .source-picker {
   position: relative;
@@ -1877,3 +1899,4 @@
 .pf-row-slider .pf-label {
   min-width: calc(45px * var(--pf-s));
 }
+

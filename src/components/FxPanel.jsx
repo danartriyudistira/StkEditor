@@ -1,14 +1,14 @@
-﻿import { useState } from 'react'
-import { effects, getEffectsByCategory } from '../fx/effects.js'
+import { useState } from 'react'
+import { effects, getEffectById, getEffectsByCategory } from '../fx/effects.js'
 
 const CC_CHANNELS = [1, 2, 3, 4, 5, 6, 7, 8]
 
-export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkfx, onLoadStkfx }) {
+export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkfx, onLoadStkfx, onLoadIsf }) {
   const [expanded, setExpanded] = useState(false)
   const categories = getEffectsByCategory()
 
   function handleAddFx(effectId) {
-    const fx = effects.find(e => e.id === effectId)
+    const fx = getEffectById(effectId)
     if (!fx) return
     const usedCc = new Set((fxChain || []).map(f => f.cc))
     const freeCc = CC_CHANNELS.find(c => !usedCc.has(c))
@@ -127,7 +127,7 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
         <div className="fx-body">
           {fxChain && fxChain.length > 0 && (
             <div className="fx-chain">
-              {fxChain.map((fx, i) => (
+              {fxChain.map((fx, i) => { const fxDef = getEffectById(fx.id); return (
                 <div key={`${fx.id}-${i}`} className={`fx-item ${fx.enabled ? '' : 'fx-item--disabled'}`}>
                   <div className="fx-item-header">
                     <button
@@ -144,7 +144,7 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
                     >
                       CC
                     </button>
-                    <span className="fx-item-label">{fx.label}</span>
+                    <span className="fx-item-label">{fx.label}{fxDef?.isIsf && <span className="fx-isf-badge">ISF</span>}</span>
                     <select
                       className="fx-cc-select"
                       value={fx.cc}
@@ -197,7 +197,7 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
                   {fx.enabled && fx.paramValues && Object.keys(fx.paramValues).length > 0 && (
                     <div className="fx-params">
                       {Object.entries(fx.paramValues).map(([paramName, val]) => {
-                        const fxDef = effects.find(e => e.id === fx.id)
+                        const fxDef = getEffectById(fx.id)
                         const paramDef = fxDef?.params?.[paramName]
                         if (!paramDef) return null
                         const isCcMapped = !!fx.paramCc?.[paramName]
@@ -276,7 +276,7 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
                     </div>
                   )}
                 </div>
-              ))}
+              )})}
             </div>
           )}
 
@@ -299,6 +299,7 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
           </div>
 
           <div className="fx-footer">
+            {onLoadIsf && <button className="fx-footer-btn fx-footer-btn--isf" onClick={onLoadIsf}>Load ISF</button>}
             <button className="fx-footer-btn" onClick={onLoadStkfx}>Load FX</button>
             <button className="fx-footer-btn fx-footer-btn--save" onClick={onSaveStkfx}>Save FX</button>
           </div>
@@ -307,3 +308,4 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
     </div>
   )
 }
+

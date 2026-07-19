@@ -85,6 +85,7 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
   const fxChainRef = useRef(fxChain)
   const sourceTypeRef = useRef(sourceType)
   const sourceElementRef = useRef(sourceElement)
+  const hasInputImageRef = useRef(false)
 
   codeRef.current = code
   uniformValuesRef.current = uniformValues
@@ -152,7 +153,7 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
       }
 
       // Update webcam texture every frame
-      if (r.valid) {
+      if (r.valid && hasInputImageRef.current) {
         const srcType = sourceTypeRef.current
         const srcEl = sourceElementRef.current
         try {
@@ -222,26 +223,28 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
 
       renderer.loadSource(input)
 
-      // Safely set inputImage - fallback to placeholder on any error
-      try {
-        const srcType = sourceTypeRef.current
-        const srcEl = sourceElementRef.current
-        const ph = placeholderImageRef.current
+      // Check if shader has inputImage
+      const hasImageInput = (parser.inputs || []).some(i => i.TYPE === 'image')
+      hasInputImageRef.current = hasImageInput
 
-        if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
-          renderer.setValue('inputImage', flipSourceVertically(srcEl))
-        } else if (srcType === 'image' && srcEl && srcEl.complete) {
-          renderer.setValue('inputImage', flipSourceVertically(srcEl))
-        } else if (ph) {
-          renderer.setValue('inputImage', ph)
-        }
-      } catch (_) {
-        // Source image failed - try placeholder as last resort
+      // Only set inputImage when shader actually uses it
+      if (hasImageInput) {
         try {
-          if (placeholderImageRef.current) {
-            renderer.setValue('inputImage', placeholderImageRef.current)
+          const srcType = sourceTypeRef.current
+          const srcEl = sourceElementRef.current
+          const ph = placeholderImageRef.current
+          if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
+            renderer.setValue('inputImage', flipSourceVertically(srcEl))
+          } else if (srcType === 'image' && srcEl && srcEl.complete) {
+            renderer.setValue('inputImage', flipSourceVertically(srcEl))
+          } else if (ph) {
+            renderer.setValue('inputImage', ph)
           }
-        } catch (_) {}
+        } catch (_) {
+          try {
+            if (placeholderImageRef.current) renderer.setValue('inputImage', placeholderImageRef.current)
+          } catch (_) {}
+        }
       }
 
       onError?.(null)
@@ -257,7 +260,7 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
   // Update source when it changes
   useEffect(() => {
     const renderer = isfRendererRef.current
-    if (!renderer) return
+    if (!renderer || !hasInputImageRef.current) return
 
     const srcType = sourceTypeRef.current
     const srcEl = sourceElementRef.current
@@ -288,6 +291,7 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
     prevUniformsRef.current = key
 
     for (const [name, value] of Object.entries(uniformValues)) {
+      if (name.startsWith('u_cc')) continue
       try { renderer.setValue(name, value) } catch (_) {}
     }
   }, [uniformValues])
@@ -332,3 +336,7 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
     />
   )
 }
+
+
+
+

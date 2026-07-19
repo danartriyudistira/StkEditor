@@ -237,15 +237,44 @@ export const effects = [
   },
 ]
 
+// Dynamic registry for ISF-origin effects loaded at runtime
+const customEffects = new Map()
+
+/**
+ * Register a custom ISF effect for use in the FX chain.
+ * @param {string} id - Unique effect ID (e.g. 'isf_Bad_TV')
+ * @param {object} def - Effect definition matching builtin structure
+ */
+export function registerIsfEffect(id, def) {
+  customEffects.set(id, def)
+}
+
+/**
+ * Unregister a custom ISF effect.
+ * @param {string} id - Effect ID to remove
+ */
+export function unregisterIsfEffect(id) {
+  customEffects.delete(id)
+}
+
+/**
+ * Get all registered custom ISF effects.
+ * @returns {object[]} Array of custom effect definitions
+ */
+export function getCustomEffects() {
+  return Array.from(customEffects.values())
+}
+
 export function getEffectById(id) {
-  return effects.find(e => e.id === id)
+  return effects.find(e => e.id === id) || customEffects.get(id) || null
 }
 
 export function getEffectsByCategory() {
   const cats = {}
-  for (const fx of effects) {
+  for (const fx of [...effects, ...customEffects.values()]) {
     if (!cats[fx.category]) cats[fx.category] = []
     cats[fx.category].push(fx)
   }
   return cats
 }
+

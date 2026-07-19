@@ -1,4 +1,4 @@
-import { getEffectById } from './effects.js'
+﻿import { getEffectById } from './effects.js'
 
 const VERT = `
   attribute vec2 a_position;
@@ -278,3 +278,6 @@ export default class FxProcessor {
     }
   }
 }
+
+
+

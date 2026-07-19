@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+﻿import { useState, useCallback, useEffect, useRef } from 'react'
 import ShaderEditor from './components/Editor.jsx'
 import Preview from './components/Preview.jsx'
 import Controls from './components/Controls.jsx'
@@ -14,6 +14,8 @@ import ISFLibrary from './components/ISFLibrary.jsx'
 import TabBar from './components/TabBar.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { exportStk, importStk } from './lib/stkArchive.js'
+import { extractIsfMetadata, adaptIsfToFx, validateIsfForFx } from './fx/isfAdapter.js'
+import { registerIsfEffect } from './fx/effects.js'
 import './App.css'
 
 const DEFAULT_SHADER = `/*{
@@ -58,6 +60,7 @@ export default function App() {
   const [stkfxName, setStkfxName] = useState('')
   const [libraryFiles, setLibraryFiles] = useState([])
   const [showLibrary, setShowLibrary] = useState(false)
+  const [showIsfLibraryForFx, setShowIsfLibraryForFx] = useState(false)
   const [consoleConnected, setConsoleConnected] = useState(false)
   const [consoleConfig, setConsoleConfig] = useState(() => {
     try { return JSON.parse(localStorage.getItem('consoleConfig')) || { host: 'localhost', port: 8765 } } catch { return { host: 'localhost', port: 8765 } }
@@ -387,6 +390,57 @@ export default function App() {
     setShowLibrary(false)
     setError(null)
   }, [updateActiveTab])
+
+  const handleIsfSelectForFx = useCallback((source, name) => {
+    const metadata = extractIsfMetadata(source)
+    const validation = validateIsfForFx(metadata)
+    if (!validation.valid) {
+      setError(validation.reason)
+      setShowIsfLibraryForFx(false)
+      return
+    }
+
+    const id = 'isf_' + name.replace(/\.fs$/, '').replace(/[^a-zA-Z0-9]/g, '_')
+    const label = name.replace(/\.fs$/, '')
+    const category = 'ISF'
+
+    const { shader, params, warnings } = adaptIsfToFx(source, metadata)
+
+    const effectDef = {
+      id, label, category,
+      isIsf: true,
+      source,
+      params,
+      shader,
+    }
+
+    registerIsfEffect(id, effectDef)
+    
+
+    // Auto-add to chain
+    const usedCc = new Set((fxChain || []).map(fx => fx.cc))
+    const ccChannels = [1, 2, 3, 4, 5, 6, 7, 8]
+    const freeCc = ccChannels.find(cc => !usedCc.has(cc)) || 1
+
+    const newFx = {
+      id,
+      label,
+      cc: freeCc,
+      enabled: true,
+      isIsf: true,
+      isfSource: source,
+      category,
+      paramValues: Object.fromEntries(
+        Object.entries(params).map(([k, v]) => [k, v.default ?? 0])
+      ),
+      paramCc: {},
+      toggleCc: null,
+    }
+    setFxChain(prev => [...(prev || []), newFx])
+
+    setShowIsfLibraryForFx(false)
+    setError(null)
+  }, [fxChain])
 
   const handleSaveStkfx = useCallback(() => {
     const data = {
@@ -735,6 +789,7 @@ export default function App() {
               onLoadStkfx={handleLoadStkfx}
               onExportStk={handleExportStk}
               onImportStk={handleImportStk}
+              onLoadIsf={() => setShowIsfLibraryForFx(true)}
             />
             <MidiPanel
               ccValues={ccValues}
@@ -802,6 +857,13 @@ export default function App() {
           />
         )}
 
+        {showIsfLibraryForFx && (
+          <ISFLibrary
+            files={libraryFiles}
+            onSelect={handleIsfSelectForFx}
+            onClose={() => setShowIsfLibraryForFx(false)}
+          />
+        )}
         <PerformanceOverlay
           visible={performanceMode && showOverlay}
           onClose={handleOverlayClose}
@@ -839,3 +901,8 @@ export default function App() {
     </ErrorBoundary>
   )
 }
+
+
+
+
+
