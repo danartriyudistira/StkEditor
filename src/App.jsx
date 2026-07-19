@@ -153,6 +153,13 @@ export default function App() {
         } else if (e.key === 'Escape') {
           e.preventDefault()
           handlePerformanceToggle()
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+          e.preventDefault()
+          const currentIdx = tabs.findIndex(t => t.id === activeTabId)
+          if (currentIdx === -1) return
+          const dir = e.key === 'ArrowRight' ? 1 : -1
+          const nextIdx = (currentIdx + dir + tabs.length) % tabs.length
+          setActiveTabId(tabs[nextIdx].id)
         }
       } else if (performanceMode && showOverlay) {
         if (e.key === 'Escape') {
@@ -163,7 +170,7 @@ export default function App() {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [performanceMode, showOverlay, handlePerformanceToggle])
+  }, [performanceMode, showOverlay, handlePerformanceToggle, tabs, activeTabId])
 
   useEffect(() => {
     const base = import.meta.env.BASE_URL || '/'
