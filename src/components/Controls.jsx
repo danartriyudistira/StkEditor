@@ -1,4 +1,26 @@
-export default function Controls({ metadata, values, onChange }) {
+import { useState, useEffect, useRef } from 'react'
+import AnimationPopup from './AnimationPopup.jsx'
+import { computeAnimatedValue } from '../utils/animation.js'
+
+export default function Controls({ metadata, values, onChange, paramAnimation, onParamAnimationChange, bpm, onBpmChange }) {
+  const [animParam, setAnimParam] = useState(null)
+  const [animTick, setAnimTick] = useState(0)
+  const startTimeRef = useRef(Date.now())
+
+  const hasAnyAnim = Object.values(paramAnimation).some(c => c && c.mode !== 'off')
+
+  useEffect(() => {
+    if (!hasAnyAnim) return
+    let raf, frame = 0
+    function tick() {
+      frame++
+      if (frame % 2 === 0) setAnimTick(t => t + 1)
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [hasAnyAnim])
+
   if (!metadata || !metadata.inputs || metadata.inputs.length === 0) {
     return (
       <div className="controls-empty">
@@ -7,26 +29,60 @@ export default function Controls({ metadata, values, onChange }) {
     )
   }
 
+  function getDisplayValue(inputName) {
+    const config = paramAnimation?.[inputName]
+    if (!config || config.mode === 'off') return values[inputName]
+    const time = (Date.now() - startTimeRef.current) / 1000
+    return computeAnimatedValue(values[inputName], config, time, bpm)
+  }
+
   return (
     <div className="controls">
       {metadata.inputs.map((input) => (
         <ControlRow
           key={input.NAME}
           input={input}
-          value={values[input.NAME]}
+          value={getDisplayValue(input.NAME)}
           onChange={(val) => onChange?.(input.NAME, val)}
+          animConfig={paramAnimation?.[input.NAME]}
+          onAnimClick={() => setAnimParam(input.NAME)}
         />
       ))}
+
+      <div className="controls-bpm-row">
+        <label className="controls-bpm-label">BPM</label>
+        <input
+          type="range"
+          min={40}
+          max={200}
+          step={1}
+          value={bpm}
+          onChange={e => onBpmChange?.(parseFloat(e.target.value))}
+          className="controls-bpm-slider"
+        />
+        <span className="controls-bpm-value">{bpm}</span>
+      </div>
+
+      {animParam !== null && (
+        <AnimationPopup
+          paramName={animParam}
+          label={metadata.inputs.find(i => i.NAME === animParam)?.LABEL || animParam}
+          config={paramAnimation?.[animParam] || { mode: 'off', speed: 1, depth: 1, bpmSync: false, bpmDiv: 4 }}
+          onSave={onParamAnimationChange}
+          onClose={() => setAnimParam(null)}
+        />
+      )}
     </div>
   )
 }
 
-function ControlRow({ input, value, onChange }) {
+function ControlRow({ input, value, onChange, animConfig, onAnimClick }) {
   const label = input.LABEL || input.NAME
   const val = value ?? input.DEFAULT ?? 0
   const min = input.MIN ?? 0
   const max = input.MAX ?? 1
   const step = input.STEP ?? (max - min) / 100
+  const hasAnim = animConfig && animConfig.mode !== 'off'
 
   switch (input.TYPE) {
     case 'float':
@@ -40,8 +96,16 @@ function ControlRow({ input, value, onChange }) {
             step={step}
             value={val}
             onChange={(e) => onChange(parseFloat(e.target.value))}
+            className={hasAnim ? 'control-slider--anim' : ''}
           />
           <span className="control-value">{val.toFixed(3)}</span>
+          <button
+            className={`control-anim-btn${hasAnim ? ' active' : ''}`}
+            onClick={onAnimClick}
+            title="Animation settings"
+          >
+            {'\u2699'}
+          </button>
         </div>
       )
 
@@ -56,8 +120,16 @@ function ControlRow({ input, value, onChange }) {
             step={1}
             value={Math.round(val)}
             onChange={(e) => onChange(parseInt(e.target.value, 10))}
+            className={hasAnim ? 'control-slider--anim' : ''}
           />
           <span className="control-value">{Math.round(val)}</span>
+          <button
+            className={`control-anim-btn${hasAnim ? ' active' : ''}`}
+            onClick={onAnimClick}
+            title="Animation settings"
+          >
+            {'\u2699'}
+          </button>
         </div>
       )
 

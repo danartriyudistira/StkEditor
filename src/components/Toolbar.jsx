@@ -11,15 +11,11 @@ export default function Toolbar({
   onExportStk,
   consoleConnected,
   libraryFiles,
-  sourceType,
-  onSourceChange,
-  onSourceUpload,
   onSavePreset,
   onLoadPreset,
   performanceMode,
   onPerformanceToggle,
 }) {
-  const fileInputRef = useRef(null)
   const [showConfig, setShowConfig] = useState(false)
   const [configDraft, setConfigDraft] = useState({ host: '', port: '' })
   const [editing, setEditing] = useState(false)
@@ -78,49 +74,6 @@ export default function Toolbar({
       <div className="toolbar-actions">
         <button className="toolbar-btn" onClick={onImportStk} title="Import .stk project">Import</button>
         <button className="toolbar-btn" onClick={onExportStk} title="Export .stk project">Export</button>
-
-        <div className="toolbar-separator" />
-
-        {/* Source Input Picker */}
-        <div className="source-picker">
-          <button
-            className={`source-btn ${sourceType !== 'placeholder' ? 'active' : ''}`}
-            title="Source input for ISF shaders"
-          >
-            {sourceType === 'webcam' ? '\uD83D\uDCF7' : sourceType === 'image' ? '\uD83D\uDDBC\uFE0F' : '\uD83C\uDFA8'} Source
-          </button>
-          <div className="source-dropdown">
-            <button
-              className={sourceType === 'placeholder' ? 'active' : ''}
-              onClick={() => onSourceChange('placeholder')}
-            >
-              Placeholder
-            </button>
-            <button
-              className={sourceType === 'image' ? 'active' : ''}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Upload Image
-            </button>
-            <button
-              className={sourceType === 'webcam' ? 'active' : ''}
-              onClick={() => onSourceChange('webcam')}
-            >
-              Webcam
-            </button>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            style={{ display: 'none' }}
-            onChange={(e) => {
-              const file = e.target.files?.[0]
-              if (file) onSourceUpload(file)
-              e.target.value = ''
-            }}
-          />
-        </div>
 
         <div className="toolbar-separator" />
 

@@ -12,8 +12,10 @@ import Toolbar from './components/Toolbar.jsx'
 import PerformanceOverlay from './components/PerformanceOverlay.jsx'
 import ISFLibrary from './components/ISFLibrary.jsx'
 import TabBar from './components/TabBar.jsx'
+import SourcePopup from './components/SourcePopup.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { exportStk, importStk } from './lib/stkArchive.js'
+import { DEFAULT_CONFIG } from './utils/animation.js'
 import { extractIsfMetadata, adaptIsfToFx, validateIsfForFx } from './fx/isfAdapter.js'
 import { registerIsfEffect } from './fx/effects.js'
 import './App.css'
@@ -55,12 +57,15 @@ export default function App() {
   const [uniformValues, setUniformValues] = useState({})
   const [ccValues, setCcValues] = useState(defaultCcValues)
   const [ccMapping, setCcMapping] = useState({})
+  const [paramAnimation, setParamAnimation] = useState({})
+  const [bpm, setBpm] = useState(120)
   const [fxChain, setFxChain] = useState([])
   const [error, setError] = useState(null)
   const [stkfxName, setStkfxName] = useState('')
   const [libraryFiles, setLibraryFiles] = useState([])
   const [showLibrary, setShowLibrary] = useState(false)
   const [showIsfLibraryForFx, setShowIsfLibraryForFx] = useState(false)
+  const [showSourcePopup, setShowSourcePopup] = useState(false)
   const [consoleConnected, setConsoleConnected] = useState(false)
   const [consoleConfig, setConsoleConfig] = useState(() => {
     try { return JSON.parse(localStorage.getItem('consoleConfig')) || { host: 'localhost', port: 8765 } } catch { return { host: 'localhost', port: 8765 } }
@@ -71,6 +76,7 @@ export default function App() {
   const [panelOpacity, setPanelOpacity] = useState(0.92)
   const [sourceType, setSourceType] = useState('placeholder')
   const [sourceElement, setSourceElement] = useState(null)
+  const [uploadedImages, setUploadedImages] = useState([])
   const [performanceMode, setPerformanceMode] = useState(false)
   const [showOverlay, setShowOverlay] = useState(false)
   const [showPerfBar, setShowPerfBar] = useState(false)
@@ -240,6 +246,10 @@ export default function App() {
     setCcMapping(prev => ({ ...prev, [inputName]: channel }))
   }, [])
 
+  const handleParamAnimationChange = useCallback((paramName, config) => {
+    setParamAnimation(prev => ({ ...prev, [paramName]: config }))
+  }, [])
+
   const handleTrigger = useCallback((trigger) => {
     // Play sound via synth
     if (trigger.type === 'noteOn' && trigger.velocity > 0) {
@@ -291,6 +301,25 @@ export default function App() {
     }
   }, [])
 
+  const handleSourceSelectImage = useCallback((img) => {
+    setSourceType('image')
+    setSourceElement(img)
+  }, [])
+
+  function createColorbar() {
+    const canvas = document.createElement('canvas')
+    canvas.width = 512
+    canvas.height = 256
+    const ctx = canvas.getContext('2d')
+    const bars = ['#ffffff','#ffff00','#00ffff','#00ff00','#ff00ff','#ff0000','#0000ff','#000000']
+    const w = canvas.width / bars.length
+    bars.forEach((color, i) => {
+      ctx.fillStyle = color
+      ctx.fillRect(i * w, 0, w, canvas.height)
+    })
+    return canvas
+  }
+
   const handleSourceChange = useCallback((type) => {
     // Stop webcam if switching away
     if (type !== 'webcam' && webcamStreamRef.current) {
@@ -319,17 +348,22 @@ export default function App() {
       // Handled by file upload
     } else {
       setSourceType('placeholder')
-      setSourceElement(null)
+      setSourceElement(createColorbar())
     }
   }, [])
 
   const handleSourceUpload = useCallback((file) => {
+    const url = URL.createObjectURL(file)
     const img = new Image()
     img.onload = () => {
       setSourceType('image')
       setSourceElement(img)
+      setUploadedImages(prev => {
+        if (prev.some(i => i.name === file.name)) return prev
+        return [...prev, { name: file.name, url, element: img }]
+      })
     }
-    img.src = URL.createObjectURL(file)
+    img.src = url
   }, [])
 
   const handleNew = useCallback(() => {
@@ -482,10 +516,12 @@ export default function App() {
 
   const handleSavePreset = useCallback(() => {
     const preset = {
-      version: 1,
+      version: 2,
       shader: { code, fileName },
       cc: ccValues,
       ccMapping,
+      paramAnimation,
+      bpm,
       fxChain: fxChain || [],
       audio: {
         presetIndex: synthRef.current?.presetIndex || 0,
@@ -502,7 +538,7 @@ export default function App() {
     a.download = fileName.replace(/\\.[\\w]+$/, '.stk') || 'preset.stk'
     a.click()
     URL.revokeObjectURL(url)
-  }, [code, fileName, ccValues, ccMapping, fxChain, consoleConfig])
+  }, [code, fileName, ccValues, ccMapping, paramAnimation, bpm, fxChain, consoleConfig])
 
   const handleLoadPreset = useCallback(() => {
     const input = document.createElement('input')
@@ -521,6 +557,8 @@ export default function App() {
             if (data.shader?.fileName) setFileName(data.shader.fileName)
             if (data.cc) setCcValues(prev => ({ ...prev, ...data.cc }))
             if (data.ccMapping) setCcMapping(data.ccMapping)
+            if (data.paramAnimation) setParamAnimation(data.paramAnimation)
+            if (data.bpm) setBpm(data.bpm)
             if (data.fxChain) setFxChain(data.fxChain)
             if (data.console) {
               setConsoleConfig(data.console)
@@ -553,6 +591,8 @@ export default function App() {
         fxChain: fxChain || [],
         ccValues,
         ccMapping,
+        paramAnimation,
+        bpm,
         console: consoleConfig,
         audio: { presetIndex: synthRef.current?.presetIndex || 0 },
       })
@@ -565,7 +605,7 @@ export default function App() {
     } catch (e) {
       setError('Failed to export: ' + e.message)
     }
-  }, [projectName, tabs, ccValues, ccMapping, fxChain, consoleConfig])
+  }, [projectName, tabs, ccValues, ccMapping, paramAnimation, bpm, fxChain, consoleConfig])
 
   const handleImportStk = useCallback(() => {
     const input = document.createElement('input')
@@ -580,6 +620,8 @@ export default function App() {
         setTabs(project.tabs.length > 0 ? project.tabs : [{ id: 1, name: 'untitled.fs', code: DEFAULT_SHADER, modified: false }])
         if (project.ccValues) setCcValues(prev => ({ ...prev, ...project.ccValues }))
         if (project.ccMapping) setCcMapping(project.ccMapping)
+        if (project.paramAnimation) setParamAnimation(project.paramAnimation)
+        if (project.bpm) setBpm(project.bpm)
         if (project.fxChain) setFxChain(project.fxChain)
         if (project.console) {
           setConsoleConfig(project.console)
@@ -715,9 +757,6 @@ export default function App() {
           onConsoleConfigChange={handleConsoleConfigChange}
           onImportStk={handleImportStk}
           onExportStk={handleExportStk}
-          sourceType={sourceType}
-          onSourceChange={handleSourceChange}
-          onSourceUpload={handleSourceUpload}
           performanceMode={performanceMode}
           onPerformanceToggle={handlePerformanceToggle}
         />
@@ -734,6 +773,8 @@ export default function App() {
               onError={handleError}
               sourceType={sourceType}
               sourceElement={sourceElement}
+              paramAnimation={paramAnimation}
+              bpm={bpm}
             />
           </div>
 
@@ -756,6 +797,8 @@ export default function App() {
                 onRename={handleRename}
                 onLoadFromLibrary={handleLoadFromLibrary}
                 libraryFiles={libraryFiles}
+                sourceType={sourceType}
+                onSourceClick={() => setShowSourcePopup(true)}
               />
               <ShaderEditor value={code} onChange={(v) => updateActiveTab({ code: v, modified: true })} />
               {error && <div className="error-bar">{error}</div>}
@@ -772,6 +815,10 @@ export default function App() {
               metadata={isfMetadata}
               values={uniformValues}
               onChange={handleControlChange}
+              paramAnimation={paramAnimation}
+              onParamAnimationChange={handleParamAnimationChange}
+              bpm={bpm}
+              onBpmChange={setBpm}
             />
             <CcPanel
               inputs={isfMetadata?.inputs}
@@ -864,6 +911,19 @@ export default function App() {
             onClose={() => setShowIsfLibraryForFx(false)}
           />
         )}
+
+        {showSourcePopup && (
+          <SourcePopup
+            sourceType={sourceType}
+            sourceElement={sourceElement}
+            onSourceChange={handleSourceChange}
+            onSourceUpload={handleSourceUpload}
+            uploadedImages={uploadedImages}
+            onSourceSelectImage={handleSourceSelectImage}
+            onClose={() => setShowSourcePopup(false)}
+          />
+        )}
+
         <PerformanceOverlay
           visible={performanceMode && showOverlay}
           onClose={handleOverlayClose}

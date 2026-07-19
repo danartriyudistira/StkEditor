@@ -1,6 +1,6 @@
 ﻿import { useRef, useEffect, useState } from 'react'
 
-export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, onOpen, onExport, onDownload, onRename, onLoadFromLibrary, libraryFiles }) {
+export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, onOpen, onExport, onDownload, onRename, onLoadFromLibrary, libraryFiles, sourceType, onSourceClick }) {
   const scrollRef = useRef(null)
   const [editingId, setEditingId] = useState(null)
   const [editValue, setEditValue] = useState('')
@@ -81,6 +81,13 @@ export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, on
         {libraryFiles && libraryFiles.length > 0 && (
           <button className="tabbar-action" onClick={onLoadFromLibrary} title="Browse ISF library">Library</button>
         )}
+        <button
+          className={`tabbar-action source-btn ${sourceType !== 'placeholder' ? 'active' : ''}`}
+          onClick={onSourceClick}
+          title="Source input for ISF shaders"
+        >
+          Source
+        </button>
         <button className="tabbar-action" onClick={onDownload} title="Download .fs (Save As)">Download</button>
       </div>
     </div>

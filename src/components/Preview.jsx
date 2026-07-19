@@ -1,6 +1,7 @@
 ﻿import { useRef, useEffect, useCallback } from 'react'
 import { Renderer, Parser } from 'interactive-shader-format'
 import FxProcessor from '../fx/FxProcessor.js'
+import { computeAnimatedValue } from '../utils/animation.js'
 
 function wrapGLSL(code) {
   const trimmed = code.trimLeft()
@@ -70,7 +71,7 @@ function flipSourceVertically(source) {
   return flipCanvas
 }
 
-export default function Preview({ code, uniformValues, fxChain, onMetadata, onError, sourceType, sourceElement }) {
+export default function Preview({ code, uniformValues, fxChain, onMetadata, onError, sourceType, sourceElement, paramAnimation, bpm }) {
   const canvasRef = useRef(null)
   const isfCanvasRef = useRef(null)
   const isfRendererRef = useRef(null)
@@ -86,12 +87,16 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
   const sourceTypeRef = useRef(sourceType)
   const sourceElementRef = useRef(sourceElement)
   const hasInputImageRef = useRef(false)
+  const paramAnimationRef = useRef(paramAnimation)
+  const bpmRef = useRef(bpm)
 
   codeRef.current = code
   uniformValuesRef.current = uniformValues
   fxChainRef.current = fxChain
   sourceTypeRef.current = sourceType
   sourceElementRef.current = sourceElement
+  paramAnimationRef.current = paramAnimation
+  bpmRef.current = bpm
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -152,16 +157,43 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
         ic.height = c.height
       }
 
-      // Update webcam texture every frame
+      const ccValues = uniformValuesRef.current || {}
+      const animCfg = paramAnimationRef.current || {}
+      const currentBpm = bpmRef.current || 120
+      const chain = fxChainRef.current || []
+      const time = (Date.now() - (r.startTime || Date.now())) / 1000
+
+      const animated = { ...ccValues }
+      for (const key of Object.keys(animated)) {
+        if (key.startsWith('u_cc')) continue
+        const cfg = animCfg[key]
+        if (cfg && cfg.mode !== 'off') {
+          animated[key] = computeAnimatedValue(animated[key], cfg, time, currentBpm)
+        }
+      }
+
+      // Update uniforms on ISF renderer
+      if (r.valid) {
+        try {
+          for (const key of Object.keys(animated)) {
+            if (key.startsWith('u_cc')) continue
+            if (key === 'inputImage') continue
+            if (animated[key] !== undefined) {
+              r.setValue(key, animated[key])
+            }
+          }
+        } catch (_) {}
+      }
+
+      // Update inputImage
       if (r.valid && hasInputImageRef.current) {
         const srcType = sourceTypeRef.current
         const srcEl = sourceElementRef.current
         try {
           if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
             r.setValue('inputImage', flipSourceVertically(srcEl))
-          } else if (srcType === 'image' && srcEl && srcEl.complete && !srcEl._uploaded) {
+          } else if ((srcType === 'image' || srcType === 'placeholder') && srcEl) {
             r.setValue('inputImage', flipSourceVertically(srcEl))
-            srcEl._uploaded = true
           }
         } catch (_) {}
       }
@@ -178,11 +210,7 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 
-        const ccValues = uniformValuesRef.current || {}
-        const chain = fxChainRef.current || []
-        const time = (Date.now() - (r.startTime || Date.now())) / 1000
-
-        fx.process(isfTextureRef.current, chain, ccValues, time, c.width, c.height)
+        fx.process(isfTextureRef.current, chain, animated, time, c.width, c.height)
       } catch (e) {
         console.warn('FxProcessor error:', e)
       }
@@ -235,7 +263,7 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
           const ph = placeholderImageRef.current
           if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
             renderer.setValue('inputImage', flipSourceVertically(srcEl))
-          } else if (srcType === 'image' && srcEl && srcEl.complete) {
+          } else if ((srcType === 'image' || srcType === 'placeholder') && srcEl) {
             renderer.setValue('inputImage', flipSourceVertically(srcEl))
           } else if (ph) {
             renderer.setValue('inputImage', ph)
@@ -269,7 +297,7 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
     try {
       if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
         renderer.setValue('inputImage', flipSourceVertically(srcEl))
-      } else if (srcType === 'image' && srcEl && srcEl.complete) {
+      } else if ((srcType === 'image' || srcType === 'placeholder') && srcEl) {
         renderer.setValue('inputImage', flipSourceVertically(srcEl))
       } else if (ph) {
         renderer.setValue('inputImage', ph)
