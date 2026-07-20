@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import RandomNoteGenerator from '../audio/randomGen.js'
+import Slider from './Slider.jsx'
 
 function noteName(note) {
   const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
@@ -113,12 +114,12 @@ export default function RandomGenPanel({ onTrigger, noteMapping, onToggleRef, on
 
           <div className="rndgen-control">
             <label>BPM</label>
-            <input
-              type="range"
+            <Slider
+              value={bpm}
               min={40}
               max={240}
-              value={bpm}
-              onChange={e => handleBpm(e.target.value)}
+              step={1}
+              onChange={handleBpm}
             />
             <span className="rndgen-value">{bpm}</span>
           </div>

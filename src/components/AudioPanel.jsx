@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import Synthesizer from '../audio/synthesizer.js'
+import Slider from './Slider.jsx'
 
 export default function AudioPanel({ onSynthReady }) {
   const [expanded, setExpanded] = useState(false)
@@ -106,12 +107,12 @@ export default function AudioPanel({ onSynthReady }) {
 
           <div className="audio-control">
             <label>Volume</label>
-            <input
-              type="range"
+            <Slider
+              value={volume}
               min={0}
               max={100}
-              value={volume}
-              onChange={e => handleVolume(e.target.value)}
+              step={1}
+              onChange={handleVolume}
             />
             <span className="audio-value">{volume}%</span>
           </div>

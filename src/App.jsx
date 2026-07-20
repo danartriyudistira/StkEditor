@@ -14,6 +14,7 @@ import ISFLibrary from './components/ISFLibrary.jsx'
 import TabBar from './components/TabBar.jsx'
 import SourcePopup from './components/SourcePopup.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import Slider from './components/Slider.jsx'
 import { exportStk, importStk } from './lib/stkArchive.js'
 import { DEFAULT_CONFIG } from './utils/animation.js'
 import { extractIsfMetadata, adaptIsfToFx, validateIsfForFx } from './fx/isfAdapter.js'
@@ -73,6 +74,7 @@ export default function App() {
   const [showIsfLibraryForFx, setShowIsfLibraryForFx] = useState(false)
   const [showHydraLibrary, setShowHydraLibrary] = useState(false)
   const [showSourcePopup, setShowSourcePopup] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
   const [consoleConnected, setConsoleConnected] = useState(false)
   const [consoleConfig, setConsoleConfig] = useState(() => {
     try { return JSON.parse(localStorage.getItem('consoleConfig')) || { host: 'localhost', port: 8765 } } catch { return { host: 'localhost', port: 8765 } }
@@ -104,6 +106,10 @@ export default function App() {
   const synthRef = useRef(null)
   const midiOutputRef = useRef(null)
   const midiChannelRef = useRef(0)
+  const handleRefresh = useCallback(() => {
+    setRefreshKey(k => k + 1)
+  }, [])
+
   const handlePerformanceToggle = useCallback(() => {
     setPerformanceMode(prev => {
       const next = !prev
@@ -699,6 +705,7 @@ export default function App() {
         <div className="main">
           <div className="preview-bg">
             <Preview
+              key={refreshKey}
               code={code}
               uniformValues={allUniformValues}
               fxChain={fxChain}
@@ -753,6 +760,7 @@ export default function App() {
                   onClick={() => handleSwitchTabType('hydra')}
                   title="Switch to Hydra mode"
                 >Hydra</button>
+                <button className="editor-refresh" onClick={handleRefresh} title="Refresh shader">⟳</button>
               </div>
             </div>
           </div>
@@ -842,13 +850,12 @@ export default function App() {
           </button>
           <div className="opacity-control">
             <label title="Panel opacity">Op</label>
-            <input
-              type="range"
-              min="0.1"
-              max="1"
-              step="0.01"
+            <Slider
               value={panelOpacity}
-              onChange={(e) => setPanelOpacity(parseFloat(e.target.value))}
+              min={0.1}
+              max={1}
+              step={0.01}
+              onChange={setPanelOpacity}
             />
             <span>{Math.round(panelOpacity * 100)}%</span>
           </div>

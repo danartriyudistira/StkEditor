@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { effects, getEffectById, getEffectsByCategory } from '../fx/effects.js'
 import ParameterPopup from './ParameterPopup.jsx'
+import Slider from './Slider.jsx'
 
 const CC_CHANNELS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
@@ -171,13 +172,12 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
                               )
                             default: // float, long, and others use slider
                               return (
-                                <input
-                                  type="range"
+                                <Slider
+                                  value={displayVal}
                                   min={paramDef.min}
                                   max={paramDef.max}
                                   step={paramDef.step}
-                                  value={displayVal}
-                                  onChange={e => handleParamChange(i, paramName, parseFloat(e.target.value))}
+                                  onChange={(v) => handleParamChange(i, paramName, v)}
                                 />
                               )
                           }
@@ -285,15 +285,14 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
                       </div>
                       <div className="anim-popup-row">
                         <label>Min</label>
-                        <input
-                          type="range"
+                        <Slider
+                          value={fx.toggleCc.min}
                           min={0}
                           max={0.95}
                           step={0.01}
-                          value={fx.toggleCc.min}
-                          onChange={e => {
+                          onChange={(v) => {
                             const next = [...(fxChain || [])]
-                            const toggleCc = { ...fx.toggleCc, min: parseFloat(e.target.value) }
+                            const toggleCc = { ...fx.toggleCc, min: v }
                             if (toggleCc.min >= toggleCc.max) toggleCc.max = Math.min(1, toggleCc.min + 0.05)
                             next[activeFxSettings] = { ...next[activeFxSettings], toggleCc }
                             onFxChainChange?.(next)
@@ -303,15 +302,14 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
                       </div>
                       <div className="anim-popup-row">
                         <label>Max</label>
-                        <input
-                          type="range"
+                        <Slider
+                          value={fx.toggleCc.max}
                           min={0.05}
                           max={1}
                           step={0.01}
-                          value={fx.toggleCc.max}
-                          onChange={e => {
+                          onChange={(v) => {
                             const next = [...(fxChain || [])]
-                            const toggleCc = { ...fx.toggleCc, max: parseFloat(e.target.value) }
+                            const toggleCc = { ...fx.toggleCc, max: v }
                             if (toggleCc.max <= toggleCc.min) toggleCc.min = Math.max(0, toggleCc.max - 0.05)
                             next[activeFxSettings] = { ...next[activeFxSettings], toggleCc }
                             onFxChainChange?.(next)

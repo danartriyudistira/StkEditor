@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import Slider from './Slider.jsx'
 
 const MODES = [
   { value: 'off', label: 'Off' },
@@ -115,13 +116,12 @@ export default function ParameterPopup({
                 ) : (
                   <div className="anim-popup-row">
                     <label>Speed (Hz)</label>
-                    <input
-                      type="range"
+                    <Slider
+                      value={animConfig?.speed || 1}
                       min={0.01}
                       max={20}
                       step={0.01}
-                      value={animConfig?.speed || 1}
-                      onChange={e => setAnimField('speed', parseFloat(e.target.value))}
+                      onChange={(v) => setAnimField('speed', v)}
                     />
                     <span className="anim-popup-value">{(animConfig?.speed || 1).toFixed(2)}</span>
                   </div>
@@ -129,25 +129,23 @@ export default function ParameterPopup({
 
                 <div className="anim-popup-row">
                   <label>Min</label>
-                  <input
-                    type="range"
+                  <Slider
+                    value={animConfig?.min ?? 0}
                     min={paramMin}
                     max={paramMax}
                     step={(paramMax - paramMin) / 100 || 0.01}
-                    value={animConfig?.min ?? 0}
-                    onChange={e => setAnimField('min', parseFloat(e.target.value))}
+                    onChange={(v) => setAnimField('min', v)}
                   />
                   <span className="anim-popup-value">{(animConfig?.min ?? 0).toFixed(3)}</span>
                 </div>
                 <div className="anim-popup-row">
                   <label>Max</label>
-                  <input
-                    type="range"
+                  <Slider
+                    value={animConfig?.max ?? 1}
                     min={paramMin}
                     max={paramMax}
                     step={(paramMax - paramMin) / 100 || 0.01}
-                    value={animConfig?.max ?? 1}
-                    onChange={e => setAnimField('max', parseFloat(e.target.value))}
+                    onChange={(v) => setAnimField('max', v)}
                   />
                   <span className="anim-popup-value">{(animConfig?.max ?? 1).toFixed(3)}</span>
                 </div>

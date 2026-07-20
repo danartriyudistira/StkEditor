@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import Slider from './Slider.jsx'
 
 const CC_CHANNELS = [1, 2, 3, 4, 5, 6, 7, 8]
 
@@ -54,16 +55,14 @@ export default function CcPanel({ inputs, mapping, parameterConfig, values, onVa
             {CC_CHANNELS.map(ch => (
               <div key={ch} className="cc-channel">
                 <label className="cc-label">CC{ch}</label>
-                <input
-                  type="range"
+                <Slider
+                  value={values?.[`u_cc${ch}`] ?? 0.5}
                   min={0}
                   max={1}
                   step={0.01}
-                  value={values?.[`u_cc${ch}`] ?? 0.5}
-                  onChange={e => handleCcChange(ch, parseFloat(e.target.value))}
-                  className="cc-slider"
+                  onChange={(v) => handleCcChange(ch, v)}
                 />
-                <span className="cc-value">
+                <span className="td-slider-control-value" style={{ color: '#4fc3f7' }}>
                   {(values?.[`u_cc${ch}`] ?? 0.5).toFixed(3)}
                 </span>
                 {ccFxLabels[ch] && ccFxLabels[ch].length > 0 && (

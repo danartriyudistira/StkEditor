@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import ParameterPopup from './ParameterPopup.jsx'
+import Slider from './Slider.jsx'
 import { computeAnimatedValue } from '../utils/animation.js'
 
 export default function Controls({
@@ -58,14 +59,12 @@ export default function Controls({
       {hasAnyAnim && (
         <div className="controls-bpm-row">
           <label className="controls-bpm-label">BPM</label>
-          <input
-            type="range"
+          <Slider
+            value={bpm}
             min={40}
             max={200}
             step={1}
-            value={bpm}
-            onChange={e => onBpmChange?.(parseFloat(e.target.value))}
-            className="controls-bpm-slider"
+            onChange={onBpmChange}
           />
           <span className="controls-bpm-value">{bpm}</span>
         </div>
@@ -109,16 +108,15 @@ function ControlRow({ input, value, onChange, animConfig, paramConfig, onSetting
       return (
         <div className="control-row">
           <label>{label}</label>
-          <input
-            type="range"
+          <Slider
+            value={val}
             min={min}
             max={max}
             step={step}
-            value={val}
-            onChange={(e) => onChange(parseFloat(e.target.value))}
-            className={hasAnim ? 'control-slider--anim' : ''}
+            onChange={onChange}
+            className={hasAnim ? 'td-slider--anim' : ''}
           />
-          <span className="control-value">{val.toFixed(3)}</span>
+          <span className="td-slider-control-value">{val.toFixed(3)}</span>
           <button
             className={btnClass}
             onClick={onSettingsClick}
@@ -133,16 +131,15 @@ function ControlRow({ input, value, onChange, animConfig, paramConfig, onSetting
       return (
         <div className="control-row">
           <label>{label}</label>
-          <input
-            type="range"
+          <Slider
+            value={Math.round(val)}
             min={Math.round(min)}
             max={Math.round(max)}
             step={1}
-            value={Math.round(val)}
-            onChange={(e) => onChange(parseInt(e.target.value, 10))}
-            className={hasAnim ? 'control-slider--anim' : ''}
+            onChange={(v) => onChange(Math.round(v))}
+            className={hasAnim ? 'td-slider--anim' : ''}
           />
-          <span className="control-value">{Math.round(val)}</span>
+          <span className="td-slider-control-value">{Math.round(val)}</span>
           <button
             className={btnClass}
             onClick={onSettingsClick}
@@ -188,26 +185,24 @@ function ControlRow({ input, value, onChange, animConfig, paramConfig, onSetting
         <div className="control-row control-row--point">
           <label>{label}</label>
           <div className="point-inputs">
-            <input
-              type="range"
+            <Slider
+              value={val?.[0] ?? 0}
               min={min}
               max={max}
               step={step}
-              value={val?.[0] ?? 0}
-              onChange={(e) => {
-                const v = val || [0, 0]
-                onChange([parseFloat(e.target.value), v[1]])
+              onChange={(v) => {
+                const cur = val || [0, 0]
+                onChange([v, cur[1]])
               }}
             />
-            <input
-              type="range"
+            <Slider
+              value={val?.[1] ?? 0}
               min={min}
               max={max}
               step={step}
-              value={val?.[1] ?? 0}
-              onChange={(e) => {
-                const v = val || [0, 0]
-                onChange([v[0], parseFloat(e.target.value)])
+              onChange={(v) => {
+                const cur = val || [0, 0]
+                onChange([cur[0], v])
               }}
             />
           </div>
