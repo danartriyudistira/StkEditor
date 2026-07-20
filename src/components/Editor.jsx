@@ -76,9 +76,13 @@ function registerGLSL(monaco) {
   })
 }
 
-export default function ShaderEditor({ value, onChange }) {
+export default function ShaderEditor({ value, onChange, onReady }) {
   function handleBeforeMount(monaco) {
     registerGLSL(monaco)
+  }
+
+  function handleMount(editor) {
+    onReady?.(editor)
   }
 
   return (
@@ -89,6 +93,7 @@ export default function ShaderEditor({ value, onChange }) {
       value={value}
       onChange={onChange}
       beforeMount={handleBeforeMount}
+      onMount={handleMount}
       options={{
         minimap: { enabled: false },
         fontSize: 14,
@@ -97,6 +102,7 @@ export default function ShaderEditor({ value, onChange }) {
         automaticLayout: true,
         wordWrap: 'on',
         tabSize: 2,
+        contextmenu: false,
       }}
     />
   )

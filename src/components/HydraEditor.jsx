@@ -98,10 +98,11 @@ function ensureLanguageRegistered(monaco) {
   })
 }
 
-export default function HydraEditor({ value, onChange }) {
+export default function HydraEditor({ value, onChange, onReady }) {
   function handleMount(editor, monaco) {
     ensureLanguageRegistered(monaco)
     monaco.editor.setTheme('hydra-dark')
+    onReady?.(editor)
     editor.focus()
   }
 
@@ -123,6 +124,7 @@ export default function HydraEditor({ value, onChange }) {
         automaticLayout: true,
         tabSize: 2,
         renderWhitespace: 'none',
+        contextmenu: false,
         bracketPairColorization: { enabled: true },
       }}
     />

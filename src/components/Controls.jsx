@@ -7,7 +7,8 @@ export default function Controls({
   metadata, values, onChange,
   paramAnimation, onParamAnimationChange,
   parameterConfig, onParameterConfigChange, onParamOscChange,
-  bpm, onBpmChange
+  bpm, onBpmChange,
+  hydraParams, engineMode,
 }) {
   const [activeParam, setActiveParam] = useState(null)
   const [animTick, setAnimTick] = useState(0)
@@ -27,24 +28,38 @@ export default function Controls({
     return () => cancelAnimationFrame(raf)
   }, [hasAnyAnim])
 
-  if (!metadata || !metadata.inputs || metadata.inputs.length === 0) {
+  const isHydra = engineMode === 'hydra'
+
+  const inputs = isHydra
+    ? Object.entries(hydraParams || {}).map(([name, p]) => ({
+        NAME: name,
+        LABEL: name,
+        MIN: p.min,
+        MAX: p.max,
+        DEFAULT: p.default,
+        TYPE: 'float',
+        STEP: (p.max - p.min) / 100 || 0.01,
+      }))
+    : metadata?.inputs
+
+  if (!inputs || inputs.length === 0) {
     return (
       <div className="controls-empty">
-        No inputs
+        {isHydra ? 'Right-click a number and choose Create slider' : 'No inputs'}
       </div>
     )
   }
 
   function getDisplayValue(inputName) {
     const config = paramAnimation?.[inputName]
-    if (!config || config.mode === 'off') return values[inputName]
+    if (!config || config.mode === 'off') return values?.[inputName] ?? 0
     const time = (Date.now() - startTimeRef.current) / 1000
-    return computeAnimatedValue(values[inputName], config, time, bpm, inputName)
+    return computeAnimatedValue(values?.[inputName] ?? 0, config, time, bpm, inputName)
   }
 
   return (
     <div className="controls">
-      {metadata.inputs.map((input) => (
+      {inputs.map((input) => (
         <ControlRow
           key={input.NAME}
           input={input}
@@ -71,7 +86,7 @@ export default function Controls({
       )}
 
       {activeParam !== null && (() => {
-        const input = metadata.inputs.find(i => i.NAME === activeParam)
+        const input = inputs.find(i => i.NAME === activeParam)
         const cfg = parameterConfig?.[activeParam] || {}
         return (
           <ParameterPopup

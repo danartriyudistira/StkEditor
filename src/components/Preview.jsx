@@ -57,7 +57,7 @@ function flipSourceVertically(source) {
   return flipCanvas
 }
 
-export default function Preview({ code, uniformValues, fxChain, onMetadata, onError, sourceType, sourceElement, paramAnimation, bpm, engineMode }) {
+export default function Preview({ code, uniformValues, hydraParams, fxChain, onMetadata, onError, sourceType, sourceElement, paramAnimation, bpm, engineMode }) {
   const canvasRef = useRef(null)
   const engineRef = useRef(null)
   const fxProcessorRef = useRef(null)
@@ -70,6 +70,7 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
   const paramAnimationRef = useRef(paramAnimation)
   const bpmRef = useRef(bpm)
   const engineModeRef = useRef(engineMode)
+  const hydraParamsRef = useRef(hydraParams)
   const placeholderImageRef = useRef(null)
 
   codeRef.current = code
@@ -80,6 +81,7 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
   paramAnimationRef.current = paramAnimation
   bpmRef.current = bpm
   engineModeRef.current = engineMode
+  hydraParamsRef.current = hydraParams
 
   // Initialize engine + render loop
   useEffect(() => {
@@ -159,13 +161,17 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
       const animCfg = paramAnimationRef.current || {}
       const currentBpm = bpmRef.current || 120
       const chain = fxChainRef.current || []
+      const hydraParamsRefCurrent = hydraParamsRef.current || {}
 
       // Use engine's startTime for consistent time calculation
       const startTime = eng.startTime || (eng.startTime = Date.now())
       const time = (Date.now() - startTime) / 1000
 
-      // Compute animated values
+      // Compute animated values (ISF + Hydra params)
       const animated = { ...ccValues }
+      for (const [name, p] of Object.entries(hydraParamsRefCurrent)) {
+        animated[name] = p.value
+      }
       for (const key of Object.keys(animated)) {
         if (key.startsWith('u_cc')) continue
         const cfg = animCfg[key]
@@ -284,6 +290,15 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
       try { engine.setValue(name, value) } catch (_) {}
     }
   }, [uniformValues])
+
+  // Apply hydra params
+  useEffect(() => {
+    const engine = engineRef.current
+    if (!engine || engine.name !== 'hydra' || !hydraParams) return
+    for (const [name, value] of Object.entries(hydraParams)) {
+      try { engine.setValue(name, value) } catch (_) {}
+    }
+  }, [hydraParams])
 
   // Resize observer
   useEffect(() => {

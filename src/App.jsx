@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import ShaderEditor from './components/Editor.jsx'
 import Preview from './components/Preview.jsx'
 import Controls from './components/Controls.jsx'
@@ -8,6 +8,7 @@ import MidiPanel from './components/MidiPanel.jsx'
 import RandomGenPanel from './components/RandomGenPanel.jsx'
 import AudioPanel from './components/AudioPanel.jsx'
 import OscPanel from './components/OscPanel.jsx'
+
 import Toolbar from './components/Toolbar.jsx'
 import PerformanceOverlay from './components/PerformanceOverlay.jsx'
 import ISFLibrary from './components/ISFLibrary.jsx'
@@ -15,6 +16,7 @@ import TabBar from './components/TabBar.jsx'
 import SourcePopup from './components/SourcePopup.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Slider from './components/Slider.jsx'
+import ModuleMenu from './components/ModuleMenu.jsx'
 import { exportStk, importStk } from './lib/stkArchive.js'
 import { DEFAULT_CONFIG } from './utils/animation.js'
 import { extractIsfMetadata, adaptIsfToFx, validateIsfForFx } from './fx/isfAdapter.js'
@@ -52,7 +54,7 @@ const defaultCcValues = Object.fromEntries(
 
 export default function App() {
   const [projectName, setProjectName] = useState('untitled')
-  const [tabs, setTabs] = useState([{ id: 1, name: 'untitled.fs', code: DEFAULT_SHADER, type: 'isf', modified: false }])
+  const [tabs, setTabs] = useState([{ id: 1, name: 'untitled.js', code: DEFAULT_HYDRA_CODE, type: 'hydra', modified: false }])
   const [activeTabId, setActiveTabId] = useState(1)
   const nextTabIdRef = useRef(2)
   const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0]
@@ -75,6 +77,53 @@ export default function App() {
   const [showHydraLibrary, setShowHydraLibrary] = useState(false)
   const [showSourcePopup, setShowSourcePopup] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [moduleMenu, setModuleMenu] = useState(null)
+  const editorRef = useRef(null)
+  const [hydraParams, setHydraParams] = useState({})
+  const hydraParamIdRef = useRef(0)
+
+  const parseHydraParamsFromCode = useCallback((code) => {
+    const re = /^\s*(\w+)\s*=\s*([\d.]+)\s*(?:\/\/\s*min:\s*([\d.-]+)\s*max:\s*([\d.-]+)\s*(?:default:\s*([\d.-]+))?)?/gm
+    const found = {}
+    let match
+    while ((match = re.exec(code)) !== null) {
+      const name = match[1]
+      const val = parseFloat(match[2])
+      const min = match[3] !== undefined ? parseFloat(match[3]) : 0
+      const max = match[4] !== undefined ? parseFloat(match[4]) : 1
+      const def = match[5] !== undefined ? parseFloat(match[5]) : val
+      found[name] = { value: val, min, max, default: def }
+    }
+    return found
+  }, [])
+
+  useEffect(() => {
+    if (engineMode !== 'hydra') return
+    const found = parseHydraParamsFromCode(code)
+    setHydraParams(prev => {
+      const next = { ...prev }
+      let changed = false
+      for (const [name, p] of Object.entries(found)) {
+        if (!next[name]) {
+          next[name] = p
+          changed = true
+        } else {
+          const cur = next[name]
+          if (cur.min !== p.min || cur.max !== p.max || cur.default !== p.default) {
+            next[name] = { ...cur, min: p.min, max: p.max, default: p.default }
+            changed = true
+          }
+        }
+      }
+      for (const name of Object.keys(next)) {
+        if (!found[name]) {
+          delete next[name]
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+  }, [code, engineMode, parseHydraParamsFromCode])
   const [consoleConnected, setConsoleConnected] = useState(false)
   const [consoleConfig, setConsoleConfig] = useState(() => {
     try { return JSON.parse(localStorage.getItem('consoleConfig')) || { host: 'localhost', port: 8765 } } catch { return { host: 'localhost', port: 8765 } }
@@ -131,6 +180,94 @@ export default function App() {
   const updateActiveTab = useCallback((updates) => {
     setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, ...updates } : t))
   }, [activeTabId])
+
+  const handleModuleSelect = useCallback((module) => {
+    setModuleMenu(null)
+    if (module.type === 'insert') {
+      const ed = editorRef.current
+      if (ed) {
+        const snippet = (module.snippet || '') + '\n'
+        const sel = ed.getSelection()
+        ed.executeEdits('module-insert', [{ range: sel, text: snippet }])
+        const newLine = sel.startLineNumber + snippet.split('\n').length - 1
+        ed.setPosition({ lineNumber: newLine, column: 1 })
+        ed.focus()
+        updateActiveTab({ modified: true })
+      }
+    } else if (module.type === 'fx') {
+      setFxChain(prev => {
+        const params = {}
+        for (const [k, v] of Object.entries(module.params || {})) {
+          params[k] = v.default ?? 0
+        }
+        return [...prev, { id: module.id, label: module.name, enabled: true, paramValues: params, paramCc: {}, paramConfig: {} }]
+      })
+    }
+  }, [updateActiveTab])
+
+  const handleEditorReady = useCallback((editor) => {
+    editorRef.current = editor
+  }, [])
+
+  const handleCreateSlider = useCallback((word) => {
+    setModuleMenu(null)
+    const ed = editorRef.current
+    if (!ed || !word) return
+    const id = hydraParamIdRef.current++
+    const name = `__p${id}`
+    const defaultValue = Number(word.text)
+    const wrap = `() => ${name}`
+    ed.executeEdits('create-slider', [
+      { range: { startLineNumber: word.lineNumber, startColumn: word.startColumn, endLineNumber: word.lineNumber, endColumn: word.endColumn }, text: wrap }
+    ])
+    const min = defaultValue <= 0 ? defaultValue * 2 : 0
+    const max = defaultValue > 0 ? defaultValue * 2 : Math.max(1, defaultValue * 2)
+    const decl = `${name} = ${defaultValue}  // min:${min} max:${max} default:${defaultValue}\n`
+    setHydraParams(prev => ({
+      ...prev,
+      [name]: { value: defaultValue, min, max, default: defaultValue }
+    }))
+    ed.executeEdits('create-slider-decl', [
+      { range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 }, text: decl }
+    ])
+    const newCol = word.startColumn + wrap.length
+    ed.setPosition({ lineNumber: word.lineNumber, column: newCol })
+    ed.focus()
+    updateActiveTab({ modified: true })
+  }, [updateActiveTab])
+
+  const handleHydraParamChange = useCallback((name, value) => {
+    setHydraParams(prev => {
+      const p = prev[name]
+      if (!p) return prev
+      return { ...prev, [name]: { ...p, value } }
+    })
+  }, [])
+
+  const hydraValues = useMemo(() => {
+    const out = {}
+    for (const [name, p] of Object.entries(hydraParams)) {
+      out[name] = p.value
+    }
+    return out
+  }, [hydraParams])
+
+  const handleEditorContext = useCallback((e) => {
+    e.preventDefault()
+    let word = null
+    const ed = editorRef.current
+    if (ed) {
+      const pos = ed.getPosition()
+      const model = ed.getModel()
+      if (pos && model) {
+        const w = model.getWordAtPosition(pos)
+        if (w && !isNaN(Number(w.word))) {
+          word = { text: w.word, startColumn: w.startColumn, endColumn: w.endColumn, lineNumber: pos.lineNumber }
+        }
+      }
+    }
+    setModuleMenu({ x: e.clientX, y: e.clientY, word })
+  }, [])
 
   const handleNewTab = useCallback((type) => {
     const tabType = type || 'isf'
@@ -708,6 +845,7 @@ export default function App() {
               key={refreshKey}
               code={code}
               uniformValues={allUniformValues}
+              hydraParams={Object.fromEntries(Object.entries(hydraParams).map(([k, v]) => [k, v.value]))}
               fxChain={fxChain}
               onMetadata={handleMetadata}
               onError={handleError}
@@ -743,11 +881,24 @@ export default function App() {
                 onRandom={handleHydraRandom}
                 onMutate={handleHydraMutate}
               />
-              {activeTab?.type === 'hydra' ? (
-                <HydraEditor value={code} onChange={(v) => updateActiveTab({ code: v, modified: true })} />
-              ) : (
-                <ShaderEditor value={code} onChange={(v) => updateActiveTab({ code: v, modified: true })} />
-              )}
+              <div className="editor-context-wrapper" onContextMenu={handleEditorContext}>
+                {activeTab?.type === 'hydra' ? (
+                  <HydraEditor value={code} onChange={(v) => updateActiveTab({ code: v, modified: true })} onReady={handleEditorReady} />
+                ) : (
+                  <ShaderEditor value={code} onChange={(v) => updateActiveTab({ code: v, modified: true })} onReady={handleEditorReady} />
+                )}
+                {moduleMenu && (
+                  <ModuleMenu
+                    x={moduleMenu.x}
+                    y={moduleMenu.y}
+                    mode={engineMode}
+                    word={moduleMenu.word}
+                    onSelect={handleModuleSelect}
+                    onCreateSlider={handleCreateSlider}
+                    onClose={() => setModuleMenu(null)}
+                  />
+                )}
+              </div>
               {error && <div className="error-bar">{error}</div>}
               <div className="editor-footer">
                 <button
@@ -772,8 +923,8 @@ export default function App() {
           >
             <Controls
               metadata={isfMetadata}
-              values={uniformValues}
-              onChange={handleControlChange}
+              values={engineMode === 'hydra' ? hydraValues : uniformValues}
+              onChange={engineMode === 'hydra' ? handleHydraParamChange : handleControlChange}
               paramAnimation={paramAnimation}
               onParamAnimationChange={handleParamAnimationChange}
               parameterConfig={parameterConfig}
@@ -781,6 +932,8 @@ export default function App() {
               onParamOscChange={handleParamOscChange}
               bpm={bpm}
               onBpmChange={setBpm}
+              hydraParams={hydraParams}
+              engineMode={engineMode}
             />
             <CcPanel
               inputs={isfMetadata?.inputs}
@@ -827,6 +980,9 @@ export default function App() {
                   const min = input.MIN ?? 0
                   const max = input.MAX ?? 1
                   setUniformValues(prev => ({ ...prev, [paramName]: min + value * (max - min) }))
+                } else if (hydraParams?.[paramName]) {
+                  const p = hydraParams[paramName]
+                  handleHydraParamChange(paramName, p.min + value * (p.max - p.min))
                 }
               }}
             />

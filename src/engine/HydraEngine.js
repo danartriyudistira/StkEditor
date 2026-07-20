@@ -98,6 +98,7 @@ export default class HydraEngine extends EngineInterface {
     if (!this.hydra) return
     try {
       this.hydra.synth[name] = value
+      window[name] = value
     } catch (_) {}
   }
 
