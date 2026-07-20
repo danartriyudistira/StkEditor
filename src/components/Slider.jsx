@@ -1,8 +1,11 @@
-import { useRef, useCallback, useEffect } from 'react'
+import { useRef, useCallback, useEffect, useState } from 'react'
 
 export default function Slider({ value, min, max, step, onChange, className, disabled }) {
   const trackRef = useRef(null)
   const draggingRef = useRef(false)
+  const [editing, setEditing] = useState(false)
+  const [editText, setEditText] = useState('')
+  const inputRef = useRef(null)
 
   const range = max - min || 1
   const frac = Math.max(0, Math.min(1, (value - min) / range))
@@ -61,19 +64,53 @@ export default function Slider({ value, min, max, step, onChange, className, dis
     return () => el.removeEventListener('wheel', handleWheel)
   }, [handleWheel, disabled])
 
+  function startEditing() {
+    setEditText(String(value))
+    setEditing(true)
+  }
+
+  function commitEdit() {
+    setEditing(false)
+    const v = parseFloat(editText)
+    if (isNaN(v)) return
+    onChange?.(Math.max(min, Math.min(max, v)))
+  }
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [editing])
+
   return (
-    <div
-      ref={trackRef}
-      className={`td-slider${className ? ' ' + className : ''}${disabled ? ' td-slider--disabled' : ''}`}
-      onPointerDown={handlePointerDown}
-      role="slider"
-      tabIndex={disabled ? -1 : 0}
-      aria-valuemin={min}
-      aria-valuemax={max}
-      aria-valuenow={value}
-    >
-      <div className="td-slider-fill" style={{ width: `${frac * 100}%` }} />
-      <div className="td-slider-knot" style={{ left: `${frac * 100}%` }} />
+    <div className="td-slider-wrap">
+      <div
+        ref={trackRef}
+        className={`td-slider${className ? ' ' + className : ''}${disabled ? ' td-slider--disabled' : ''}`}
+        onPointerDown={handlePointerDown}
+        role="slider"
+        tabIndex={disabled ? -1 : 0}
+        aria-valuemin={min}
+        aria-valuemax={max}
+        aria-valuenow={value}
+      >
+        <div className="td-slider-fill" style={{ width: `${frac * 100}%` }} />
+        <div className="td-slider-knot" style={{ left: `${frac * 100}%` }} />
+      </div>
+      {editing ? (
+        <input
+          ref={inputRef}
+          className="td-slider-input"
+          type="text"
+          value={editText}
+          onChange={(e) => setEditText(e.target.value)}
+          onBlur={commitEdit}
+          onKeyDown={(e) => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditing(false) }}
+        />
+      ) : (
+        <span className="td-slider-value" onDoubleClick={startEditing}>{Number(value).toFixed(3)}</span>
+      )}
     </div>
   )
 }

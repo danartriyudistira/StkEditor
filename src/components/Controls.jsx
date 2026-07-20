@@ -114,12 +114,13 @@ function ControlRow({ input, value, onChange, animConfig, paramConfig, onSetting
   const step = input.STEP ?? (max - min) / 100
   const hasAnim = animConfig && animConfig.mode !== 'off'
   const hasOsc = paramConfig?.oscAddr?.trim()
-  const hasBadge = hasAnim || hasOsc
+  const hasNote = animConfig?.mode === 'note'
+  const hasBadge = hasAnim || hasOsc || hasNote
 
-  const btnClass = `control-anim-btn${hasBadge ? ' active' : ''}${hasOsc ? ' has-osc' : ''}`
+  const btnClass = `control-anim-btn${hasBadge ? ' active' : ''}${hasOsc ? ' has-osc' : ''}${hasNote ? ' has-note' : ''}`
 
   switch (input.TYPE) {
-    case 'float':
+      case 'float':
       return (
         <div className="control-row">
           <label>{label}</label>
@@ -131,7 +132,6 @@ function ControlRow({ input, value, onChange, animConfig, paramConfig, onSetting
             onChange={onChange}
             className={hasAnim ? 'td-slider--anim' : ''}
           />
-          <span className="td-slider-control-value">{val.toFixed(3)}</span>
           <button
             className={btnClass}
             onClick={onSettingsClick}
@@ -154,7 +154,6 @@ function ControlRow({ input, value, onChange, animConfig, paramConfig, onSetting
             onChange={(v) => onChange(Math.round(v))}
             className={hasAnim ? 'td-slider--anim' : ''}
           />
-          <span className="td-slider-control-value">{Math.round(val)}</span>
           <button
             className={btnClass}
             onClick={onSettingsClick}

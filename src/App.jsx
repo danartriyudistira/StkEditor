@@ -24,6 +24,7 @@ import { registerIsfEffect } from './fx/effects.js'
 import HydraEditor from './components/HydraEditor.jsx'
 import HydraLibrary from './components/HydraLibrary.jsx'
 import { DEFAULT_HYDRA_CODE, getRandomExample } from './data/hydraExamples.js'
+import { MODULE_CATEGORIES } from './data/moduleRegistry.js'
 import { mutateCode } from './utils/hydraMutator.js'
 import './App.css'
 
@@ -155,6 +156,7 @@ export default function App() {
   const synthRef = useRef(null)
   const midiOutputRef = useRef(null)
   const midiChannelRef = useRef(0)
+  const noteTriggerRef = useRef({ triggerNote: () => {} })
   const handleRefresh = useCallback(() => {
     setRefreshKey(k => k + 1)
   }, [])
@@ -181,6 +183,8 @@ export default function App() {
     setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, ...updates } : t))
   }, [activeTabId])
 
+  const moduleDecorationsRef = useRef([])
+
   const handleModuleSelect = useCallback((module) => {
     setModuleMenu(null)
     if (module.type === 'insert') {
@@ -189,10 +193,35 @@ export default function App() {
         const snippet = (module.snippet || '') + '\n'
         const sel = ed.getSelection()
         ed.executeEdits('module-insert', [{ range: sel, text: snippet }])
-        const newLine = sel.startLineNumber + snippet.split('\n').length - 1
+        const lineCount = snippet.split('\n').length - 1
+        const newLine = sel.startLineNumber + lineCount
         ed.setPosition({ lineNumber: newLine, column: 1 })
         ed.focus()
         updateActiveTab({ modified: true })
+
+        // Add colored line decoration to highlight inserted range
+        const catColor = MODULE_CATEGORIES.find(c => c.id === module.category)?.color || '#888'
+        moduleDecorationsRef.current = ed.deltaDecorations(moduleDecorationsRef.current, [
+          {
+            range: {
+              startLineNumber: sel.startLineNumber,
+              startColumn: 1,
+              endLineNumber: sel.startLineNumber + lineCount,
+              endColumn: 1
+            },
+            options: {
+              isWholeLine: true,
+              linesDecorationsClassName: 'module-line-decoration',
+              stickiness: 1,
+            }
+          }
+        ])
+
+        // Apply color to decoration via CSS variable on editor container
+        const container = ed.getContainerDomNode()
+        if (container) {
+          container.style.setProperty('--module-color', catColor)
+        }
       }
     } else if (module.type === 'fx') {
       setFxChain(prev => {
@@ -332,6 +361,7 @@ export default function App() {
       if (e.ctrlKey && e.key === '.') { e.preventDefault(); setRightOpen(v => !v) }
       if (e.ctrlKey && e.key === 's') { e.preventDefault(); handleExportStk() }
       if (e.ctrlKey && e.key === 'o') { e.preventDefault(); handleImportStk() }
+      if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); handleRefresh() }
 
       if (performanceMode && !showOverlay) {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -357,7 +387,7 @@ export default function App() {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [performanceMode, showOverlay, handlePerformanceToggle, tabs, activeTabId])
+  }, [performanceMode, showOverlay, handlePerformanceToggle, handleRefresh, tabs, activeTabId])
 
   useEffect(() => {
     const base = import.meta.env.BASE_URL || '/'
@@ -483,7 +513,24 @@ export default function App() {
         return fx
       }))
     }
-  }, [])
+    // Note Trigger: cari param dengan mode 'note', trigger envelope di Preview
+    if (trigger.type === 'noteOn' && trigger.velocity > 0) {
+      for (const [paramName, anim] of Object.entries(paramAnimation)) {
+        if (anim?.mode !== 'note') continue
+        const nt = anim
+        if (!nt.any && !nt.notes?.hasOwnProperty(trigger.note)) continue
+        const peakFraction = nt.useVelocity
+          ? (nt.velocityMin ?? 0) + trigger.velocity * ((nt.velocityMax ?? 1) - (nt.velocityMin ?? 0))
+          : (nt.notes?.[trigger.note] ?? nt.fixedValue ?? 1)
+        const p = hydraParams?.[paramName]
+        const input = isfMetadata?.inputs?.find(i => i.NAME === paramName)
+        if (!p && !input) continue
+        const paramMin = p ? p.min : (input.MIN ?? 0)
+        const paramMax = p ? p.max : (input.MAX ?? 1)
+        noteTriggerRef.current.triggerNote(paramName, peakFraction, paramMin, paramMax)
+      }
+    }
+  }, [paramAnimation, hydraParams, isfMetadata])
 
   const handleSourceSelectImage = useCallback((img) => {
     setSourceType('image')
@@ -854,6 +901,7 @@ export default function App() {
               paramAnimation={paramAnimation}
               bpm={bpm}
               engineMode={engineMode}
+              noteTriggerRef={noteTriggerRef}
             />
           </div>
 

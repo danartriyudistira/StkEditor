@@ -98,10 +98,10 @@ export default function ModuleMenu({ x, y, mode, word, onSelect, onCreateSlider,
             const items = filtered.byCategory[cat.id] || []
             const isExpanded = expanded.has(cat.id)
             return (
-              <div key={cat.id} className="module-menu-category">
+              <div key={cat.id} className="module-menu-category" style={{ borderLeftColor: cat.color }}>
                 <div className="module-menu-cat-header" onClick={() => toggleCategory(cat.id)}>
                   <span className="module-menu-cat-arrow">{isExpanded ? '\u25BC' : '\u25B6'}</span>
-                  <span className="module-menu-cat-icon">{cat.icon}</span>
+                  <span className="module-menu-cat-icon" style={{ color: cat.color }}>{cat.icon}</span>
                   <span className="module-menu-cat-label">{cat.label}</span>
                   <span className="module-menu-cat-count">{items.length}</span>
                 </div>
@@ -111,7 +111,7 @@ export default function ModuleMenu({ x, y, mode, word, onSelect, onCreateSlider,
                     className="module-menu-item"
                     onClick={() => onSelect?.(m)}
                   >
-                    <span className={`module-menu-item-badge module-menu-item-badge--${m.source}`}>{m.source === 'hydra' ? 'H' : 'F'}</span>
+                    <span className="module-menu-item-badge" style={{ background: cat.color, color: '#fff' }}>{m.source === 'hydra' ? 'H' : 'F'}</span>
                     <span className="module-menu-item-name">{m.name}</span>
                   </div>
                 ))}

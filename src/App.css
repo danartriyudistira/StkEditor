@@ -783,9 +783,83 @@
   font-family: monospace;
 }
 
+.anim-badge--note {
+  background: #47a;
+  color: #fff;
+}
+
+.anim-popup-notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 6px 0;
+}
+
+.anim-popup-note-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  background: #252525;
+  border-radius: 4px;
+}
+
+.anim-popup-note-input {
+  width: 48px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  color: #ccc;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: monospace;
+  text-align: center;
+}
+
+.anim-popup-note-name {
+  font-size: 10px;
+  color: #888;
+  min-width: 28px;
+  font-family: monospace;
+}
+
+.anim-popup-note-del {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 2px;
+  line-height: 1;
+}
+
+.anim-popup-note-del:hover {
+  color: #f66;
+}
+
+.anim-popup-add-note {
+  background: #333;
+  border: 1px dashed #555;
+  color: #888;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.anim-popup-add-note:hover {
+  border-color: #4fc3f7;
+  color: #4fc3f7;
+}
+
 /* Button states */
 .control-anim-btn.has-osc {
   border-color: #a74;
+}
+
+.control-anim-btn.has-note {
+  border-color: #47a;
 }
 
 /* OSC mapped count */
@@ -2459,12 +2533,41 @@
   background: #d0a0ff;
 }
 
-.td-slider-control-value {
+.td-slider-wrap {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+}
+
+.td-slider-value {
   font-size: 11px;
   color: #888;
   font-family: monospace;
   min-width: 50px;
   text-align: right;
+  cursor: text;
+  padding: 2px 4px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+}
+
+.td-slider-value:hover {
+  color: #ccc;
+  border-color: #3a3a3a;
+}
+
+.td-slider-input {
+  font-size: 11px;
+  font-family: monospace;
+  min-width: 50px;
+  text-align: right;
+  padding: 2px 4px;
+  background: #1a1a1a;
+  color: #eee;
+  border: 1px solid #4fc3f7;
+  border-radius: 3px;
+  outline: none;
 }
 
 /* Editor context wrapper */
@@ -2510,6 +2613,11 @@
 
 .module-menu-category {
   border-bottom: 1px solid #333;
+}
+
+.module-menu-category {
+  border-left: 3px solid #555;
+  margin: 2px 0;
 }
 
 .module-menu-cat-header {
@@ -2603,6 +2711,15 @@
   text-align: center;
   color: #666;
   font-style: italic;
+}
+
+/* Monaco editor module decoration — colored bar in line decorations gutter */
+.module-line-decoration {
+  width: 3px !important;
+  background: var(--module-color, #888) !important;
+  margin-left: 3px;
+  opacity: 0.7;
+  border-radius: 1px;
 }
 
 .module-menu-slider-create {

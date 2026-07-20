@@ -57,7 +57,7 @@ function flipSourceVertically(source) {
   return flipCanvas
 }
 
-export default function Preview({ code, uniformValues, hydraParams, fxChain, onMetadata, onError, sourceType, sourceElement, paramAnimation, bpm, engineMode }) {
+export default function Preview({ code, uniformValues, hydraParams, fxChain, onMetadata, onError, sourceType, sourceElement, paramAnimation, bpm, engineMode, noteTriggerRef }) {
   const canvasRef = useRef(null)
   const engineRef = useRef(null)
   const fxProcessorRef = useRef(null)
@@ -72,6 +72,7 @@ export default function Preview({ code, uniformValues, hydraParams, fxChain, onM
   const engineModeRef = useRef(engineMode)
   const hydraParamsRef = useRef(hydraParams)
   const placeholderImageRef = useRef(null)
+  const activeNoteTriggersRef = useRef({})
 
   codeRef.current = code
   uniformValuesRef.current = uniformValues
@@ -82,6 +83,17 @@ export default function Preview({ code, uniformValues, hydraParams, fxChain, onM
   bpmRef.current = bpm
   engineModeRef.current = engineMode
   hydraParamsRef.current = hydraParams
+
+  if (noteTriggerRef) {
+    noteTriggerRef.current.triggerNote = (paramName, peakFraction, paramMin, paramMax) => {
+      activeNoteTriggersRef.current[paramName] = {
+        peakFraction,
+        paramMin,
+        paramMax,
+        startTime: Date.now(),
+      }
+    }
+  }
 
   // Initialize engine + render loop
   useEffect(() => {
@@ -178,6 +190,22 @@ export default function Preview({ code, uniformValues, hydraParams, fxChain, onM
         if (cfg && cfg.mode !== 'off') {
           animated[key] = computeAnimatedValue(animated[key], cfg, time, currentBpm)
         }
+      }
+
+      // Apply note trigger envelopes (decay over 1 beat)
+      const triggers = activeNoteTriggersRef.current
+      const now = Date.now()
+      const beatMs = (60 / currentBpm) * 1000
+      for (const [name, t] of Object.entries(triggers)) {
+        const elapsed = now - t.startTime
+        if (elapsed >= beatMs) {
+          delete triggers[name]
+          animated[name] = t.paramMin
+          continue
+        }
+        const progress = elapsed / beatMs
+        const envelope = 1 - progress
+        animated[name] = t.paramMin + t.peakFraction * envelope * (t.paramMax - t.paramMin)
       }
 
       // Update uniforms on engine

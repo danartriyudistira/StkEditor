@@ -312,15 +312,92 @@ export const HYDRA_EXAMPLES = [
   },
 ]
 
+// ── ATOMIC FUNCTION MODULES ──────────────────────────────
+
+export const HYDRA_ATOMIC = [
+  // ── Source ────────────────────────────────────────────────
+  { name: 'noise()', category: 'Source', code: `noise(10, 0.1).out()` },
+  { name: 'voronoi()', category: 'Source', code: `voronoi(5, 0.3, 0.3).out()` },
+  { name: 'osc()', category: 'Source', code: `osc(60, 0.1, 0).out()` },
+  { name: 'shape()', category: 'Source', code: `shape(3, 0.3, 0.01).out()` },
+  { name: 'gradient()', category: 'Source', code: `gradient(0).out()` },
+  { name: 'src()', category: 'Source', code: `src(o0).out()` },
+  { name: 'solid()', category: 'Source', code: `solid(1, 1, 1).out()` },
+  { name: 'prev()', category: 'Source', code: `prev().out()` },
+
+  // ── Geometry ──────────────────────────────────────────────
+  { name: 'rotate()', category: 'Geometry', code: `osc(60)\n  .rotate(10, 0)\n  .out()` },
+  { name: 'scale()', category: 'Geometry', code: `osc(60)\n  .scale(1.5, 1, 1, 0.5, 0.5)\n  .out()` },
+  { name: 'pixelate()', category: 'Geometry', code: `osc(60)\n  .pixelate(20, 20)\n  .out()` },
+  { name: 'repeat()', category: 'Geometry', code: `osc(60)\n  .repeat(3, 3, 0, 0)\n  .out()` },
+  { name: 'repeatX()', category: 'Geometry', code: `osc(60)\n  .repeatX(3, 0)\n  .out()` },
+  { name: 'repeatY()', category: 'Geometry', code: `osc(60)\n  .repeatY(3, 0)\n  .out()` },
+  { name: 'kaleid()', category: 'Geometry', code: `osc(60)\n  .kaleid(4)\n  .out()` },
+  { name: 'scroll()', category: 'Geometry', code: `osc(60)\n  .scroll(0.5, 0.5, 0, 0)\n  .out()` },
+  { name: 'scrollX()', category: 'Geometry', code: `osc(60)\n  .scrollX(0.5, 0)\n  .out()` },
+  { name: 'scrollY()', category: 'Geometry', code: `osc(60)\n  .scrollY(0.5, 0)\n  .out()` },
+
+  // ── Color ─────────────────────────────────────────────────
+  { name: 'posterize()', category: 'Color', code: `osc(60)\n  .posterize(3, 0.6)\n  .out()` },
+  { name: 'shift()', category: 'Color', code: `osc(60)\n  .shift(0.5, 0, 0, 0)\n  .out()` },
+  { name: 'invert()', category: 'Color', code: `osc(60)\n  .invert(1)\n  .out()` },
+  { name: 'contrast()', category: 'Color', code: `osc(60)\n  .contrast(1.6)\n  .out()` },
+  { name: 'brightness()', category: 'Color', code: `osc(60)\n  .brightness(0.4)\n  .out()` },
+  { name: 'luma()', category: 'Color', code: `osc(60)\n  .luma(0.5, 0.1)\n  .out()` },
+  { name: 'thresh()', category: 'Color', code: `osc(60)\n  .thresh(0.5, 0.04)\n  .out()` },
+  { name: 'color()', category: 'Color', code: `osc(60)\n  .color(1, 1, 1, 1)\n  .out()` },
+  { name: 'saturate()', category: 'Color', code: `osc(60)\n  .saturate(2)\n  .out()` },
+  { name: 'hue()', category: 'Color', code: `osc(60)\n  .hue(0.4)\n  .out()` },
+  { name: 'colorama()', category: 'Color', code: `osc(60)\n  .colorama(0.005)\n  .out()` },
+  { name: 'sum()', category: 'Color', code: `osc(60)\n  .sum(1)\n  .out()` },
+  { name: 'r()', category: 'Color', code: `osc(60)\n  .r(1, 0)\n  .out()` },
+  { name: 'g()', category: 'Color', code: `osc(60)\n  .g(1, 0)\n  .out()` },
+  { name: 'b()', category: 'Color', code: `osc(60)\n  .b(1, 0)\n  .out()` },
+  { name: 'a()', category: 'Color', code: `osc(60)\n  .a(1, 0)\n  .out()` },
+
+  // ── Blend (Combine) ───────────────────────────────────────
+  { name: 'add()', category: 'Blend', code: `osc(60)\n  .add(osc(20), 1)\n  .out()` },
+  { name: 'sub()', category: 'Blend', code: `osc(60)\n  .sub(osc(20), 1)\n  .out()` },
+  { name: 'layer()', category: 'Blend', code: `osc(60)\n  .layer(shape(4).color(1,0,0))\n  .out()` },
+  { name: 'blend()', category: 'Blend', code: `osc(60)\n  .blend(voronoi(3), 0.5)\n  .out()` },
+  { name: 'mult()', category: 'Blend', code: `osc(60)\n  .mult(noise(3), 1)\n  .out()` },
+  { name: 'diff()', category: 'Blend', code: `osc(60)\n  .diff(noise(3))\n  .out()` },
+  { name: 'mask()', category: 'Blend', code: `osc(60)\n  .mask(shape(4))\n  .out()` },
+
+  // ── Modulate (CombineCoord) ───────────────────────────────
+  { name: 'modulate()', category: 'Modulation', code: `osc(60)\n  .modulate(noise(3), 0.1)\n  .out()` },
+  { name: 'modulateScale()', category: 'Modulation', code: `osc(60)\n  .modulateScale(noise(3), 1)\n  .out()` },
+  { name: 'modulatePixelate()', category: 'Modulation', code: `osc(60)\n  .modulatePixelate(noise(3), 10, 3)\n  .out()` },
+  { name: 'modulateRotate()', category: 'Modulation', code: `osc(60)\n  .modulateRotate(noise(3), 1, 0)\n  .out()` },
+  { name: 'modulateKaleid()', category: 'Modulation', code: `osc(60)\n  .modulateKaleid(4)\n  .out()` },
+  { name: 'modulateHue()', category: 'Modulation', code: `osc(60)\n  .modulateHue(voronoi(3), 1)\n  .out()` },
+  { name: 'modulateRepeat()', category: 'Modulation', code: `osc(60)\n  .modulateRepeat(noise(3), 3, 3, 0.5)\n  .out()` },
+  { name: 'modulateRepeatX()', category: 'Modulation', code: `osc(60)\n  .modulateRepeatX(noise(3), 3, 0.5)\n  .out()` },
+  { name: 'modulateRepeatY()', category: 'Modulation', code: `osc(60)\n  .modulateRepeatY(noise(3), 3, 0.5)\n  .out()` },
+  { name: 'modulateScrollX()', category: 'Modulation', code: `osc(60)\n  .modulateScrollX(noise(3), 0.5, 0)\n  .out()` },
+  { name: 'modulateScrollY()', category: 'Modulation', code: `osc(60)\n  .modulateScrollY(noise(3), 0.5, 0)\n  .out()` },
+
+  // ── External Sources ──────────────────────────────────────
+  { name: 'initCam()', category: 'ExternalSources', code: `s0.initCam()`, raw: true },
+  { name: 'initImage()', category: 'ExternalSources', code: `s0.initImage('https://example.com/image.jpg')`, raw: true },
+  { name: 'initVideo()', category: 'ExternalSources', code: `s0.initVideo('https://example.com/video.mp4')`, raw: true },
+  { name: 'initStream()', category: 'ExternalSources', code: `s0.initStream('https://example.com/stream')`, raw: true },
+  { name: 'initScreen()', category: 'ExternalSources', code: `s0.initScreen()`, raw: true },
+  { name: 'init()', category: 'ExternalSources', code: `init({ type: 'src', src: '' })`, raw: true },
+]
+
 export const HYDRA_CATEGORIES = [
   'All',
   'Basics',
+  'Source',
   'Combination',
+  'Blend',
   'Modulation',
   'Feedback',
   'Color',
   'Geometry',
   'Audio-Reactive',
+  'ExternalSources',
 ]
 
 /** Pick a random example from the full list */

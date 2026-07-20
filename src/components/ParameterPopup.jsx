@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Slider from './Slider.jsx'
 
 const MODES = [
@@ -8,6 +8,7 @@ const MODES = [
   { value: 'saw', label: 'Saw' },
   { value: 'square', label: 'Square' },
   { value: 'random', label: 'Random (S&H)' },
+  { value: 'note', label: 'Note Trigger' },
 ]
 
 const DIRECTIONS = [
@@ -25,6 +26,13 @@ const BPM_DIVS = [
   { value: 16, label: '4' },
   { value: 32, label: '8' },
 ]
+
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
+
+function noteName(n) {
+  if (n < 0 || n > 127) return String(n)
+  return NOTE_NAMES[n % 12] + Math.floor(n / 12)
+}
 
 export default function ParameterPopup({
   paramName,
@@ -55,8 +63,61 @@ export default function ParameterPopup({
     onOscChange?.(paramName, '')
   }
 
+  const isNote = animConfig?.mode === 'note'
   const hasOsc = oscAddr.trim() !== ''
   const hasAnim = animConfig && animConfig.mode !== 'off'
+  const hasNote = isNote
+
+  // Note mode local state (kept in sync with animConfig)
+  const [ntNotes, setNtNotes] = useState(
+    animConfig?.notes ? Object.entries(animConfig.notes).map(([k,v]) => ({note: Number(k), value: v})) : []
+  )
+  const [ntUseVelocity, setNtUseVelocity] = useState(animConfig?.useVelocity ?? false)
+  const [ntFixedValue, setNtFixedValue] = useState(animConfig?.fixedValue ?? 1)
+  const [ntVelocityMin, setNtVelocityMin] = useState(animConfig?.velocityMin ?? 0)
+  const [ntVelocityMax, setNtVelocityMax] = useState(animConfig?.velocityMax ?? 1)
+
+  useEffect(() => {
+    if (!isNote) return
+    setAnimField('notes', Object.fromEntries(ntNotes.map(e => [e.note, e.value])))
+  }, [ntNotes])
+
+  useEffect(() => {
+    if (!isNote) return
+    setAnimField('useVelocity', ntUseVelocity)
+  }, [ntUseVelocity])
+
+  useEffect(() => {
+    if (!isNote) return
+    setAnimField('fixedValue', ntFixedValue)
+  }, [ntFixedValue])
+
+  useEffect(() => {
+    if (!isNote) return
+    setAnimField('velocityMin', ntVelocityMin)
+  }, [ntVelocityMin])
+
+  useEffect(() => {
+    if (!isNote) return
+    setAnimField('velocityMax', ntVelocityMax)
+  }, [ntVelocityMax])
+
+  function addNote() {
+    const used = new Set(ntNotes.map(e => e.note))
+    let next = 60
+    while (used.has(next)) next++
+    setNtNotes([...ntNotes, { note: next, value: 0.5 }])
+  }
+
+  function removeNote(idx) {
+    setNtNotes(ntNotes.filter((_, i) => i !== idx))
+  }
+
+  function updateNote(idx, field, val) {
+    const copy = [...ntNotes]
+    copy[idx] = { ...copy[idx], [field]: val }
+    setNtNotes(copy)
+  }
 
   return (
     <div className="anim-popup-overlay" onClick={onClose}>
@@ -65,7 +126,7 @@ export default function ParameterPopup({
           <span>Control — {label || paramName}</span>
           {(hasAnim || hasOsc) && (
             <span className="anim-popup-badges">
-              {hasAnim && <span className="anim-badge anim-badge--anim">A</span>}
+              {hasAnim && <span className={`anim-badge${hasNote ? ' anim-badge--note' : ' anim-badge--anim'}`}>{hasNote ? 'N' : 'A'}</span>}
               {hasOsc && <span className="anim-badge anim-badge--osc">OSC</span>}
             </span>
           )}
@@ -85,7 +146,68 @@ export default function ParameterPopup({
               </select>
             </div>
 
-            {animConfig?.mode !== 'off' && (
+            {isNote && (
+              <>
+                <div className="anim-popup-row">
+                  <label>Any Note</label>
+                  <input type="checkbox" checked={animConfig?.any ?? false} onChange={e => setAnimField('any', e.target.checked)} />
+                </div>
+
+                {!animConfig?.any && (
+                  <div className="anim-popup-notes-list">
+                    {ntNotes.map((entry, i) => (
+                      <div className="anim-popup-note-row" key={i}>
+                        <button className="anim-popup-note-del" onClick={() => removeNote(i)} title="Remove note">{'\u2715'}</button>
+                        <input
+                          className="anim-popup-note-input"
+                          type="number" min={0} max={127}
+                          value={entry.note}
+                          onChange={e => updateNote(i, 'note', Math.max(0, Math.min(127, Number(e.target.value))))}
+                        />
+                        <span className="anim-popup-note-name">{noteName(entry.note)}</span>
+                        <Slider
+                          value={entry.value}
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          onChange={v => updateNote(i, 'value', v)}
+                        />
+                        <span className="anim-popup-value">{entry.value.toFixed(2)}</span>
+                      </div>
+                    ))}
+                    <button className="anim-popup-add-note" onClick={addNote}>+ Add Note</button>
+                  </div>
+                )}
+
+                <div className="anim-popup-row">
+                  <label>Use Velocity</label>
+                  <input type="checkbox" checked={ntUseVelocity} onChange={e => setNtUseVelocity(e.target.checked)} />
+                </div>
+
+                {ntUseVelocity ? (
+                  <>
+                    <div className="anim-popup-row">
+                      <label>Vel Min</label>
+                      <Slider value={ntVelocityMin} min={0} max={1} step={0.01} onChange={setNtVelocityMin} />
+                      <span className="anim-popup-value">{ntVelocityMin.toFixed(3)}</span>
+                    </div>
+                    <div className="anim-popup-row">
+                      <label>Vel Max</label>
+                      <Slider value={ntVelocityMax} min={0} max={1} step={0.01} onChange={setNtVelocityMax} />
+                      <span className="anim-popup-value">{ntVelocityMax.toFixed(3)}</span>
+                    </div>
+                  </>
+                ) : animConfig?.any && (
+                  <div className="anim-popup-row">
+                    <label>Fixed Value</label>
+                    <Slider value={ntFixedValue} min={0} max={1} step={0.01} onChange={setNtFixedValue} />
+                    <span className="anim-popup-value">{ntFixedValue.toFixed(3)}</span>
+                  </div>
+                )}
+              </>
+            )}
+
+            {animConfig?.mode !== 'off' && !isNote && (
               <>
                 <div className="anim-popup-row">
                   <label>Direction</label>
