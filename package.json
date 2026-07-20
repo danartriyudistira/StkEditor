@@ -13,6 +13,7 @@
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "esbuild": "^0.28.1",
+    "hydra-synth": "^1.4.0",
     "interactive-shader-format": "^2.8.1",
     "jszip": "^3.10.1",
     "react": "^19.2.7",

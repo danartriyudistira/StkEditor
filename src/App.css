@@ -1,4 +1,4 @@
-﻿.app {
+.app {
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -364,7 +364,7 @@
 /* Error bar */
 .error-bar {
   position: absolute;
-  bottom: 0;
+  bottom: 33px;
   left: 0;
   right: 0;
   background: #b71c1c;
@@ -449,6 +449,8 @@
   font-family: monospace;
   color: #aaa;
   border-radius: 3px;
+  display: flex;
+  align-items: center;
 }
 
 .library-item:hover {
@@ -460,6 +462,51 @@
   padding: 20px;
   text-align: center;
   color: #666;
+}
+
+/* Hydra Gallery */
+.hydra-category-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 12px;
+  border-bottom: 1px solid #333;
+  background: #252526;
+}
+
+.hydra-category-pill {
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid #444;
+  background: transparent;
+  color: #aaa;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.hydra-category-pill:hover {
+  background: #3d3d3d;
+  color: #fff;
+}
+
+.hydra-category-pill.active {
+  background: #0e639c;
+  border-color: #0e639c;
+  color: #fff;
+}
+
+.hydra-example-name {
+  flex: 1;
+}
+
+.hydra-example-category {
+  font-size: 10px;
+  color: #666;
+  background: #333;
+  padding: 1px 6px;
+  border-radius: 8px;
+  margin-left: 8px;
 }
 
 /* CC Panel */
@@ -693,8 +740,113 @@
   color: white !important;
 }
 
+.anim-popup-reset {
+  background: #5a3d3d !important;
+  border-color: #7a5050 !important;
+  margin-right: auto;
+}
+
 .anim-popup-save:hover {
   background: #006ab3 !important;
+}
+
+/* ParameterPopup badges */
+.anim-popup-badges {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+.anim-badge {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.anim-badge--anim {
+  background: #4a9;
+  color: #fff;
+}
+
+.anim-badge--cc {
+  background: #7a4;
+  color: #fff;
+}
+
+.anim-badge--osc {
+  background: #a74;
+  color: #fff;
+}
+
+/* Section dividers in popup */
+.anim-popup-section {
+  border-top: 1px solid #444;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.anim-popup-section:first-child {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.anim-popup-section-title {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+/* Text input in popup */
+.anim-popup-input {
+  flex: 1;
+  background: #333;
+  border: 1px solid #555;
+  color: #ccc;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+/* Button states */
+.control-anim-btn.has-osc {
+  border-color: #a74;
+}
+
+/* OSC mapped count */
+.osc-mapped-count {
+  font-size: 10px;
+  color: #a74;
+  margin-left: 4px;
+}
+
+.osc-mapped-params {
+  margin-top: 8px;
+}
+
+.osc-mapped-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 11px;
+}
+
+.osc-mapped-addr {
+  font-family: monospace;
+  color: #a74;
+}
+
+.osc-mapped-arrow {
+  color: #666;
+}
+
+.osc-mapped-name {
+  color: #ccc;
 }
 
 /* MIDI Panel */
@@ -945,6 +1097,64 @@
 }
 
 .fx-param-cc-btn:hover {
+  border-color: #4fc3f7;
+}
+
+/* FX Settings Button (like shader controls) */
+.fx-settings-btn {
+  background: none;
+  border: 1px solid #444;
+  color: #666;
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.fx-settings-btn.has-toggle {
+  border-color: #4fc3f7;
+  color: #4fc3f7;
+}
+
+.fx-settings-btn:hover {
+  border-color: #4fc3f7;
+}
+
+/* FX Toggle CC Info */
+.fx-toggle-cc-info {
+  padding: 2px 8px;
+}
+
+.fx-toggle-cc-badge {
+  font-size: 10px;
+  color: #4fc3f7;
+  font-family: monospace;
+}
+
+/* FX Parameter Settings Button (like shader controls) */
+.fx-param-settings-btn {
+  background: none;
+  border: 1px solid #444;
+  color: #666;
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.fx-param-settings-btn.active {
+  background: rgba(79, 195, 247, 0.15);
+  border-color: #4fc3f7;
+  color: #4fc3f7;
+}
+
+.fx-param-settings-btn.has-osc {
+  border-color: #a74;
+}
+
+.fx-param-settings-btn:hover {
   border-color: #4fc3f7;
 }
 
@@ -1915,6 +2125,36 @@
   background: #444;
 }
 
+/* Engine Switch */
+.engine-switch {
+  display: flex;
+  gap: 0;
+}
+
+.engine-btn {
+  border-radius: 0;
+  min-width: 48px;
+  text-align: center;
+}
+
+.engine-btn:first-child {
+  border-radius: 3px 0 0 3px;
+}
+
+.engine-btn:last-child {
+  border-radius: 0 3px 3px 0;
+}
+
+.engine-btn.active {
+  background: #5b8def;
+  border-color: #5b8def;
+  color: #fff;
+}
+
+.engine-btn.active:hover {
+  background: #4a7de0;
+}
+
 /* MIDI Output */
 .midi-section {
   margin-bottom: 8px;
@@ -2151,3 +2391,38 @@
   min-width: calc(45px * var(--pf-s));
 }
 
+
+/* Editor Footer - Engine Toggle */
+.editor-footer {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-top: 1px solid #333;
+  background: #252526;
+}
+
+.engine-toggle {
+  padding: 4px 20px;
+  border: 1px solid #555;
+  border-radius: 3px;
+  background: transparent;
+  color: #999;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.5px;
+}
+
+.engine-toggle:hover {
+  background: #3d3d3d;
+  color: #fff;
+  border-color: #666;
+}
+
+.engine-toggle.active {
+  background: #0e639c;
+  border-color: #0e639c;
+  color: #fff;
+}

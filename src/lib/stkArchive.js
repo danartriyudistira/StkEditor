@@ -1,4 +1,4 @@
-﻿import JSZip from 'jszip'
+import JSZip from 'jszip'
 import { extractIsfMetadata, adaptIsfToFx } from '../fx/isfAdapter.js'
 import { registerIsfEffect } from '../fx/effects.js'
 
@@ -7,7 +7,7 @@ export async function exportStk(project) {
   const projectJson = {
     version: 2,
     projectName: project.projectName || 'untitled',
-    tabs: project.tabs.map(t => ({ name: t.name, code: t.code })),
+    tabs: project.tabs.map(t => ({ name: t.name, code: t.code, type: t.type || 'isf' })),
     fxChain: project.fxChain || [],
     ccValues: project.ccValues || {},
     ccMapping: project.ccMapping || {},
@@ -36,13 +36,13 @@ export async function importStk(blob) {
         id: Date.now() + Math.random(),
         name: tabInfo.name,
         code: await file.async('text'),
+        type: tabInfo.type || 'isf',
         modified: false,
       })
     }
   }
   const fxChain = projectJson.fxChain || []
 
-  // Re-register ISF effects from isfSource fields
   for (const fx of fxChain) {
     if (fx.isfSource && fx.isIsf) {
       const metadata = extractIsfMetadata(fx.isfSource)
@@ -71,5 +71,3 @@ export async function importStk(blob) {
     audio: projectJson.audio || null,
   }
 }
-
-

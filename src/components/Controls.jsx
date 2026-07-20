@@ -1,9 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
-import AnimationPopup from './AnimationPopup.jsx'
+import ParameterPopup from './ParameterPopup.jsx'
 import { computeAnimatedValue } from '../utils/animation.js'
 
-export default function Controls({ metadata, values, onChange, paramAnimation, onParamAnimationChange, bpm, onBpmChange }) {
-  const [animParam, setAnimParam] = useState(null)
+export default function Controls({
+  metadata, values, onChange,
+  paramAnimation, onParamAnimationChange,
+  parameterConfig, onParameterConfigChange, onParamOscChange,
+  bpm, onBpmChange
+}) {
+  const [activeParam, setActiveParam] = useState(null)
   const [animTick, setAnimTick] = useState(0)
   const startTimeRef = useRef(Date.now())
 
@@ -33,7 +38,7 @@ export default function Controls({ metadata, values, onChange, paramAnimation, o
     const config = paramAnimation?.[inputName]
     if (!config || config.mode === 'off') return values[inputName]
     const time = (Date.now() - startTimeRef.current) / 1000
-    return computeAnimatedValue(values[inputName], config, time, bpm)
+    return computeAnimatedValue(values[inputName], config, time, bpm, inputName)
   }
 
   return (
@@ -45,44 +50,59 @@ export default function Controls({ metadata, values, onChange, paramAnimation, o
           value={getDisplayValue(input.NAME)}
           onChange={(val) => onChange?.(input.NAME, val)}
           animConfig={paramAnimation?.[input.NAME]}
-          onAnimClick={() => setAnimParam(input.NAME)}
+          paramConfig={parameterConfig?.[input.NAME]}
+          onSettingsClick={() => setActiveParam(input.NAME)}
         />
       ))}
 
-      <div className="controls-bpm-row">
-        <label className="controls-bpm-label">BPM</label>
-        <input
-          type="range"
-          min={40}
-          max={200}
-          step={1}
-          value={bpm}
-          onChange={e => onBpmChange?.(parseFloat(e.target.value))}
-          className="controls-bpm-slider"
-        />
-        <span className="controls-bpm-value">{bpm}</span>
-      </div>
-
-      {animParam !== null && (
-        <AnimationPopup
-          paramName={animParam}
-          label={metadata.inputs.find(i => i.NAME === animParam)?.LABEL || animParam}
-          config={paramAnimation?.[animParam] || { mode: 'off', speed: 1, depth: 1, bpmSync: false, bpmDiv: 4 }}
-          onSave={onParamAnimationChange}
-          onClose={() => setAnimParam(null)}
-        />
+      {hasAnyAnim && (
+        <div className="controls-bpm-row">
+          <label className="controls-bpm-label">BPM</label>
+          <input
+            type="range"
+            min={40}
+            max={200}
+            step={1}
+            value={bpm}
+            onChange={e => onBpmChange?.(parseFloat(e.target.value))}
+            className="controls-bpm-slider"
+          />
+          <span className="controls-bpm-value">{bpm}</span>
+        </div>
       )}
+
+      {activeParam !== null && (() => {
+        const input = metadata.inputs.find(i => i.NAME === activeParam)
+        const cfg = parameterConfig?.[activeParam] || {}
+        return (
+          <ParameterPopup
+            paramName={activeParam}
+            label={input?.LABEL || activeParam}
+            paramMin={input?.MIN ?? 0}
+            paramMax={input?.MAX ?? 1}
+            animConfig={paramAnimation?.[activeParam] || { mode: 'off', speed: 1, min: 0, max: 1, bpmSync: false, bpmDiv: 4, direction: 'loop' }}
+            oscAddr={cfg.oscAddr || ''}
+            onAnimSave={onParamAnimationChange}
+            onOscChange={onParamOscChange}
+            onClose={() => setActiveParam(null)}
+          />
+        )
+      })()}
     </div>
   )
 }
 
-function ControlRow({ input, value, onChange, animConfig, onAnimClick }) {
+function ControlRow({ input, value, onChange, animConfig, paramConfig, onSettingsClick }) {
   const label = input.LABEL || input.NAME
   const val = value ?? input.DEFAULT ?? 0
   const min = input.MIN ?? 0
   const max = input.MAX ?? 1
   const step = input.STEP ?? (max - min) / 100
   const hasAnim = animConfig && animConfig.mode !== 'off'
+  const hasOsc = paramConfig?.oscAddr?.trim()
+  const hasBadge = hasAnim || hasOsc
+
+  const btnClass = `control-anim-btn${hasBadge ? ' active' : ''}${hasOsc ? ' has-osc' : ''}`
 
   switch (input.TYPE) {
     case 'float':
@@ -100,9 +120,9 @@ function ControlRow({ input, value, onChange, animConfig, onAnimClick }) {
           />
           <span className="control-value">{val.toFixed(3)}</span>
           <button
-            className={`control-anim-btn${hasAnim ? ' active' : ''}`}
-            onClick={onAnimClick}
-            title="Animation settings"
+            className={btnClass}
+            onClick={onSettingsClick}
+            title="Control settings (Animation, CC, OSC)"
           >
             {'\u2699'}
           </button>
@@ -124,9 +144,9 @@ function ControlRow({ input, value, onChange, animConfig, onAnimClick }) {
           />
           <span className="control-value">{Math.round(val)}</span>
           <button
-            className={`control-anim-btn${hasAnim ? ' active' : ''}`}
-            onClick={onAnimClick}
-            title="Animation settings"
+            className={btnClass}
+            onClick={onSettingsClick}
+            title="Control settings (Animation, CC, OSC)"
           >
             {'\u2699'}
           </button>

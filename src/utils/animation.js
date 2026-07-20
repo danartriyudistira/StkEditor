@@ -27,7 +27,7 @@ function waveTriangle(t) { const p = t - Math.floor(t); return p < 0.5 ? p * 2 :
 function waveSaw(t) { return t - Math.floor(t) }
 function waveSquare(t) { return (t - Math.floor(t)) < 0.5 ? 1 : 0 }
 
-function computeAnimatedValue(baseValue, config, time, bpm) {
+function computeAnimatedValue(baseValue, config, time, bpm, paramName) {
   if (!config || config.mode === 'off') return baseValue
 
   let speed = config.speed || 1
@@ -39,9 +39,10 @@ function computeAnimatedValue(baseValue, config, time, bpm) {
   const direction = config.direction || 'loop'
   const animMin = config.min ?? 0
   const animMax = config.max ?? 1
+  const key = paramName || 'default'
 
   if (direction === 'random') {
-    const r = sampleAndHold('dir', time * speed, 1 / (speed || 1))
+    const r = sampleAndHold(`dir_${key}`, time * speed, 1 / (speed || 1))
     return animMin + r * (animMax - animMin)
   }
 
@@ -74,7 +75,7 @@ function computeAnimatedValue(baseValue, config, time, bpm) {
       animated = waveSquare(phase)
       break
     case 'random':
-      animated = sampleAndHold('cc', raw, 1)
+      animated = sampleAndHold(`cc_${key}`, raw, 1)
       break
     default:
       return baseValue

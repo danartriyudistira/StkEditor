@@ -1,9 +1,7 @@
-import { useRef, useEffect, useState } from 'react'
+﻿import { useRef, useEffect, useState } from 'react'
 
-export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, onOpen, onExport, onDownload, onRename, onLoadFromLibrary, libraryFiles, sourceType, onSourceClick, onGallery, onRandom, onMutate }) {
+export default function HydraTabBar({ tabs, activeTabId, onSwitch, onClose, onNew, onGallery, onRandom, onMutate, onDownload, onRename }) {
   const scrollRef = useRef(null)
-
-  const activeTabType = tabs.find(t => t.id === activeTabId)?.type || 'isf'
   const [editingId, setEditingId] = useState(null)
   const [editValue, setEditValue] = useState('')
   const inputRef = useRef(null)
@@ -61,7 +59,6 @@ export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, on
               ) : (
                 <>
                   {tab.modified && <span className="tabbar-modified">{'\u25CF'} </span>}
-                  <span className={`tabbar-type-badge ${tab.type || 'isf'}`}>{tab.type === 'hydra' ? 'H' : 'I'}</span>
                   {tab.name}
                 </>
               )}
@@ -77,30 +74,13 @@ export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, on
             )}
           </div>
         ))}
-        <button className="tabbar-new" onClick={() => onNew()} title="New tab">+</button>
+        <button className="tabbar-new" onClick={onNew} title="New tab">{'\u2795'}</button>
       </div>
       <div className="tabbar-actions">
-        <button className="tabbar-action" onClick={onOpen} title="Open file">Open</button>
-        {libraryFiles && libraryFiles.length > 0 && activeTabType !== 'hydra' && (
-          <button className="tabbar-action" onClick={onLoadFromLibrary} title="Browse ISF library">ISF Lib</button>
-        )}
-        {activeTabType === 'hydra' && (
-          <>
-            <button className="tabbar-action" onClick={onGallery} title="Browse Hydra gallery">Gallery</button>
-            <button className="tabbar-action" onClick={onRandom} title="Load random sketch">Random</button>
-            <button className="tabbar-action" onClick={onMutate} title="Mutate current sketch">Mutate</button>
-          </>
-        )}
-        {activeTabType !== 'hydra' && (
-          <button
-            className={`tabbar-action source-btn ${sourceType !== 'placeholder' ? 'active' : ''}`}
-            onClick={onSourceClick}
-            title="Source input for ISF shaders"
-          >
-            Source
-          </button>
-        )}
-        <button className="tabbar-action" onClick={onDownload} title="Download (Save As)">Download</button>
+        <button className="tabbar-action" onClick={onGallery} title="Browse Hydra gallery">Gallery</button>
+        <button className="tabbar-action" onClick={onRandom} title="Load random sketch">Random</button>
+        <button className="tabbar-action" onClick={onMutate} title="Mutate current sketch">Mutate</button>
+        <button className="tabbar-action" onClick={onDownload} title="Download sketch">Download</button>
       </div>
     </div>
   )

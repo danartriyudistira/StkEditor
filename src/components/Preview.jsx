@@ -1,22 +1,8 @@
-﻿import { useRef, useEffect, useCallback } from 'react'
-import { Renderer, Parser } from 'interactive-shader-format'
+import { useRef, useEffect, useCallback } from 'react'
 import FxProcessor from '../fx/FxProcessor.js'
 import { computeAnimatedValue } from '../utils/animation.js'
-
-function wrapGLSL(code) {
-  const trimmed = code.trimLeft()
-  if (trimmed.startsWith('/*{')) return code
-  return `/*{
-  "DESCRIPTION": "",
-  "CREDIT": "",
-  "ISFVSN": "2",
-  "INPUTS": [],
-  "CATEGORIES": [ "Custom" ]
-}
-*/
-
-${code}`
-}
+import ISFEngine from '../engine/ISFEngine.js'
+import HydraEngine from '../engine/HydraEngine.js'
 
 function createPlaceholderTexture(gl) {
   const size = 256
@@ -71,24 +57,20 @@ function flipSourceVertically(source) {
   return flipCanvas
 }
 
-export default function Preview({ code, uniformValues, fxChain, onMetadata, onError, sourceType, sourceElement, paramAnimation, bpm }) {
+export default function Preview({ code, uniformValues, fxChain, onMetadata, onError, sourceType, sourceElement, paramAnimation, bpm, engineMode }) {
   const canvasRef = useRef(null)
-  const isfCanvasRef = useRef(null)
-  const isfRendererRef = useRef(null)
+  const engineRef = useRef(null)
   const fxProcessorRef = useRef(null)
-  const isfTextureRef = useRef(null)
-  const sourceTextureRef = useRef(null)
-  const placeholderImageRef = useRef(null)
-  const parserRef = useRef(null)
   const rafRef = useRef(null)
   const codeRef = useRef(code)
   const uniformValuesRef = useRef(uniformValues)
   const fxChainRef = useRef(fxChain)
   const sourceTypeRef = useRef(sourceType)
   const sourceElementRef = useRef(sourceElement)
-  const hasInputImageRef = useRef(false)
   const paramAnimationRef = useRef(paramAnimation)
   const bpmRef = useRef(bpm)
+  const engineModeRef = useRef(engineMode)
+  const placeholderImageRef = useRef(null)
 
   codeRef.current = code
   uniformValuesRef.current = uniformValues
@@ -97,27 +79,16 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
   sourceElementRef.current = sourceElement
   paramAnimationRef.current = paramAnimation
   bpmRef.current = bpm
+  engineModeRef.current = engineMode
 
+  // Initialize engine + render loop
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const isfCanvas = document.createElement('canvas')
-    isfCanvasRef.current = isfCanvas
-
-    const isfGL = isfCanvas.getContext('webgl', {
-      preserveDrawingBuffer: true,
-      alpha: true,
-      antialias: true,
-    })
-
-    if (!isfGL) {
-      onError?.('WebGL not supported')
-      return
-    }
-
-    const isfRenderer = new Renderer(isfGL)
-    isfRendererRef.current = isfRenderer
+    const mode = engineModeRef.current || 'isf'
+    const engine = mode === 'hydra' ? new HydraEngine() : new ISFEngine()
+    engineRef.current = engine
 
     const mainGL = canvas.getContext('webgl', {
       preserveDrawingBuffer: false,
@@ -126,24 +97,56 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
     })
 
     if (!mainGL) {
-      onError?.('WebGL not supported (main)')
+      onError?.('WebGL not supported')
       return
     }
 
     const fxProcessor = new FxProcessor(mainGL)
     fxProcessorRef.current = fxProcessor
 
-    isfTextureRef.current = mainGL.createTexture()
-    sourceTextureRef.current = createPlaceholderTexture(mainGL)
     placeholderImageRef.current = createPlaceholderImage()
 
+    let cancelled = false
+    let engineReady = false
+
+    // Init engine (async for Hydra)
+    async function initEngine() {
+      if (mode === 'isf') {
+        const isfCanvas = document.createElement('canvas')
+        engine._offscreenCanvas = isfCanvas
+        engine.init(isfCanvas, mainGL)
+      } else {
+        await engine.init(canvas, mainGL)
+      }
+
+      if (cancelled) return
+      if (!engine.isValid()) {
+        onError?.(engine.getError())
+        return
+      }
+
+      engineReady = true
+
+      // Load initial code now that engine is ready
+      const initialCode = codeRef.current
+      if (initialCode) {
+        engine.loadCode(initialCode)
+        if (engine.isValid()) {
+          const meta = engine.getMetadata()
+          onMetadata?.(meta)
+          onError?.(null)
+        } else {
+          onError?.(engine.getError())
+        }
+      }
+    }
+    initEngine()
+
     function render() {
-      const r = isfRendererRef.current
+      const eng = engineRef.current
       const fx = fxProcessorRef.current
       const c = canvasRef.current
-      const ic = isfCanvasRef.current
-      const gl = mainGL
-      if (!r || !c || !ic || !fx) {
+      if (!eng || !c || !fx) {
         rafRef.current = requestAnimationFrame(render)
         return
       }
@@ -152,17 +155,16 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
         return
       }
 
-      if (ic.width !== c.width || ic.height !== c.height) {
-        ic.width = c.width
-        ic.height = c.height
-      }
-
       const ccValues = uniformValuesRef.current || {}
       const animCfg = paramAnimationRef.current || {}
       const currentBpm = bpmRef.current || 120
       const chain = fxChainRef.current || []
-      const time = (Date.now() - (r.startTime || Date.now())) / 1000
 
+      // Use engine's startTime for consistent time calculation
+      const startTime = eng.startTime || (eng.startTime = Date.now())
+      const time = (Date.now() - startTime) / 1000
+
+      // Compute animated values
       const animated = { ...ccValues }
       for (const key of Object.keys(animated)) {
         if (key.startsWith('u_cc')) continue
@@ -172,45 +174,44 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
         }
       }
 
-      // Update uniforms on ISF renderer
-      if (r.valid) {
+      // Update uniforms on engine
+      if (eng.isValid()) {
         try {
           for (const key of Object.keys(animated)) {
             if (key.startsWith('u_cc')) continue
             if (key === 'inputImage') continue
             if (animated[key] !== undefined) {
-              r.setValue(key, animated[key])
+              eng.setValue(key, animated[key])
             }
           }
         } catch (_) {}
       }
 
-      // Update inputImage
-      if (r.valid && hasInputImageRef.current) {
+      // Update inputImage (ISF only)
+      if (eng.isValid() && eng.name === 'isf') {
         const srcType = sourceTypeRef.current
         const srcEl = sourceElementRef.current
+        const ph = placeholderImageRef.current
         try {
           if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
-            r.setValue('inputImage', flipSourceVertically(srcEl))
+            eng.setInputImage(flipSourceVertically(srcEl))
           } else if ((srcType === 'image' || srcType === 'placeholder') && srcEl) {
-            r.setValue('inputImage', flipSourceVertically(srcEl))
+            eng.setInputImage(flipSourceVertically(srcEl))
+          } else if (ph) {
+            eng.setInputImage(ph)
           }
         } catch (_) {}
       }
 
-      try {
-        r.draw(ic)
-      } catch (_) {}
+      // Draw engine output
+      try { eng.draw() } catch (_) {}
 
+      // Get output texture and process through FX chain
       try {
-        gl.bindTexture(gl.TEXTURE_2D, isfTextureRef.current)
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, ic)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-
-        fx.process(isfTextureRef.current, chain, animated, time, c.width, c.height)
+        const outputTex = eng.getOutputTexture()
+        if (outputTex) {
+          fx.process(outputTex, chain, animated, time, c.width, c.height)
+        }
       } catch (e) {
         console.warn('FxProcessor error:', e)
       }
@@ -220,75 +221,38 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
     render()
 
     return () => {
+      cancelled = true
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      engine.destroy()
       fxProcessor.destroy()
     }
-  }, [onError])
+  }, [onError, engineMode])
 
+  // Load code into engine (only when engine is ready)
   const loadCode = useCallback((src) => {
-    const renderer = isfRendererRef.current
-    if (!renderer) return
+    const engine = engineRef.current
+    if (!engine || !engine.isValid()) return
 
-    const input = wrapGLSL(src)
+    engine.loadCode(src)
 
-    try {
-      const parser = new Parser()
-      parser.parse(input)
-      parserRef.current = parser
-
-      if (!parser.valid) {
-        onError?.(parser.error || 'Invalid ISF')
-        return
-      }
-
-      onMetadata?.({
-        inputs: parser.inputs || [],
-        description: parser.description || '',
-        credit: parser.credit || '',
-        categories: parser.categories || [],
-        passes: parser.passes || [],
-      })
-
-      renderer.loadSource(input)
-
-      // Check if shader has inputImage
-      const hasImageInput = (parser.inputs || []).some(i => i.TYPE === 'image')
-      hasInputImageRef.current = hasImageInput
-
-      // Only set inputImage when shader actually uses it
-      if (hasImageInput) {
-        try {
-          const srcType = sourceTypeRef.current
-          const srcEl = sourceElementRef.current
-          const ph = placeholderImageRef.current
-          if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
-            renderer.setValue('inputImage', flipSourceVertically(srcEl))
-          } else if ((srcType === 'image' || srcType === 'placeholder') && srcEl) {
-            renderer.setValue('inputImage', flipSourceVertically(srcEl))
-          } else if (ph) {
-            renderer.setValue('inputImage', ph)
-          }
-        } catch (_) {
-          try {
-            if (placeholderImageRef.current) renderer.setValue('inputImage', placeholderImageRef.current)
-          } catch (_) {}
-        }
-      }
-
-      onError?.(null)
-    } catch (e) {
-      onError?.(e.message || String(e))
+    if (!engine.isValid()) {
+      onError?.(engine.getError())
+      return
     }
+
+    const meta = engine.getMetadata()
+    onMetadata?.(meta)
+    onError?.(null)
   }, [onMetadata, onError])
 
   useEffect(() => {
     if (code) loadCode(code)
   }, [code, loadCode])
 
-  // Update source when it changes
+  // Update source when it changes (ISF only)
   useEffect(() => {
-    const renderer = isfRendererRef.current
-    if (!renderer || !hasInputImageRef.current) return
+    const engine = engineRef.current
+    if (!engine || engine.name !== 'isf') return
 
     const srcType = sourceTypeRef.current
     const srcEl = sourceElementRef.current
@@ -296,23 +260,20 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
 
     try {
       if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
-        renderer.setValue('inputImage', flipSourceVertically(srcEl))
+        engine.setInputImage(flipSourceVertically(srcEl))
       } else if ((srcType === 'image' || srcType === 'placeholder') && srcEl) {
-        renderer.setValue('inputImage', flipSourceVertically(srcEl))
+        engine.setInputImage(flipSourceVertically(srcEl))
       } else if (ph) {
-        renderer.setValue('inputImage', ph)
+        engine.setInputImage(ph)
       }
-    } catch (_) {
-      try {
-        if (ph) renderer.setValue('inputImage', ph)
-      } catch (_) {}
-    }
+    } catch (_) {}
   }, [sourceType, sourceElement])
 
+  // Update uniforms when they change
   const prevUniformsRef = useRef('')
   useEffect(() => {
-    const renderer = isfRendererRef.current
-    if (!renderer || !uniformValues) return
+    const engine = engineRef.current
+    if (!engine || !uniformValues) return
 
     const key = JSON.stringify(uniformValues)
     if (key === prevUniformsRef.current) return
@@ -320,10 +281,11 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
 
     for (const [name, value] of Object.entries(uniformValues)) {
       if (name.startsWith('u_cc')) continue
-      try { renderer.setValue(name, value) } catch (_) {}
+      try { engine.setValue(name, value) } catch (_) {}
     }
   }, [uniformValues])
 
+  // Resize observer
   useEffect(() => {
     function resize() {
       const canvas = canvasRef.current
@@ -335,6 +297,16 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
       if (w > 0 && h > 0 && (canvas.width !== w || canvas.height !== h)) {
         canvas.width = w
         canvas.height = h
+        // Resize offscreen canvas to match
+        const eng = engineRef.current
+        if (eng) {
+          if (eng.name === 'hydra' && typeof eng.resize === 'function') {
+            eng.resize(w, h)
+          } else if (eng.name === 'isf' && eng.canvas) {
+            eng.canvas.width = w
+            eng.canvas.height = h
+          }
+        }
       }
     }
     resize()
@@ -364,7 +336,3 @@ export default function Preview({ code, uniformValues, fxChain, onMetadata, onEr
     />
   )
 }
-
-
-
-

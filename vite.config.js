@@ -11,6 +11,9 @@ export default defineConfig({
       languageWorkers: ['editorWorkerService', 'typescript', 'json'],
     }),
   ],
+  define: {
+    global: {},
+  },
   base: './',
   server: {
     fs: {

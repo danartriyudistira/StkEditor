@@ -1,4 +1,4 @@
-﻿import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import ShaderEditor from './components/Editor.jsx'
 import Preview from './components/Preview.jsx'
 import Controls from './components/Controls.jsx'
@@ -18,6 +18,10 @@ import { exportStk, importStk } from './lib/stkArchive.js'
 import { DEFAULT_CONFIG } from './utils/animation.js'
 import { extractIsfMetadata, adaptIsfToFx, validateIsfForFx } from './fx/isfAdapter.js'
 import { registerIsfEffect } from './fx/effects.js'
+import HydraEditor from './components/HydraEditor.jsx'
+import HydraLibrary from './components/HydraLibrary.jsx'
+import { DEFAULT_HYDRA_CODE, getRandomExample } from './data/hydraExamples.js'
+import { mutateCode } from './utils/hydraMutator.js'
 import './App.css'
 
 const DEFAULT_SHADER = `/*{
@@ -47,17 +51,19 @@ const defaultCcValues = Object.fromEntries(
 
 export default function App() {
   const [projectName, setProjectName] = useState('untitled')
-  const [tabs, setTabs] = useState([{ id: 1, name: 'untitled.fs', code: DEFAULT_SHADER, modified: false }])
+  const [tabs, setTabs] = useState([{ id: 1, name: 'untitled.fs', code: DEFAULT_SHADER, type: 'isf', modified: false }])
   const [activeTabId, setActiveTabId] = useState(1)
   const nextTabIdRef = useRef(2)
   const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0]
   const code = activeTab?.code || ''
   const fileName = activeTab?.name || 'untitled.fs'
+  const engineMode = activeTab?.type || 'isf'
   const [isfMetadata, setIsfMetadata] = useState(null)
   const [uniformValues, setUniformValues] = useState({})
   const [ccValues, setCcValues] = useState(defaultCcValues)
   const [ccMapping, setCcMapping] = useState({})
   const [paramAnimation, setParamAnimation] = useState({})
+  const [parameterConfig, setParameterConfig] = useState({})
   const [bpm, setBpm] = useState(120)
   const [fxChain, setFxChain] = useState([])
   const [error, setError] = useState(null)
@@ -65,6 +71,7 @@ export default function App() {
   const [libraryFiles, setLibraryFiles] = useState([])
   const [showLibrary, setShowLibrary] = useState(false)
   const [showIsfLibraryForFx, setShowIsfLibraryForFx] = useState(false)
+  const [showHydraLibrary, setShowHydraLibrary] = useState(false)
   const [showSourcePopup, setShowSourcePopup] = useState(false)
   const [consoleConnected, setConsoleConnected] = useState(false)
   const [consoleConfig, setConsoleConfig] = useState(() => {
@@ -97,7 +104,6 @@ export default function App() {
   const synthRef = useRef(null)
   const midiOutputRef = useRef(null)
   const midiChannelRef = useRef(0)
-
   const handlePerformanceToggle = useCallback(() => {
     setPerformanceMode(prev => {
       const next = !prev
@@ -120,9 +126,12 @@ export default function App() {
     setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, ...updates } : t))
   }, [activeTabId])
 
-  const handleNewTab = useCallback(() => {
+  const handleNewTab = useCallback((type) => {
+    const tabType = type || 'isf'
     const id = nextTabIdRef.current++
-    const newTab = { id, name: 'untitled.fs', code: DEFAULT_SHADER, modified: false }
+    const newTab = tabType === 'hydra'
+      ? { id, name: 'untitled.js', code: DEFAULT_HYDRA_CODE, type: 'hydra', modified: false }
+      : { id, name: 'untitled.fs', code: DEFAULT_SHADER, type: 'isf', modified: false }
     setTabs(prev => [...prev, newTab])
     setActiveTabId(id)
   }, [])
@@ -147,6 +156,32 @@ export default function App() {
   const handleRename = useCallback((tabId, newName) => {
     setTabs(prev => prev.map(t => t.id === tabId ? { ...t, name: newName } : t))
   }, [])
+
+  const handleSwitchTabType = useCallback((type) => {
+    setTabs(prev => prev.map(t => {
+      if (t.id !== activeTabId) return t
+      if (t.type === type) return t
+      const newCode = type === 'hydra' ? DEFAULT_HYDRA_CODE : DEFAULT_SHADER
+      return { ...t, type, code: newCode, name: type === 'hydra' ? 'untitled.js' : 'untitled.fs' }
+    }))
+  }, [activeTabId])
+
+  const handleHydraLibrarySelect = useCallback((code, name) => {
+    updateActiveTab({ code, name, modified: false })
+    setShowHydraLibrary(false)
+    setError(null)
+  }, [updateActiveTab])
+
+  const handleHydraRandom = useCallback(() => {
+    const example = getRandomExample()
+    updateActiveTab({ code: example.code, name: example.name, modified: false })
+  }, [updateActiveTab])
+
+  const handleHydraMutate = useCallback(() => {
+    const currentCode = code || ''
+    const mutated = mutateCode(currentCode, 0.3)
+    updateActiveTab({ code: mutated, modified: true })
+  }, [code, updateActiveTab])
 
   useEffect(() => {
     const handler = (e) => {
@@ -189,7 +224,6 @@ export default function App() {
       .catch(() => setLibraryFiles([]))
   }, [])
 
-  // Cleanup webcam on unmount
   useEffect(() => {
     return () => {
       if (webcamStreamRef.current) {
@@ -220,16 +254,18 @@ export default function App() {
 
   const handleCcValueChange = useCallback((name, value) => {
     setCcValues(prev => ({ ...prev, [name]: value }))
-
     const ccChannel = name.replace('u_cc', '')
     const mappedInputs = Object.entries(ccMapping)
       .filter(([_, ch]) => ch === `cc${ccChannel}`)
       .map(([inputName]) => inputName)
-
-    if (mappedInputs.length > 0 && isfMetadata?.inputs) {
+    const directMapped = Object.entries(parameterConfig)
+      .filter(([_, cfg]) => cfg.cc === parseInt(ccChannel))
+      .map(([paramName]) => paramName)
+    const allMapped = [...new Set([...mappedInputs, ...directMapped])]
+    if (allMapped.length > 0 && isfMetadata?.inputs) {
       setUniformValues(prev => {
         const next = { ...prev }
-        for (const inputName of mappedInputs) {
+        for (const inputName of allMapped) {
           const input = isfMetadata.inputs.find(i => i.NAME === inputName)
           if (input) {
             const min = input.MIN ?? 0
@@ -240,7 +276,7 @@ export default function App() {
         return next
       })
     }
-  }, [ccMapping, isfMetadata])
+  }, [ccMapping, parameterConfig, isfMetadata])
 
   const handleCcMappingChange = useCallback((inputName, channel) => {
     setCcMapping(prev => ({ ...prev, [inputName]: channel }))
@@ -250,15 +286,23 @@ export default function App() {
     setParamAnimation(prev => ({ ...prev, [paramName]: config }))
   }, [])
 
+  const handleParameterConfigChange = useCallback((paramName, config) => {
+    setParameterConfig(prev => ({ ...prev, [paramName]: config }))
+  }, [])
+
+  const handleParamOscChange = useCallback((paramName, oscAddr) => {
+    setParameterConfig(prev => ({
+      ...prev,
+      [paramName]: { ...prev[paramName], oscAddr }
+    }))
+  }, [])
+
   const handleTrigger = useCallback((trigger) => {
-    // Play sound via synth
     if (trigger.type === 'noteOn' && trigger.velocity > 0) {
       synthRef.current?.noteOn(trigger.note, Math.round(trigger.velocity * 127))
     } else if (trigger.type === 'noteOff') {
       synthRef.current?.noteOff(trigger.note)
     }
-
-    // Send MIDI output directly
     const output = midiOutputRef.current
     if (output) {
       const ch = midiChannelRef.current
@@ -275,7 +319,6 @@ export default function App() {
         sendToChannel(ch)
       }
     }
-
     setTriggers(prev => {
       if (trigger.type === 'noteOn') {
         const next = [...prev, {
@@ -284,13 +327,11 @@ export default function App() {
           startTime: Date.now(),
           effectId: trigger.effectId || null,
         }]
-        return next.slice(-6) // max 6 active triggers
+        return next.slice(-6)
       } else {
         return prev.filter(t => t.note !== trigger.note)
       }
     })
-
-    // If mapped to effect, toggle it
     if (trigger.effectId) {
       setFxChain(prev => prev.map(fx => {
         if (fx.id === trigger.effectId) {
@@ -321,12 +362,10 @@ export default function App() {
   }
 
   const handleSourceChange = useCallback((type) => {
-    // Stop webcam if switching away
     if (type !== 'webcam' && webcamStreamRef.current) {
       webcamStreamRef.current.getTracks().forEach(t => t.stop())
       webcamStreamRef.current = null
     }
-
     if (type === 'webcam') {
       navigator.mediaDevices.getUserMedia({ video: true })
         .then(stream => {
@@ -367,25 +406,31 @@ export default function App() {
   }, [])
 
   const handleNew = useCallback(() => {
-    updateActiveTab({ code: DEFAULT_SHADER, name: 'untitled.fs', modified: false })
+    if (engineMode === 'hydra') {
+      updateActiveTab({ code: DEFAULT_HYDRA_CODE, name: 'untitled.js', modified: false })
+    } else {
+      updateActiveTab({ code: DEFAULT_SHADER, name: 'untitled.fs', modified: false })
+    }
     setIsfMetadata(null)
     setUniformValues({})
     setCcMapping({})
     setFxChain([])
     setError(null)
     setStkfxName('')
-  }, [updateActiveTab])
+  }, [updateActiveTab, engineMode])
 
   const handleOpen = useCallback(() => {
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = '.fs,.frag,.glsl,.vert,.txt'
+    input.accept = '.fs,.frag,.glsl,.vert,.txt,.js'
     input.onchange = (e) => {
       const file = e.target.files?.[0]
       if (!file) return
       const reader = new FileReader()
       reader.onload = (ev) => {
-        updateActiveTab({ code: ev.target.result, name: file.name, modified: false })
+        const ext = file.name.split('.').pop().toLowerCase()
+        const type = (ext === 'js' || ext === 'txt') ? 'hydra' : 'isf'
+        updateActiveTab({ code: ev.target.result, name: file.name, type, modified: false })
         setError(null)
       }
       reader.readAsText(file)
@@ -403,24 +448,12 @@ export default function App() {
     URL.revokeObjectURL(url)
   }, [code, fileName])
 
-  const handleSave = useCallback(() => {
-    // Save .fs file - overwrite if already has content, else download
-    const blob = new Blob([code], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = fileName || 'untitled.fs'
-    a.click()
-    URL.revokeObjectURL(url)
-    updateActiveTab({ modified: false })
-  }, [code, fileName, updateActiveTab])
-
   const handleLoadFromLibrary = useCallback(() => {
     setShowLibrary(true)
   }, [])
 
   const handleLibrarySelect = useCallback((source, name) => {
-    updateActiveTab({ code: source, name: name, modified: false })
+    updateActiveTab({ code: source, name, modified: false })
     setShowLibrary(false)
     setError(null)
   }, [updateActiveTab])
@@ -433,45 +466,18 @@ export default function App() {
       setShowIsfLibraryForFx(false)
       return
     }
-
     const id = 'isf_' + name.replace(/\.fs$/, '').replace(/[^a-zA-Z0-9]/g, '_')
     const label = name.replace(/\.fs$/, '')
     const category = 'ISF'
-
-    const { shader, params, warnings } = adaptIsfToFx(source, metadata)
-
-    const effectDef = {
-      id, label, category,
-      isIsf: true,
-      source,
-      params,
-      shader,
-    }
-
+    const { shader, params } = adaptIsfToFx(source, metadata)
+    const effectDef = { id, label, category, isIsf: true, source, params, shader }
     registerIsfEffect(id, effectDef)
-    
-
-    // Auto-add to chain
-    const usedCc = new Set((fxChain || []).map(fx => fx.cc))
-    const ccChannels = [1, 2, 3, 4, 5, 6, 7, 8]
-    const freeCc = ccChannels.find(cc => !usedCc.has(cc)) || 1
-
     const newFx = {
-      id,
-      label,
-      cc: freeCc,
-      enabled: true,
-      isIsf: true,
-      isfSource: source,
-      category,
-      paramValues: Object.fromEntries(
-        Object.entries(params).map(([k, v]) => [k, v.default ?? 0])
-      ),
-      paramCc: {},
-      toggleCc: null,
+      id, label, enabled: true, isIsf: true, isfSource: source, category,
+      paramValues: Object.fromEntries(Object.entries(params).map(([k, v]) => [k, v.default ?? 0])),
+      paramCc: {}, toggleCc: null,
     }
     setFxChain(prev => [...(prev || []), newFx])
-
     setShowIsfLibraryForFx(false)
     setError(null)
   }, [fxChain])
@@ -514,84 +520,16 @@ export default function App() {
     input.click()
   }, [])
 
-  const handleSavePreset = useCallback(() => {
-    const preset = {
-      version: 2,
-      shader: { code, fileName },
-      cc: ccValues,
-      ccMapping,
-      paramAnimation,
-      bpm,
-      fxChain: fxChain || [],
-      audio: {
-        presetIndex: synthRef.current?.presetIndex || 0,
-      },
-      midi: {
-        ccMapping: {},
-      },
-      console: consoleConfig,
-    }
-    const blob = new Blob([JSON.stringify(preset, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = fileName.replace(/\\.[\\w]+$/, '.stk') || 'preset.stk'
-    a.click()
-    URL.revokeObjectURL(url)
-  }, [code, fileName, ccValues, ccMapping, paramAnimation, bpm, fxChain, consoleConfig])
-
-  const handleLoadPreset = useCallback(() => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.stk,.stkfx,.json'
-    input.onchange = (e) => {
-      const file = e.target.files?.[0]
-      if (!file) return
-      const reader = new FileReader()
-      reader.onload = (ev) => {
-        try {
-          const data = JSON.parse(ev.target.result)
-          // Full preset (.stk)
-          if (data.version === 1) {
-            if (data.shader?.code) setCode(data.shader.code)
-            if (data.shader?.fileName) setFileName(data.shader.fileName)
-            if (data.cc) setCcValues(prev => ({ ...prev, ...data.cc }))
-            if (data.ccMapping) setCcMapping(data.ccMapping)
-            if (data.paramAnimation) setParamAnimation(data.paramAnimation)
-            if (data.bpm) setBpm(data.bpm)
-            if (data.fxChain) setFxChain(data.fxChain)
-            if (data.console) {
-              setConsoleConfig(data.console)
-              localStorage.setItem('consoleConfig', JSON.stringify(data.console))
-            }
-            if (data.audio?.presetIndex !== undefined) {
-              synthRef.current?.setPreset(data.audio.presetIndex)
-            }
-          }
-          // Legacy stkfx (.stkfx)
-          else {
-            if (data.fxChain) setFxChain(data.fxChain)
-          }
-          setFileName(file.name.replace(/\\.[\\w]+$/, '.fs'))
-          setError(null)
-        } catch (err) {
-          setError('Failed to parse preset file')
-        }
-      }
-      reader.readAsText(file)
-    }
-    input.click()
-  }, [])
-
   const handleExportStk = useCallback(async () => {
     try {
       const blob = await exportStk({
         projectName,
-        tabs,
+        tabs: tabs.map(t => ({ ...t })),
         fxChain: fxChain || [],
         ccValues,
         ccMapping,
         paramAnimation,
+        parameterConfig,
         bpm,
         console: consoleConfig,
         audio: { presetIndex: synthRef.current?.presetIndex || 0 },
@@ -605,7 +543,7 @@ export default function App() {
     } catch (e) {
       setError('Failed to export: ' + e.message)
     }
-  }, [projectName, tabs, ccValues, ccMapping, paramAnimation, bpm, fxChain, consoleConfig])
+  }, [projectName, tabs, ccValues, ccMapping, paramAnimation, parameterConfig, bpm, fxChain, consoleConfig])
 
   const handleImportStk = useCallback(() => {
     const input = document.createElement('input')
@@ -617,10 +555,12 @@ export default function App() {
       try {
         const project = await importStk(file)
         setProjectName(project.projectName)
-        setTabs(project.tabs.length > 0 ? project.tabs : [{ id: 1, name: 'untitled.fs', code: DEFAULT_SHADER, modified: false }])
+        const restoredTabs = (project.tabs || []).map(t => ({ ...t, id: Date.now() + Math.random(), modified: false }))
+        setTabs(restoredTabs.length > 0 ? restoredTabs : [{ id: 1, name: 'untitled.fs', code: DEFAULT_SHADER, type: 'isf', modified: false }])
         if (project.ccValues) setCcValues(prev => ({ ...prev, ...project.ccValues }))
         if (project.ccMapping) setCcMapping(project.ccMapping)
         if (project.paramAnimation) setParamAnimation(project.paramAnimation)
+        if (project.parameterConfig) setParameterConfig(project.parameterConfig)
         if (project.bpm) setBpm(project.bpm)
         if (project.fxChain) setFxChain(project.fxChain)
         if (project.console) {
@@ -647,9 +587,7 @@ export default function App() {
     localStorage.setItem('consoleConfig', JSON.stringify(newConfig))
   }, [])
 
-  const handleOverlayClose = useCallback(() => {
-    setShowOverlay(false)
-  }, [])
+  const handleOverlayClose = useCallback(() => { setShowOverlay(false) }, [])
 
   const handlePerfBarEnter = useCallback(() => {
     if (perfBarTimerRef.current) clearTimeout(perfBarTimerRef.current)
@@ -660,18 +598,14 @@ export default function App() {
     perfBarTimerRef.current = setTimeout(() => setShowPerfBar(false), 800)
   }, [])
 
-  const handleOverlaySwitchTab = useCallback((tabId) => {
-    setActiveTabId(tabId)
-  }, [])
+  const handleOverlaySwitchTab = useCallback((tabId) => { setActiveTabId(tabId) }, [])
 
   const handleOverlayPresetChange = useCallback((idx) => {
     setPfPresetIndex(idx)
     synthRef.current?.setPreset(idx)
   }, [])
 
-  const handleOverlayToggleRandomGen = useCallback(() => {
-    randomGenRef.current?.()
-  }, [])
+  const handleOverlayToggleRandomGen = useCallback(() => { randomGenRef.current?.() }, [])
 
   const handleOverlayVolumeChange = useCallback((val) => {
     setPfVolume(val)
@@ -688,31 +622,20 @@ export default function App() {
       uniforms: uniformValues,
       triggers,
     })
-
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(payload)
       return
     }
-
     const ws = new WebSocket(`ws://${consoleConfig.host}:${consoleConfig.port}`)
-    ws.onopen = () => {
-      setConsoleConnected(true)
-      ws.send(payload)
-    }
-    ws.onclose = () => {
-      setConsoleConnected(false)
-      wsRef.current = null
-    }
-    ws.onerror = () => {
-      setConsoleConnected(false)
-      wsRef.current = null
-    }
+    ws.onopen = () => { setConsoleConnected(true); ws.send(payload) }
+    ws.onclose = () => { setConsoleConnected(false); wsRef.current = null }
+    ws.onerror = () => { setConsoleConnected(false); wsRef.current = null }
     wsRef.current = ws
   }, [code, ccValues, uniformValues, triggers, consoleConfig])
 
   const allUniformValues = { ...uniformValues, ...ccValues }
-
   const appliedUniformValues = { ...ccValues }
+
   for (const [inputName, channel] of Object.entries(ccMapping)) {
     if (channel && ccValues[`u_${channel}`] !== undefined) {
       const input = isfMetadata?.inputs?.find(i => i.NAME === inputName)
@@ -721,6 +644,17 @@ export default function App() {
         const min = input.MIN ?? 0
         const max = input.MAX ?? 1
         appliedUniformValues[inputName] = min + ccVal * (max - min)
+      }
+    }
+  }
+  for (const [paramName, cfg] of Object.entries(parameterConfig)) {
+    if (cfg.cc && ccValues[`u_cc${cfg.cc}`] !== undefined) {
+      const input = isfMetadata?.inputs?.find(i => i.NAME === paramName)
+      if (input) {
+        const ccVal = ccValues[`u_cc${cfg.cc}`]
+        const min = input.MIN ?? 0
+        const max = input.MAX ?? 1
+        appliedUniformValues[paramName] = min + ccVal * (max - min)
       }
     }
   }
@@ -763,7 +697,6 @@ export default function App() {
         )}
 
         <div className="main">
-          {/* Fullscreen Preview Background */}
           <div className="preview-bg">
             <Preview
               code={code}
@@ -775,10 +708,10 @@ export default function App() {
               sourceElement={sourceElement}
               paramAnimation={paramAnimation}
               bpm={bpm}
+              engineMode={engineMode}
             />
           </div>
 
-          {/* Left Panel - Editor */}
           {!performanceMode && (
           <div
             className={`left-panel${leftOpen ? '' : ' collapsed'}`}
@@ -799,14 +732,32 @@ export default function App() {
                 libraryFiles={libraryFiles}
                 sourceType={sourceType}
                 onSourceClick={() => setShowSourcePopup(true)}
+                onGallery={() => setShowHydraLibrary(true)}
+                onRandom={handleHydraRandom}
+                onMutate={handleHydraMutate}
               />
-              <ShaderEditor value={code} onChange={(v) => updateActiveTab({ code: v, modified: true })} />
+              {activeTab?.type === 'hydra' ? (
+                <HydraEditor value={code} onChange={(v) => updateActiveTab({ code: v, modified: true })} />
+              ) : (
+                <ShaderEditor value={code} onChange={(v) => updateActiveTab({ code: v, modified: true })} />
+              )}
               {error && <div className="error-bar">{error}</div>}
+              <div className="editor-footer">
+                <button
+                  className={`engine-toggle ${activeTab?.type !== 'hydra' ? 'active' : ''}`}
+                  onClick={() => handleSwitchTabType('isf')}
+                  title="Switch to ISF mode"
+                >ISF</button>
+                <button
+                  className={`engine-toggle ${activeTab?.type === 'hydra' ? 'active' : ''}`}
+                  onClick={() => handleSwitchTabType('hydra')}
+                  title="Switch to Hydra mode"
+                >Hydra</button>
+              </div>
             </div>
           </div>
           )}
 
-          {/* Right Panel - Controls */}
           <div
             className={`right-panel${rightOpen ? '' : ' collapsed'}${performanceMode ? ' perf-hidden' : ''}`}
             style={{ background: `rgba(37, 37, 38, ${panelOpacity})` }}
@@ -817,13 +768,16 @@ export default function App() {
               onChange={handleControlChange}
               paramAnimation={paramAnimation}
               onParamAnimationChange={handleParamAnimationChange}
+              parameterConfig={parameterConfig}
+              onParameterConfigChange={handleParameterConfigChange}
+              onParamOscChange={handleParamOscChange}
               bpm={bpm}
               onBpmChange={setBpm}
             />
             <CcPanel
               inputs={isfMetadata?.inputs}
               mapping={ccMapping}
-              onMappingChange={handleCcMappingChange}
+              parameterConfig={parameterConfig}
               values={ccValues}
               onValueChange={handleCcValueChange}
               fxChain={fxChain}
@@ -858,10 +812,18 @@ export default function App() {
             />
             <OscPanel
               onCcChange={handleCcValueChange}
+              parameterConfig={parameterConfig}
+              onOscMessage={(paramName, value) => {
+                const input = isfMetadata?.inputs?.find(i => i.NAME === paramName)
+                if (input) {
+                  const min = input.MIN ?? 0
+                  const max = input.MAX ?? 1
+                  setUniformValues(prev => ({ ...prev, [paramName]: min + value * (max - min) }))
+                }
+              }}
             />
           </div>
 
-          {/* Toggle Buttons - always visible */}
           {!performanceMode && (
           <>
           <button
@@ -878,8 +840,6 @@ export default function App() {
           >
             {rightOpen ? '\u25B6' : '\u25C0'}
           </button>
-
-          {/* Opacity Slider */}
           <div className="opacity-control">
             <label title="Panel opacity">Op</label>
             <input
@@ -903,7 +863,6 @@ export default function App() {
             onClose={() => setShowLibrary(false)}
           />
         )}
-
         {showIsfLibraryForFx && (
           <ISFLibrary
             files={libraryFiles}
@@ -911,7 +870,12 @@ export default function App() {
             onClose={() => setShowIsfLibraryForFx(false)}
           />
         )}
-
+        {showHydraLibrary && (
+          <HydraLibrary
+            onSelect={handleHydraLibrarySelect}
+            onClose={() => setShowHydraLibrary(false)}
+          />
+        )}
         {showSourcePopup && (
           <SourcePopup
             sourceType={sourceType}
@@ -961,8 +925,3 @@ export default function App() {
     </ErrorBoundary>
   )
 }
-
-
-
-
-
