@@ -7,7 +7,7 @@ import { computeAnimatedValue } from '../utils/animation.js'
 
 const CC_CHANNELS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
-export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkfx, onLoadStkfx, onLoadIsf, onAnimGlitch, glitchParamConfig, onGlitchConfigChange, bpm }) {
+export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkfx, onLoadStkfx, onLoadIsf, onAnimGlitch, glitchParamConfig, onGlitchConfigChange, bpm, resetBeatKey }) {
   const [expanded, setExpanded] = useState(false)
   const [activeFxParam, setActiveFxParam] = useState(null)
   const [activeFxSettings, setActiveFxSettings] = useState(null)
@@ -16,6 +16,10 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
   const animValuesRef = useRef({})
   const animCtxRef = useRef()
   animCtxRef.current = { fxChain, bpm, onAnimGlitch, onFxChainChange }
+
+  useEffect(() => {
+    startTimeRef.current = Date.now()
+  }, [resetBeatKey])
 
   const hasAnyAnim = useMemo(() => {
     return (fxChain || []).some(fx =>

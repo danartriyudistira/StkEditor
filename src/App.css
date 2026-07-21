@@ -168,6 +168,30 @@
 }
 
 /* Opacity control */
+.panel-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  z-index: 15;
+  cursor: col-resize;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.panel-resize-handle:hover,
+.panel-resize-handle:active {
+  background: rgba(79, 195, 247, 0.25);
+}
+
+.panel-resize-handle--right {
+  right: -3px;
+}
+
+.panel-resize-handle--left {
+  left: -3px;
+}
+
 .opacity-control {
   position: absolute;
   bottom: 10px;
@@ -335,6 +359,182 @@
   font-weight: bold;
   min-width: 32px;
   text-align: right;
+}
+
+.bpm-btn {
+  background: #333;
+  border: 1px solid #555;
+  color: #ccc;
+  font-size: 14px;
+  font-weight: 600;
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  user-select: none;
+}
+
+.bpm-btn:hover {
+  background: #444;
+  border-color: #888;
+}
+
+.bpm-input {
+  background: #1e1e1e;
+  border: 1px solid #555;
+  color: #bb86fc;
+  font-size: 13px;
+  font-family: monospace;
+  font-weight: 600;
+  width: 52px;
+  padding: 3px 6px;
+  border-radius: 3px;
+  text-align: center;
+  outline: none;
+}
+
+.bpm-input:focus {
+  border-color: #bb86fc;
+}
+
+.tempo-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 0 8px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.tempo-bar-bpm {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.tempo-btn {
+  background: #333;
+  border: 1px solid #555;
+  color: #ccc;
+  font-size: 16px;
+  font-weight: 700;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.tempo-btn:hover {
+  background: #444;
+  border-color: #888;
+}
+
+.tempo-value {
+  background: #1e1e1e;
+  border: 1px solid #444;
+  color: #bb86fc;
+  font-size: 15px;
+  font-family: monospace;
+  font-weight: 700;
+  width: 58px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  text-align: center;
+  cursor: text;
+  user-select: none;
+}
+
+.tempo-value:hover {
+  border-color: #666;
+}
+
+.tempo-input {
+  background: #1e1e1e;
+  border: 1px solid #bb86fc;
+  color: #bb86fc;
+  font-size: 15px;
+  font-family: monospace;
+  font-weight: 700;
+  width: 58px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  text-align: center;
+  outline: none;
+}
+
+.tempo-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tempo-act {
+  background: #333;
+  border: 1px solid #555;
+  color: #ccc;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 5px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: monospace;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.tempo-act:hover {
+  background: #444;
+  border-color: #888;
+  color: #fff;
+}
+
+.tempo-act--tab {
+  background: #2a3a2a;
+  border-color: #4a7a4a;
+  color: #8f8;
+}
+
+.tempo-act--tab:hover {
+  background: #3a4a3a;
+  border-color: #6a9a6a;
+}
+
+.tempo-act--reset {
+  background: #3a2a2a;
+  border-color: #7a4a4a;
+  color: #f88;
+}
+
+.tempo-act--reset:hover {
+  background: #4a3a3a;
+  border-color: #9a6a6a;
+}
+
+.tempo-act--nudge {
+  background: #2a2a3a;
+  border-color: #5a5a7a;
+  color: #88f;
+}
+
+.tempo-act--nudge:hover {
+  background: #3a3a4a;
+  border-color: #7a7a9a;
 }
 
 /* Glitch Sound Section */

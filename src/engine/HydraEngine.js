@@ -122,7 +122,7 @@ export default class HydraEngine extends EngineInterface {
   }
 
   getOutputTexture() {
-    if (!this.outputGL || !this.outputCanvas) return null
+    if (!this.outputGL || !this.outputCanvas || !this.outputTexture) return null
     const gl = this.outputGL
     gl.bindTexture(gl.TEXTURE_2D, this.outputTexture)
     gl.texImage2D(

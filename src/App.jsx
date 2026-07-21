@@ -69,6 +69,7 @@ export default function App() {
   const [paramAnimation, setParamAnimation] = useState({})
   const [parameterConfig, setParameterConfig] = useState({})
   const [bpm, setBpm] = useState(120)
+  const [resetBeatKey, setResetBeatKey] = useState(0)
   const [fxChain, setFxChain] = useState([])
   const [glitchParamConfig, setGlitchParamConfig] = useState({})
   const [error, setError] = useState(null)
@@ -133,6 +134,13 @@ export default function App() {
   const [triggers, setTriggers] = useState([])
   const [leftOpen, setLeftOpen] = useState(true)
   const [rightOpen, setRightOpen] = useState(true)
+  const [leftPanelWidth, setLeftPanelWidth] = useState(45)
+  const [rightPanelWidth, setRightPanelWidth] = useState(350)
+  const leftPanelWidthRef = useRef(45)
+  const rightPanelWidthRef = useRef(350)
+  leftPanelWidthRef.current = leftPanelWidth
+  rightPanelWidthRef.current = rightPanelWidth
+
   const [panelOpacity, setPanelOpacity] = useState(0.92)
   const [sourceType, setSourceType] = useState('placeholder')
   const [sourceElement, setSourceElement] = useState(null)
@@ -145,7 +153,7 @@ export default function App() {
   const [pfRenderQuality, setPfRenderQuality] = useState('Full')
   const [pfFps, setPfFps] = useState(60)
   const [pfVolume, setPfVolume] = useState(50)
-  const [pfBpm, setPfBpm] = useState(120)
+
   const [pfNoteDivider, setPfNoteDivider] = useState(2)
   const [pfPresetIndex, setPfPresetIndex] = useState(0)
   const [pfMidiLearnActive, setPfMidiLearnActive] = useState(false)
@@ -1056,8 +1064,31 @@ export default function App() {
           {!performanceMode && (
           <div
             className={`left-panel${leftOpen ? '' : ' collapsed'}`}
-            style={{ background: `rgba(30, 30, 30, ${panelOpacity})` }}
+            style={{ width: `${leftPanelWidth}%`, background: `rgba(30, 30, 30, ${panelOpacity})` }}
           >
+            <div
+              className="panel-resize-handle panel-resize-handle--right"
+              onMouseDown={e => {
+                e.preventDefault()
+                const sx = e.clientX, sw = leftPanelWidthRef.current
+                const parent = e.currentTarget.parentElement.parentElement
+                const pw = parent.clientWidth
+                const move = ev => setLeftPanelWidth(Math.max(20, Math.min(80, sw + ((ev.clientX - sx) / pw) * 100)))
+                const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up) }
+                document.addEventListener('mousemove', move)
+                document.addEventListener('mouseup', up)
+              }}
+              onTouchStart={e => {
+                const t = e.touches[0]
+                const sx = t.clientX, sw = leftPanelWidthRef.current
+                const parent = e.currentTarget.parentElement.parentElement
+                const pw = parent.clientWidth
+                const move = ev => { ev.preventDefault(); setLeftPanelWidth(Math.max(20, Math.min(80, sw + ((ev.touches[0].clientX - sx) / pw) * 100))) }
+                const up = () => { document.removeEventListener('touchmove', move); document.removeEventListener('touchend', up) }
+                document.addEventListener('touchmove', move, { passive: false })
+                document.addEventListener('touchend', up)
+              }}
+            />
             <div className="editor-pane">
               <TabBar
                 tabs={tabs}
@@ -1115,8 +1146,27 @@ export default function App() {
 
           <div
             className={`right-panel${rightOpen ? '' : ' collapsed'}${performanceMode ? ' perf-hidden' : ''}`}
-            style={{ background: `rgba(37, 37, 38, ${panelOpacity})` }}
+            style={{ width: `${rightPanelWidth}px`, background: `rgba(37, 37, 38, ${panelOpacity})` }}
           >
+            <div
+              className="panel-resize-handle panel-resize-handle--left"
+              onMouseDown={e => {
+                e.preventDefault()
+                const sx = e.clientX, sw = rightPanelWidthRef.current
+                const move = ev => setRightPanelWidth(Math.max(180, Math.min(800, sw - (ev.clientX - sx))))
+                const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up) }
+                document.addEventListener('mousemove', move)
+                document.addEventListener('mouseup', up)
+              }}
+              onTouchStart={e => {
+                const t = e.touches[0]
+                const sx = t.clientX, sw = rightPanelWidthRef.current
+                const move = ev => { ev.preventDefault(); setRightPanelWidth(Math.max(180, Math.min(800, sw - (ev.touches[0].clientX - sx)))) }
+                const up = () => { document.removeEventListener('touchmove', move); document.removeEventListener('touchend', up) }
+                document.addEventListener('touchmove', move, { passive: false })
+                document.addEventListener('touchend', up)
+              }}
+            />
             <Controls
               metadata={isfMetadata}
               values={engineMode === 'hydra' ? hydraValues : uniformValues}
@@ -1133,6 +1183,8 @@ export default function App() {
               glitchParamConfig={glitchParamConfig}
               onGlitchConfigChange={handleGlitchConfigChange}
               onAnimGlitch={handleAnimGlitch}
+              resetBeatKey={resetBeatKey}
+              onResetBeat={() => setResetBeatKey(k => k + 1)}
             />
             <CcPanel
               inputs={isfMetadata?.inputs}
@@ -1142,7 +1194,7 @@ export default function App() {
               onValueChange={handleCcValueChange}
               fxChain={fxChain}
             />
-<FxPanel
+            <FxPanel
               fxChain={fxChain}
               onFxChainChange={setFxChain}
               ccValues={ccValues}
@@ -1155,6 +1207,7 @@ export default function App() {
               glitchParamConfig={glitchParamConfig}
               onGlitchConfigChange={handleGlitchConfigChange}
               bpm={bpm}
+              resetBeatKey={resetBeatKey}
             />
             <MidiPanel
               ccValues={ccValues}
@@ -1170,6 +1223,8 @@ export default function App() {
               noteMapping={{}}
               onToggleRef={randomGenRef}
               onChange={setRandomGenOn}
+              bpm={bpm}
+              onBpmChange={setBpm}
             />
             <AudioPanel
               onSynthReady={handleSynthReady}
@@ -1195,6 +1250,7 @@ export default function App() {
           <>
           <button
             className={`panel-toggle panel-toggle--left${leftOpen ? ' at-edge' : ''}`}
+            style={leftOpen ? { left: `${leftPanelWidth}%` } : undefined}
             onClick={() => setLeftOpen(v => !v)}
             title={leftOpen ? 'Hide editor (Ctrl+B)' : 'Show editor (Ctrl+B)'}
           >
@@ -1202,6 +1258,7 @@ export default function App() {
           </button>
           <button
             className={`panel-toggle panel-toggle--right${rightOpen ? ' at-edge' : ''}`}
+            style={rightOpen ? { right: `${rightPanelWidth}px` } : undefined}
             onClick={() => setRightOpen(v => !v)}
             title={rightOpen ? 'Hide controls (Ctrl+.)' : 'Show controls (Ctrl+.)'}
           >
@@ -1272,8 +1329,8 @@ export default function App() {
           onPresetChange={handleOverlayPresetChange}
           volume={pfVolume}
           onVolumeChange={handleOverlayVolumeChange}
-          bpm={pfBpm}
-          onBpmChange={setPfBpm}
+          bpm={bpm}
+          onBpmChange={setBpm}
           noteDivider={pfNoteDivider}
           onNoteDividerChange={setPfNoteDivider}
           isfMetadata={isfMetadata}

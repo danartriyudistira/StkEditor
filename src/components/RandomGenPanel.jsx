@@ -1,23 +1,27 @@
 ﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import RandomNoteGenerator from '../audio/randomGen.js'
-import Slider from './Slider.jsx'
 
 function noteName(note) {
   const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
   return names[note % 12] + Math.floor(note / 12 - 1)
 }
 
-export default function RandomGenPanel({ onTrigger, noteMapping, onToggleRef, onChange }) {
+export default function RandomGenPanel({ onTrigger, noteMapping, onToggleRef, onChange, bpm, onBpmChange }) {
   const [enabled, setEnabled] = useState(false)
-  const [bpm, setBpm] = useState(120)
   const [noteDivider, setNoteDivider] = useState(1)
   const [activeNote, setActiveNote] = useState(null)
   const genRef = useRef(null)
   const onTriggerRef = useRef(onTrigger)
   const noteMappingRef = useRef(noteMapping)
   const enabledRef = useRef(false)
+  const bpmRef = useRef(bpm ?? 120)
 
   enabledRef.current = enabled
+  bpmRef.current = bpm ?? 120
+
+  useEffect(() => {
+    genRef.current?.setBpm(bpm ?? 120)
+  }, [bpm])
 
   // Expose toggle function to parent
   useEffect(() => {
@@ -30,6 +34,7 @@ export default function RandomGenPanel({ onTrigger, noteMapping, onToggleRef, on
           setEnabled(false)
           onChange?.(false)
         } else {
+          gen.setBpm(bpmRef.current)
           gen.start()
           setEnabled(true)
           onChange?.(true)
@@ -61,6 +66,7 @@ export default function RandomGenPanel({ onTrigger, noteMapping, onToggleRef, on
         onTriggerRef.current?.({ note: pitch, velocity: 0, type: 'noteOff' })
       }
     }
+    gen.setBpm(bpm ?? 120)
     genRef.current = gen
     return () => gen.stop()
   }, [])
@@ -72,17 +78,12 @@ export default function RandomGenPanel({ onTrigger, noteMapping, onToggleRef, on
       setEnabled(false)
       onChange?.(false)
     } else {
+      gen.setBpm(bpmRef.current)
       gen.start()
       setEnabled(true)
       onChange?.(true)
     }
   }, [enabled, onChange])
-
-  const handleBpm = useCallback((val) => {
-    const v = parseInt(val)
-    setBpm(v)
-    genRef.current?.setBpm(v)
-  }, [])
 
   const handleDivider = useCallback((val) => {
     const v = parseInt(val)
@@ -110,18 +111,6 @@ export default function RandomGenPanel({ onTrigger, noteMapping, onToggleRef, on
             ) : (
               <span className="midi-note-badge midi-note-idle">-</span>
             )}
-          </div>
-
-          <div className="rndgen-control">
-            <label>BPM</label>
-            <Slider
-              value={bpm}
-              min={40}
-              max={240}
-              step={1}
-              onChange={handleBpm}
-            />
-            <span className="rndgen-value">{bpm}</span>
           </div>
 
           <div className="rndgen-control">
