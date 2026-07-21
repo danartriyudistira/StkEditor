@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Slider from './Slider.jsx'
 
 const MODES = [
@@ -9,6 +10,7 @@ const MODES = [
   { value: 'square', label: 'Square' },
   { value: 'random', label: 'Random (S&H)' },
   { value: 'note', label: 'Note Trigger' },
+  { value: 'link', label: 'Link' },
 ]
 
 const DIRECTIONS = [
@@ -34,16 +36,28 @@ function noteName(n) {
   return NOTE_NAMES[n % 12] + Math.floor(n / 12)
 }
 
+const GLITCH_DEFAULTS = {
+  enabled: false, mode: 'trigger', type: 'click',
+  sensitivity: 0.15, volume: 0.5,
+  cutoff: 4000, emphasis: 5, contour: 0,
+  soundType: 'noise',
+  modCutoff: true, modEmphasis: false, modContour: false,
+}
+
 export default function ParameterPopup({
   paramName,
   label,
   paramMin = 0,
   paramMax = 1,
+  value,
   animConfig,
   oscAddr = '',
   onAnimSave,
   onOscChange,
-  onClose
+  onClose,
+  glitchConfig = {},
+  onGlitchChange,
+  allParamNames = [],
 }) {
   useEffect(() => {
     document.addEventListener('keydown', handleKey)
@@ -58,15 +72,33 @@ export default function ParameterPopup({
     onAnimSave?.(paramName, { ...animConfig, [field]: value })
   }
 
+  function setGlitchField(field, value) {
+    onGlitchChange?.({ ...GLITCH_DEFAULTS, ...glitchConfig, [field]: value })
+  }
+
+  function toggleLinkTarget(targetName) {
+    const links = animConfig?.links || []
+    const next = links.includes(targetName)
+      ? links.filter(n => n !== targetName)
+      : [...links, targetName]
+    setAnimField('links', next)
+  }
+
   function handleReset() {
     onAnimSave?.(paramName, { mode: 'off', speed: 1, min: 0, max: 1, bpmSync: false, bpmDiv: 4, direction: 'loop' })
     onOscChange?.(paramName, '')
+    onGlitchChange?.(GLITCH_DEFAULTS)
   }
 
+  const glitchObj = { ...GLITCH_DEFAULTS, ...glitchConfig }
+
   const isNote = animConfig?.mode === 'note'
+  const isLink = animConfig?.mode === 'link'
   const hasOsc = oscAddr.trim() !== ''
   const hasAnim = animConfig && animConfig.mode !== 'off'
   const hasNote = isNote
+  const hasLink = isLink
+  const hasGlitch = glitchObj.enabled
 
   // Note mode local state (kept in sync with animConfig)
   const [ntNotes, setNtNotes] = useState(
@@ -119,15 +151,16 @@ export default function ParameterPopup({
     setNtNotes(copy)
   }
 
-  return (
+  return createPortal(
     <div className="anim-popup-overlay" onClick={onClose}>
       <div className="anim-popup" onClick={e => e.stopPropagation()}>
         <div className="anim-popup-header">
           <span>Control — {label || paramName}</span>
-          {(hasAnim || hasOsc) && (
+          {(hasAnim || hasOsc || hasGlitch) && (
             <span className="anim-popup-badges">
-              {hasAnim && <span className={`anim-badge${hasNote ? ' anim-badge--note' : ' anim-badge--anim'}`}>{hasNote ? 'N' : 'A'}</span>}
+              {hasAnim && <span className={`anim-badge${hasNote ? ' anim-badge--note' : hasLink ? ' anim-badge--link' : ' anim-badge--anim'}`}>{hasNote ? 'N' : hasLink ? 'L' : 'A'}</span>}
               {hasOsc && <span className="anim-badge anim-badge--osc">OSC</span>}
+              {hasGlitch && <span className="anim-badge anim-badge--glitch">G</span>}
             </span>
           )}
           <button className="anim-popup-close" onClick={onClose}>{'\u2715'}</button>
@@ -207,7 +240,23 @@ export default function ParameterPopup({
               </>
             )}
 
-            {animConfig?.mode !== 'off' && !isNote && (
+            {isLink && allParamNames.length > 0 && (() => {
+              const otherParams = allParamNames.filter(n => n !== paramName)
+              const links = animConfig?.links || []
+              return (
+                <>
+                  <div className="anim-popup-section-title" style={{ marginTop: 10 }}>Link To</div>
+                  {otherParams.map(n => (
+                    <div className="anim-popup-row" key={n}>
+                      <label>{n}</label>
+                      <input type="checkbox" checked={links.includes(n)} onChange={() => toggleLinkTarget(n)} />
+                    </div>
+                  ))}
+                </>
+              )
+            })()}
+
+            {animConfig?.mode !== 'off' && !isNote && !isLink && (
               <>
                 <div className="anim-popup-row">
                   <label>Direction</label>
@@ -248,7 +297,11 @@ export default function ParameterPopup({
                     <span className="anim-popup-value">{(animConfig?.speed || 1).toFixed(2)}</span>
                   </div>
                 )}
+              </>
+            )}
 
+            {animConfig?.mode !== 'off' && !isNote && (
+              <>
                 <div className="anim-popup-row">
                   <label>Min</label>
                   <Slider
@@ -289,6 +342,110 @@ export default function ParameterPopup({
               />
             </div>
           </div>
+
+          {/* Glitch Sound Section */}
+          <div className="anim-popup-section">
+            <div className="anim-popup-section-title">Glitch Sound</div>
+            <div className="anim-popup-row">
+              <label>Enable</label>
+              <input
+                type="checkbox"
+                checked={glitchObj.enabled}
+                onChange={e => setGlitchField('enabled', e.target.checked)}
+              />
+            </div>
+            {glitchObj.enabled && (
+              <>
+                <div className="anim-popup-row">
+                  <label>Mode</label>
+                  <select value={glitchObj.mode} onChange={e => setGlitchField('mode', e.target.value)}>
+                    <option value="trigger">Trigger</option>
+                    <option value="frequency">Frequency</option>
+                  </select>
+                </div>
+                {glitchObj.mode === 'trigger' ? (
+                  <>
+                    <div className="anim-popup-row">
+                      <label>Type</label>
+                      <select value={glitchObj.type} onChange={e => setGlitchField('type', e.target.value)}>
+                        <option value="click">Click</option>
+                        <option value="klek">Klek</option>
+                        <option value="sss">Sss</option>
+                        <option value="engine">Engine</option>
+                        <option value="hum">Hum</option>
+                      </select>
+                    </div>
+                    <div className="anim-popup-row">
+                      <label>Sensitivity</label>
+                      <Slider value={glitchObj.sensitivity} min={0.01} max={0.5} step={0.01} onChange={v => setGlitchField('sensitivity', v)} />
+                      <span className="anim-popup-value">{glitchObj.sensitivity.toFixed(2)}</span>
+                    </div>
+                    <div className="anim-popup-row">
+                      <label>Volume</label>
+                      <Slider value={glitchObj.volume} min={0} max={1} step={0.05} onChange={v => setGlitchField('volume', v)} />
+                      <span className="anim-popup-value">{glitchObj.volume.toFixed(2)}</span>
+                    </div>
+                  </>
+                ) : (() => {
+                  const normVal = value !== undefined
+                    ? (value - paramMin) / Math.max(0.001, paramMax - paramMin)
+                    : 0.5
+                  const effCutoff = glitchObj.modCutoff
+                    ? 20 + normVal * Math.max(1, glitchObj.cutoff - 20)
+                    : glitchObj.cutoff
+                  const effEmphasis = glitchObj.modEmphasis
+                    ? glitchObj.emphasis * (0.5 + normVal * 0.5)
+                    : glitchObj.emphasis
+                  const effContour = glitchObj.modContour
+                    ? glitchObj.contour * normVal
+                    : glitchObj.contour
+                  return (
+                  <>
+                    <div className="anim-popup-row">
+                      <label>Sound</label>
+                      <select value={glitchObj.soundType} onChange={e => setGlitchField('soundType', e.target.value)}>
+                        <option value="noise">Noise</option>
+                        <option value="ambience">Ambience</option>
+                        <option value="space">Space</option>
+                        <option value="wind">Wind</option>
+                        <option value="bass">Bass</option>
+                      </select>
+                    </div>
+                    <div className="anim-popup-row">
+                      <label>Cutoff</label>
+                      <Slider value={effCutoff} min={20} max={8000} step={10} onChange={v => setGlitchField('cutoff', v)} />
+                      <span className="anim-popup-value">{effCutoff >= 1000 ? `${(effCutoff / 1000).toFixed(1)}k` : Math.round(effCutoff)}</span>
+                      <label className="anim-popup-toggle-label">
+                        <input type="checkbox" checked={glitchObj.modCutoff} onChange={e => setGlitchField('modCutoff', e.target.checked)} />
+                      </label>
+                    </div>
+                    <div className="anim-popup-row">
+                      <label>Emphasis</label>
+                      <Slider value={effEmphasis} min={0} max={20} step={0.5} onChange={v => setGlitchField('emphasis', v)} />
+                      <span className="anim-popup-value">{effEmphasis.toFixed(1)}</span>
+                      <label className="anim-popup-toggle-label">
+                        <input type="checkbox" checked={glitchObj.modEmphasis} onChange={e => setGlitchField('modEmphasis', e.target.checked)} />
+                      </label>
+                    </div>
+                    <div className="anim-popup-row">
+                      <label>Contour</label>
+                      <Slider value={effContour} min={-1} max={1} step={0.05} onChange={v => setGlitchField('contour', v)} />
+                      <span className="anim-popup-value">{effContour.toFixed(2)}</span>
+                      <label className="anim-popup-toggle-label">
+                        <input type="checkbox" checked={glitchObj.modContour} onChange={e => setGlitchField('modContour', e.target.checked)} />
+                      </label>
+                    </div>
+                    <div className="anim-popup-row">
+                      <label>Volume</label>
+                      <Slider value={glitchObj.volume} min={0} max={1} step={0.05} onChange={v => setGlitchField('volume', v)} />
+                      <span className="anim-popup-value">{glitchObj.volume.toFixed(2)}</span>
+                    </div>
+                  </>
+                  )
+                })()}
+              </>
+            )}
+          </div>
         </div>
 
         <div className="anim-popup-footer">
@@ -296,6 +453,7 @@ export default function ParameterPopup({
           <button className="anim-popup-save" onClick={onClose}>Close</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

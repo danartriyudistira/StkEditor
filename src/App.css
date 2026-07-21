@@ -337,6 +337,92 @@
   text-align: right;
 }
 
+/* Glitch Sound Section */
+.glitch-section {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #333;
+}
+
+.glitch-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.glitch-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #888;
+  font-family: monospace;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.glitch-toggle-label input[type="checkbox"] {
+  accent-color: #ff6ec7;
+  cursor: pointer;
+}
+
+.glitch-mode-select {
+  font-size: 10px;
+  padding: 2px 4px;
+  background: #1e1e1e;
+  color: #ccc;
+  border: 1px solid #444;
+  border-radius: 3px;
+  font-family: monospace;
+  cursor: pointer;
+}
+
+.glitch-params {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 4px;
+}
+
+.glitch-param-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.glitch-param-row label {
+  font-size: 10px;
+  color: #777;
+  font-family: monospace;
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+.glitch-param-row select {
+  flex: 1;
+  font-size: 10px;
+  padding: 2px 4px;
+  background: #1e1e1e;
+  color: #ccc;
+  border: 1px solid #444;
+  border-radius: 3px;
+  font-family: monospace;
+  cursor: pointer;
+}
+
+.glitch-param-row .Slider {
+  flex: 1;
+}
+
+.glitch-val {
+  font-size: 10px;
+  color: #ff6ec7;
+  font-family: monospace;
+  min-width: 36px;
+  text-align: right;
+}
+
 .control-row--point .point-inputs {
   display: flex;
   flex-direction: column;
@@ -683,6 +769,29 @@
   text-align: right;
 }
 
+.anim-popup-toggle-label {
+  display: flex;
+  align-items: center;
+  min-width: 20px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.anim-popup-toggle-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #bb86fc;
+}
+
+.anim-popup-toggle-label::before {
+  content: 'M';
+  font-size: 9px;
+  color: #888;
+  margin-right: 2px;
+  font-family: monospace;
+}
+
 .anim-popup-footer {
   display: flex;
   justify-content: flex-end;
@@ -747,6 +856,11 @@
 
 .anim-badge--osc {
   background: #a74;
+  color: #fff;
+}
+
+.anim-badge--glitch {
+  background: #e56;
   color: #fff;
 }
 

@@ -70,6 +70,7 @@ export default function App() {
   const [parameterConfig, setParameterConfig] = useState({})
   const [bpm, setBpm] = useState(120)
   const [fxChain, setFxChain] = useState([])
+  const [glitchParamConfig, setGlitchParamConfig] = useState({})
   const [error, setError] = useState(null)
   const [stkfxName, setStkfxName] = useState('')
   const [libraryFiles, setLibraryFiles] = useState([])
@@ -265,12 +266,112 @@ export default function App() {
     updateActiveTab({ modified: true })
   }, [updateActiveTab])
 
+  const glitchPrevRef = useRef({})
+  const glitchDragRef = useRef(false)
+  const glitchParamRef = useRef(glitchParamConfig)
+  glitchParamRef.current = glitchParamConfig
+  const paramAnimationRef = useRef(paramAnimation)
+  paramAnimationRef.current = paramAnimation
+  const isfMetadataRef = useRef(isfMetadata)
+  isfMetadataRef.current = isfMetadata
+  const hydraParamsRef = useRef(hydraParams)
+  hydraParamsRef.current = hydraParams
+
+  const handleAnimGlitch = useCallback((name, value) => {
+    const cfg = glitchParamRef.current[name]
+    if (!cfg?.enabled) return
+    const synth = synthRef.current
+    if (!synth) return
+    if (cfg.mode === 'trigger') {
+      const prevVal = glitchPrevRef.current[name]
+      if (prevVal !== undefined) {
+        const delta = Math.abs(value - prevVal)
+        if (delta > cfg.sensitivity) {
+          synth.playGlitchTrigger(cfg.type, delta / (cfg.sensitivity * 4))
+        }
+      }
+      glitchPrevRef.current[name] = value
+    } else if (cfg.mode === 'frequency') {
+      if (glitchDragRef.current) {
+        synth.updateGlitchContinuous(value)
+      } else {
+        glitchDragRef.current = true
+        synth.startGlitchContinuous(value, cfg)
+      }
+      clearTimeout(window._glitchDebounce)
+      window._glitchDebounce = setTimeout(() => {
+        glitchDragRef.current = false
+        synth.scheduleStopGlitch(200)
+      }, 250)
+    }
+  }, [])
+
+  const handleGlitchConfigChange = useCallback((name, config) => {
+    setGlitchParamConfig(prev => ({
+      ...prev,
+      [name]: { enabled: false, mode: 'trigger', type: 'click', sensitivity: 0.15, volume: 0.5, cutoff: 4000, emphasis: 5, contour: 0, soundType: 'noise', modCutoff: true, modEmphasis: false, modContour: false, ...config }
+    }))
+  }, [])
+
   const handleHydraParamChange = useCallback((name, value) => {
+    const cfg = glitchParamRef.current[name]
+    if (cfg?.enabled) {
+      const synth = synthRef.current
+      if (synth) {
+        if (cfg.mode === 'trigger') {
+          const prevVal = glitchPrevRef.current[name]
+          if (prevVal !== undefined) {
+            const delta = Math.abs(value - prevVal)
+            if (delta > cfg.sensitivity) {
+              synth.playGlitchTrigger(cfg.type, delta / (cfg.sensitivity * 4))
+            }
+          }
+          glitchPrevRef.current[name] = value
+        } else if (cfg.mode === 'frequency') {
+          if (glitchDragRef.current) {
+            synth.updateGlitchContinuous(value)
+          } else {
+            glitchDragRef.current = true
+            synth.startGlitchContinuous(value, cfg)
+          }
+          clearTimeout(window._glitchDebounce)
+          window._glitchDebounce = setTimeout(() => {
+            glitchDragRef.current = false
+            synth.scheduleStopGlitch(200)
+          }, 250)
+        }
+      }
+    }
     setHydraParams(prev => {
       const p = prev[name]
       if (!p) return prev
       return { ...prev, [name]: { ...p, value } }
     })
+    const pAnim = paramAnimationRef.current
+    const hp = hydraParamsRef.current
+    const srcP = hp?.[name]
+    const srcMin = srcP?.min ?? 0
+    const srcMax = srcP?.max ?? 1
+    const srcRange = Math.max(0.001, srcMax - srcMin)
+    const normVal = (value - srcMin) / srcRange
+    const linked = {}
+    for (const [pName, pCfg] of Object.entries(pAnim)) {
+      if (pCfg.mode === 'link' && (pCfg.links || []).includes(name)) {
+        const dstMin = pCfg.min ?? 0
+        const dstMax = pCfg.max ?? 1
+        linked[pName] = dstMin + normVal * (dstMax - dstMin)
+      }
+    }
+    if (Object.keys(linked).length > 0) {
+      setHydraParams(prev => {
+        const next = { ...prev }
+        for (const [ln, lv] of Object.entries(linked)) {
+          const lp = next[ln]
+          if (lp) next[ln] = { ...lp, value: lv }
+        }
+        return next
+      })
+    }
   }, [])
 
   const hydraValues = useMemo(() => {
@@ -422,7 +523,54 @@ export default function App() {
   }, [])
 
   const handleControlChange = useCallback((name, value) => {
+    const cfg = glitchParamRef.current[name]
+    if (cfg?.enabled) {
+      const synth = synthRef.current
+      if (synth) {
+        if (cfg.mode === 'trigger') {
+          const prevVal = glitchPrevRef.current[name]
+          if (prevVal !== undefined) {
+            const delta = Math.abs(value - prevVal)
+            if (delta > cfg.sensitivity) {
+              synth.playGlitchTrigger(cfg.type, delta / (cfg.sensitivity * 4))
+            }
+          }
+          glitchPrevRef.current[name] = value
+        } else if (cfg.mode === 'frequency') {
+          if (glitchDragRef.current) {
+            synth.updateGlitchContinuous(value)
+          } else {
+            glitchDragRef.current = true
+            synth.startGlitchContinuous(value, cfg)
+          }
+          clearTimeout(window._glitchDebounce)
+          window._glitchDebounce = setTimeout(() => {
+            glitchDragRef.current = false
+            synth.scheduleStopGlitch(200)
+          }, 250)
+        }
+      }
+    }
     setUniformValues(prev => ({ ...prev, [name]: value }))
+    const pAnim = paramAnimationRef.current
+    const meta = isfMetadataRef.current
+    const findInput = (n) => meta?.inputs?.find(i => i.NAME === n)
+    const srcInput = findInput(name)
+    const srcMin = srcInput?.MIN ?? 0
+    const srcMax = srcInput?.MAX ?? 1
+    const srcRange = Math.max(0.001, srcMax - srcMin)
+    const normVal = (value - srcMin) / srcRange
+    const linked = {}
+    for (const [pName, pCfg] of Object.entries(pAnim)) {
+      if (pCfg.mode === 'link' && (pCfg.links || []).includes(name)) {
+        const dstMin = pCfg.min ?? 0
+        const dstMax = pCfg.max ?? 1
+        linked[pName] = dstMin + normVal * (dstMax - dstMin)
+      }
+    }
+    if (Object.keys(linked).length > 0) {
+      setUniformValues(prev => ({ ...prev, ...linked }))
+    }
   }, [])
 
   const handleCcValueChange = useCallback((name, value) => {
@@ -982,6 +1130,9 @@ export default function App() {
               onBpmChange={setBpm}
               hydraParams={hydraParams}
               engineMode={engineMode}
+              glitchParamConfig={glitchParamConfig}
+              onGlitchConfigChange={handleGlitchConfigChange}
+              onAnimGlitch={handleAnimGlitch}
             />
             <CcPanel
               inputs={isfMetadata?.inputs}
@@ -991,7 +1142,7 @@ export default function App() {
               onValueChange={handleCcValueChange}
               fxChain={fxChain}
             />
-            <FxPanel
+<FxPanel
               fxChain={fxChain}
               onFxChainChange={setFxChain}
               ccValues={ccValues}
@@ -1000,6 +1151,10 @@ export default function App() {
               onExportStk={handleExportStk}
               onImportStk={handleImportStk}
               onLoadIsf={() => setShowIsfLibraryForFx(true)}
+              onAnimGlitch={handleAnimGlitch}
+              glitchParamConfig={glitchParamConfig}
+              onGlitchConfigChange={handleGlitchConfigChange}
+              bpm={bpm}
             />
             <MidiPanel
               ccValues={ccValues}

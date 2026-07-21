@@ -1,15 +1,105 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { effects, getEffectById, getEffectsByCategory } from '../fx/effects.js'
 import ParameterPopup from './ParameterPopup.jsx'
 import Slider from './Slider.jsx'
+import { computeAnimatedValue } from '../utils/animation.js'
 
 const CC_CHANNELS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
-export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkfx, onLoadStkfx, onLoadIsf }) {
+export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkfx, onLoadStkfx, onLoadIsf, onAnimGlitch, glitchParamConfig, onGlitchConfigChange, bpm }) {
   const [expanded, setExpanded] = useState(false)
-  const [activeFxParam, setActiveFxParam] = useState(null) // { fxIndex, paramName }
-  const [activeFxSettings, setActiveFxSettings] = useState(null) // fxIndex for FX-level settings
+  const [activeFxParam, setActiveFxParam] = useState(null)
+  const [activeFxSettings, setActiveFxSettings] = useState(null)
   const categories = getEffectsByCategory()
+  const startTimeRef = useRef(Date.now())
+  const animValuesRef = useRef({})
+  const animCtxRef = useRef()
+  animCtxRef.current = { fxChain, bpm, onAnimGlitch, onFxChainChange }
+
+  const hasAnyAnim = useMemo(() => {
+    return (fxChain || []).some(fx =>
+      fx.paramConfig && Object.values(fx.paramConfig).some(pc => pc.animation && pc.animation.mode !== 'off')
+    )
+  }, [fxChain])
+
+  useEffect(() => {
+    if (!hasAnyAnim) return
+    let raf
+    let frame = 0
+    function tick() {
+      const { fxChain: chain, bpm: bpmVal, onAnimGlitch: glitchFn, onFxChainChange: changeFn } = animCtxRef.current || {}
+      if (!chain) { raf = requestAnimationFrame(tick); return }
+      const time = (Date.now() - startTimeRef.current) / 1000
+      const nextChain = chain.map(fx => ({ ...fx, paramValues: { ...fx.paramValues } }))
+      const prev = { ...animValuesRef.current }
+      const updates = {}
+
+      for (let i = 0; i < nextChain.length; i++) {
+        const fx = nextChain[i]
+        const fxDef = getEffectById(fx.id)
+        if (!fxDef?.params) continue
+        for (const [paramName, paramDef] of Object.entries(fxDef.params)) {
+          const animCfg = fx.paramConfig?.[paramName]?.animation
+          if (!animCfg || animCfg.mode === 'off') continue
+          const key = `fx${i}_${paramName}`
+          const baseVal = fx.paramValues[paramName] ?? paramDef.default ?? 0
+          const newVal = computeAnimatedValue(baseVal, animCfg, time, bpmVal, key)
+          if (prev[key] === undefined || Math.abs(newVal - (prev[key] ?? baseVal)) > 0.0001) {
+            updates[key] = newVal
+          }
+          prev[key] = newVal
+        }
+      }
+
+      if (Object.keys(updates).length > 0) {
+        for (const [key, val] of Object.entries(updates)) {
+          const parts = key.match(/^fx(\d+)_(.+)$/)
+          if (parts) {
+            const i = parseInt(parts[1])
+            const paramName = parts[2]
+            if (nextChain[i]) {
+              nextChain[i].paramValues[paramName] = val
+            }
+          }
+          glitchFn?.(key, val)
+        }
+
+        // Link mode: propagate values from source params to linked targets
+        for (let i = 0; i < nextChain.length; i++) {
+          const fx = nextChain[i]
+          const fxDef = getEffectById(fx.id)
+          if (!fxDef?.params) continue
+          for (const [paramName, paramDef] of Object.entries(fxDef.params)) {
+            const animCfg = fx.paramConfig?.[paramName]?.animation
+            if (!animCfg || animCfg.mode !== 'link') continue
+            const links = animCfg.links || []
+            for (const linkName of links) {
+              const srcKey = `fx${i}_${linkName}`
+              const srcVal = updates[srcKey] ?? nextChain[i].paramValues[linkName]
+              if (srcVal !== undefined) {
+                const srcDef = fxDef.params?.[linkName]
+                const srcMin = srcDef?.min ?? 0
+                const srcMax = srcDef?.max ?? 1
+                const norm = (srcVal - srcMin) / Math.max(0.001, srcMax - srcMin)
+                const dstMin = animCfg.min ?? 0
+                const dstMax = animCfg.max ?? 1
+                nextChain[i].paramValues[paramName] = dstMin + norm * (dstMax - dstMin)
+              }
+            }
+          }
+        }
+
+        changeFn?.(nextChain)
+      }
+
+      animValuesRef.current = prev
+      frame++
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [hasAnyAnim])
 
   function handleAddFx(effectId) {
     const fx = getEffectById(effectId)
@@ -46,6 +136,7 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
     fx.paramValues = { ...fx.paramValues, [paramName]: value }
     next[index] = fx
     onFxChainChange?.(next)
+    onAnimGlitch?.(`fx${index}_${paramName}`, value)
   }
 
   // FX-level toggle CC
@@ -137,75 +228,62 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
                   )}
 
                   {fx.enabled && fx.paramValues && Object.keys(fx.paramValues).length > 0 && (
-                    <div className="fx-params">
-                      {Object.entries(fx.paramValues).map(([paramName, val]) => {
-                        const fxDef = getEffectById(fx.id)
-                        const paramDef = fxDef?.params?.[paramName]
-                        if (!paramDef) return null
-                        const paramCfg = fx.paramConfig?.[paramName] || {}
-                        const hasOsc = paramCfg.oscAddr?.trim()
-                        const hasAnim = paramCfg.animation && paramCfg.animation.mode !== 'off'
-                        const hasBadge = hasOsc || hasAnim
+<div className="fx-params">
+                       {Object.entries(fx.paramValues).map(([paramName, val]) => {
+                         const fxDef = getEffectById(fx.id)
+                         const paramDef = fxDef?.params?.[paramName]
+                         if (!paramDef) return null
+                         const paramCfg = fx.paramConfig?.[paramName] || {}
+                         const animCfg = paramCfg.animation
+                         const hasOsc = paramCfg.oscAddr?.trim()
+                         const hasAnim = animCfg && animCfg.mode !== 'off'
+                         const hasBadge = hasOsc || hasAnim
+ 
+                          const animRefVal = animValuesRef.current?.[`fx${i}_${paramName}`]
+                          const displayVal = hasAnim && animRefVal !== undefined ? animRefVal : val
+ 
+                         const btnClass = `fx-param-settings-btn${hasBadge ? ' active' : ''}${hasOsc ? ' has-osc' : ''}`
 
-                        const displayVal = val
-
-                        const btnClass = `fx-param-settings-btn${hasBadge ? ' active' : ''}${hasOsc ? ' has-osc' : ''}`
-
-                        // Render control based on type
-                        function renderControl() {
-                          switch (paramDef.type) {
-                            case 'bool':
-                              return (
+                        return (
+                          <div key={paramName} className="fx-param">
+                            {paramDef.type === 'bool' ? (
+                              <div className="fx-param-row">
+                                <label>{paramDef.label || paramName}</label>
                                 <input
                                   type="checkbox"
                                   checked={!!displayVal}
                                   onChange={e => handleParamChange(i, paramName, e.target.checked ? 1 : 0)}
                                 />
-                              )
-                            case 'color':
-                              return (
+                              </div>
+                            ) : paramDef.type === 'color' ? (
+                              <div className="fx-param-row">
+                                <label>{paramDef.label || paramName}</label>
                                 <input
                                   type="color"
                                   value={rgbToHex(displayVal)}
                                   onChange={e => handleParamChange(i, paramName, hexToRgb(e.target.value))}
                                 />
-                              )
-                            default: // float, long, and others use slider
-                              return (
+                              </div>
+                            ) : (
+                              <div className="fx-param-row">
+                                <label>{paramDef.label || paramName}</label>
                                 <Slider
                                   value={displayVal}
                                   min={paramDef.min}
                                   max={paramDef.max}
                                   step={paramDef.step}
                                   onChange={(v) => handleParamChange(i, paramName, v)}
+                                  className={hasAnim ? 'td-slider--anim' : ''}
                                 />
-                              )
-                          }
-                        }
-
-                        return (
-                          <div key={paramName} className="fx-param">
-                            <div className="fx-param-row">
-                              <label>{paramDef.label || paramName}</label>
-                              <button
-                                className={btnClass}
-                                onClick={() => setActiveFxParam({ fxIndex: i, paramName })}
-                                title="Control settings (Animation, OSC)"
-                              >
-                                {'⚙'}
-                              </button>
-                              {renderControl()}
-                              <span className="fx-param-value">
-                                {paramDef.type === 'bool'
-                                  ? (displayVal ? 'ON' : 'OFF')
-                                  : paramDef.type === 'color'
-                                    ? ''
-                                    : paramDef.labels
-                                      ? paramDef.labels[Math.round(displayVal)] ?? displayVal.toFixed(0)
-                                      : (paramDef.max <= 3 ? (displayVal * 100).toFixed(0) + '%' : displayVal.toFixed(2))
-                                }
-                              </span>
-                            </div>
+                                <button
+                                  className={btnClass}
+                                  onClick={() => setActiveFxParam({ fxIndex: i, paramName })}
+                                  title="Control settings (Animation, OSC)"
+                                >
+                                  {'\u2699'}
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )
                       })}
@@ -245,7 +323,7 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
       {activeFxSettings !== null && (() => {
         const fx = fxChain?.[activeFxSettings]
         if (!fx) return null
-        return (
+        return createPortal(
           <div className="anim-popup-overlay" onClick={() => setActiveFxSettings(null)}>
             <div className="anim-popup" onClick={e => e.stopPropagation()}>
               <div className="anim-popup-header">
@@ -325,7 +403,8 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
                 <button className="anim-popup-save" onClick={() => setActiveFxSettings(null)}>Close</button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )
       })()}
 
@@ -335,18 +414,25 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
         const paramDef = fxDef?.params?.[activeFxParam.paramName]
         const paramCfg = fx?.paramConfig?.[activeFxParam.paramName] || {}
         const animCfg = paramCfg.animation || { mode: 'off', speed: 1, min: 0, max: 1, bpmSync: false, bpmDiv: 4, direction: 'loop' }
+        const glitchKey = `fx${activeFxParam.fxIndex}_${activeFxParam.paramName}`
 
+        const fxValues = fxChain?.[activeFxParam.fxIndex]?.paramValues || {}
+        const otherFxParams = fxDef?.params ? Object.keys(fxDef.params).filter(n => n !== activeFxParam.paramName) : []
         return (
           <ParameterPopup
             paramName={activeFxParam.paramName}
             label={paramDef?.label || activeFxParam.paramName}
             paramMin={paramDef?.min ?? 0}
             paramMax={paramDef?.max ?? 1}
+            value={fxValues[activeFxParam.paramName]}
             animConfig={animCfg}
             oscAddr={paramCfg.oscAddr || ''}
             onAnimSave={(name, cfg) => handleFxParamAnimChange(activeFxParam.fxIndex, activeFxParam.paramName, cfg)}
             onOscChange={(name, addr) => handleFxParamOscChange(activeFxParam.fxIndex, activeFxParam.paramName, addr)}
             onClose={() => setActiveFxParam(null)}
+            glitchConfig={glitchParamConfig?.[glitchKey] || {}}
+            onGlitchChange={(cfg) => onGlitchConfigChange?.(glitchKey, cfg)}
+            allParamNames={otherFxParams}
           />
         )
       })()}

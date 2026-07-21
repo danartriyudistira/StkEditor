@@ -9,26 +9,55 @@ export default function Controls({
   parameterConfig, onParameterConfigChange, onParamOscChange,
   bpm, onBpmChange,
   hydraParams, engineMode,
+  glitchParamConfig, onGlitchConfigChange,
+  onAnimGlitch,
 }) {
+  const isHydra = engineMode === 'hydra'
   const [activeParam, setActiveParam] = useState(null)
   const [animTick, setAnimTick] = useState(0)
   const startTimeRef = useRef(Date.now())
 
   const hasAnyAnim = Object.values(paramAnimation).some(c => c && c.mode !== 'off')
+  const prevAnimRef = useRef({})
+  const animCtxRef = useRef({ isHydra, hydraParams, metadata, values, paramAnimation, bpm, onAnimGlitch, onChange })
+  animCtxRef.current = { isHydra, hydraParams, metadata, values, paramAnimation, bpm, onAnimGlitch, onChange }
 
   useEffect(() => {
     if (!hasAnyAnim) return
     let raf, frame = 0
     function tick() {
       frame++
-      if (frame % 2 === 0) setAnimTick(t => t + 1)
+      if (frame % 2 === 0) {
+        setAnimTick(t => t + 1)
+        const ctx = animCtxRef.current
+          const list = ctx.isHydra
+            ? Object.entries(ctx.hydraParams || {}).map(([n, p]) => ({ NAME: n, MIN: p.min, MAX: p.max }))
+            : ctx.metadata?.inputs
+          if (list) {
+            const time = (Date.now() - startTimeRef.current) / 1000
+            for (const input of list) {
+              const animCfg = ctx.paramAnimation?.[input.NAME]
+              if (!animCfg || animCfg.mode === 'off' || animCfg.mode === 'link') continue
+              const base = ctx.values?.[input.NAME] ?? 0
+              const newVal = computeAnimatedValue(base, animCfg, time, ctx.bpm, input.NAME)
+              const prevVal = prevAnimRef.current[input.NAME]
+              if (prevVal !== undefined && Math.abs(newVal - prevVal) > 0.0001) {
+                ctx.onAnimGlitch(input.NAME, newVal)
+                ctx.onChange?.(input.NAME, newVal)
+                const links = animCfg.links || []
+                for (const linkName of links) {
+                  ctx.onChange?.(linkName, newVal)
+                }
+              }
+              prevAnimRef.current[input.NAME] = newVal
+            }
+          }
+      }
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
   }, [hasAnyAnim])
-
-  const isHydra = engineMode === 'hydra'
 
   const inputs = isHydra
     ? Object.entries(hydraParams || {}).map(([name, p]) => ({
@@ -94,11 +123,15 @@ export default function Controls({
             label={input?.LABEL || activeParam}
             paramMin={input?.MIN ?? 0}
             paramMax={input?.MAX ?? 1}
+            value={values?.[activeParam]}
             animConfig={paramAnimation?.[activeParam] || { mode: 'off', speed: 1, min: 0, max: 1, bpmSync: false, bpmDiv: 4, direction: 'loop' }}
             oscAddr={cfg.oscAddr || ''}
             onAnimSave={onParamAnimationChange}
             onOscChange={onParamOscChange}
             onClose={() => setActiveParam(null)}
+            glitchConfig={glitchParamConfig?.[activeParam] || {}}
+            onGlitchChange={(cfg) => onGlitchConfigChange?.(activeParam, cfg)}
+            allParamNames={inputs?.map(i => i.NAME) || []}
           />
         )
       })()}
