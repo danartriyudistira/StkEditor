@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react'
 
-export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, onOpen, onExport, onDownload, onRename, onLoadFromLibrary, libraryFiles, sourceType, onSourceClick, onGallery, onRandom, onMutate }) {
+export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, onOpen, onExport, onDownload, onRename, onLoadFromLibrary, libraryFiles, sourceType, onSourceClick, onGallery, onRandom, onMutate, onLoadVideo }) {
   const scrollRef = useRef(null)
 
   const activeTabType = tabs.find(t => t.id === activeTabId)?.type || 'isf'
@@ -81,6 +81,7 @@ export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, on
       </div>
       <div className="tabbar-actions">
         <button className="tabbar-action" onClick={onOpen} title="Open file">Open</button>
+        <button className="tabbar-action" onClick={onLoadVideo} title="Load video as HTML tab">Video</button>
         {libraryFiles && libraryFiles.length > 0 && activeTabType !== 'hydra' && activeTabType !== 'html' && (
           <button className="tabbar-action" onClick={onLoadFromLibrary} title="Browse ISF library">ISF Lib</button>
         )}

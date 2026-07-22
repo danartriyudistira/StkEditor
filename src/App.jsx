@@ -891,6 +891,22 @@ export default function App() {
     input.click()
   }, [updateActiveTab])
 
+  const handleLoadVideo = useCallback(() => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'video/*'
+    input.onchange = (e) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+      const url = URL.createObjectURL(file)
+      const html = '<!DOCTYPE html>\n<html>\n<head>\n<style>\n  * { margin:0; padding:0; box-sizing:border-box; }\n  body { background:#000; display:flex; align-items:center; justify-content:center; height:100vh; overflow:hidden; }\n  video { max-width:100vw; max-height:100vh; object-fit:contain; }\n</style>\n</head>\n<body>\n  <video src="' + url + '" autoplay loop muted playsinline></video>\n</body>\n</html>'
+      const id = nextTabIdRef.current++
+      setTabs(prev => [...prev, { id, name: file.name + '.html', code: html, type: 'html', modified: false }])
+      setActiveTabId(id)
+    }
+    input.click()
+  }, [])
+
   const handleDownload = useCallback(() => {
     const blob = new Blob([code], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
@@ -1249,6 +1265,7 @@ export default function App() {
                 onGallery={() => setShowHydraLibrary(true)}
                 onRandom={handleHydraRandom}
                 onMutate={handleHydraMutate}
+                onLoadVideo={handleLoadVideo}
               />
               <div className="editor-context-wrapper" onContextMenu={handleEditorContext}>
                 {activeTab?.type === 'hydra' ? (
