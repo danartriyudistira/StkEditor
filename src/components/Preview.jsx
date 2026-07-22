@@ -357,17 +357,20 @@ const Preview = forwardRef(function Preview({ code, uniformValues, hydraParams, 
     if (!iframe) return
     const cw = iframe.contentWindow
     if (cw) {
-      cw.postMessage({
-        type: 'stk_params',
-        values: uniformValues || {},
-      }, '*')
-      if (uniformValues?.scroll !== undefined) {
-        const doc = iframe.contentDocument
-        if (doc) {
-          const maxScroll = Math.max(0, (doc.documentElement.scrollHeight || doc.body?.scrollHeight || 0) - cw.innerHeight)
-          cw.scrollTo(0, ((uniformValues.scroll + 1) / 2) * maxScroll)
+      try {
+        cw.postMessage({
+          type: 'stk_params',
+          values: uniformValues || {},
+        }, '*')
+        if (uniformValues?.scroll !== undefined) {
+          const doc = iframe.contentDocument
+          const el = doc?.documentElement
+          if (el) {
+            const maxScroll = Math.max(0, (el.scrollHeight || doc.body?.scrollHeight || 0) - cw.innerHeight)
+            cw.scrollTo(0, ((uniformValues.scroll + 1) / 2) * maxScroll)
+          }
         }
-      }
+      } catch (_) {}
     }
   }, [uniformValues, engineMode])
 
