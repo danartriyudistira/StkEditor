@@ -182,7 +182,7 @@ export default function Preview({ code, uniformValues, hydraParams, fxChain, onM
       // Compute animated values (ISF + Hydra params)
       const animated = { ...ccValues }
       for (const [name, p] of Object.entries(hydraParamsRefCurrent)) {
-        animated[name] = p.value
+        animated[name] = p
       }
       for (const key of Object.keys(animated)) {
         if (key.startsWith('u_cc')) continue
