@@ -257,6 +257,14 @@ export default function Preview({ code, uniformValues, hydraParams, fxChain, onM
     return () => {
       cancelled = true
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      const offscreen = engine._offscreenCanvas
+      if (offscreen) {
+        const gl = offscreen.getContext('webgl') || offscreen.getContext('webgl2')
+        if (gl) {
+          const ext = gl.getExtension('WEBGL_lose_context')
+          if (ext) ext.loseContext()
+        }
+      }
       engine.destroy()
       fxProcessor.destroy()
     }
@@ -282,51 +290,6 @@ export default function Preview({ code, uniformValues, hydraParams, fxChain, onM
   useEffect(() => {
     if (code) loadCode(code)
   }, [code, loadCode])
-
-  // Update source when it changes (ISF only)
-  useEffect(() => {
-    const engine = engineRef.current
-    if (!engine || engine.name !== 'isf') return
-
-    const srcType = sourceTypeRef.current
-    const srcEl = sourceElementRef.current
-    const ph = placeholderImageRef.current
-
-    try {
-      if (srcType === 'webcam' && srcEl && srcEl.readyState >= 2) {
-        engine.setInputImage(flipSourceVertically(srcEl))
-      } else if ((srcType === 'image' || srcType === 'placeholder') && srcEl) {
-        engine.setInputImage(flipSourceVertically(srcEl))
-      } else if (ph) {
-        engine.setInputImage(ph)
-      }
-    } catch (_) {}
-  }, [sourceType, sourceElement])
-
-  // Update uniforms when they change
-  const prevUniformsRef = useRef('')
-  useEffect(() => {
-    const engine = engineRef.current
-    if (!engine || !uniformValues) return
-
-    const key = JSON.stringify(uniformValues)
-    if (key === prevUniformsRef.current) return
-    prevUniformsRef.current = key
-
-    for (const [name, value] of Object.entries(uniformValues)) {
-      if (name.startsWith('u_cc')) continue
-      try { engine.setValue(name, value) } catch (_) {}
-    }
-  }, [uniformValues])
-
-  // Apply hydra params
-  useEffect(() => {
-    const engine = engineRef.current
-    if (!engine || engine.name !== 'hydra' || !hydraParams) return
-    for (const [name, value] of Object.entries(hydraParams)) {
-      try { engine.setValue(name, value) } catch (_) {}
-    }
-  }, [hydraParams])
 
   // Resize observer
   useEffect(() => {

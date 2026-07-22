@@ -107,7 +107,6 @@
   display: flex;
   flex-direction: column;
   z-index: 10;
-  transition: transform 0.3s ease, background 0.3s ease;
 }
 
 .left-panel.collapsed {
@@ -127,7 +126,6 @@
   display: flex;
   flex-direction: column;
   z-index: 10;
-  transition: transform 0.3s ease, background 0.3s ease;
   overflow-y: auto;
 }
 
@@ -156,7 +154,6 @@
   justify-content: center;
   cursor: pointer;
   font-size: 12px;
-  transition: background 0.2s, left 0.3s ease, right 0.3s ease;
   flex-shrink: 0;
 }
 
@@ -193,7 +190,6 @@
   z-index: 15;
   cursor: col-resize;
   background: transparent;
-  transition: background 0.15s;
 }
 
 .panel-resize-handle:hover,
@@ -608,7 +604,6 @@
   color: #aaa;
   font-size: 11px;
   cursor: pointer;
-  transition: all 0.15s;
 }
 
 .hydra-category-pill:hover {
@@ -713,7 +708,6 @@
   border-radius: 8px;
   min-width: 320px;
   max-width: 400px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 .anim-popup-header {
@@ -1346,7 +1340,6 @@
   border-radius: 8px;
   min-width: 340px;
   max-width: 480px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 .source-popup-header {
@@ -1391,7 +1384,6 @@
   cursor: pointer;
   font-size: 13px;
   text-align: left;
-  transition: background 0.15s;
 }
 
 .source-popup-option:hover {
@@ -1435,7 +1427,6 @@
   border-radius: 6px;
   cursor: pointer;
   width: 90px;
-  transition: border-color 0.15s;
 }
 
 .source-popup-image-item:hover {
@@ -1505,7 +1496,6 @@
   border-radius: 8px;
   padding: 20px;
   min-width: 280px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .console-config-dialog h3 {
@@ -2168,7 +2158,6 @@
 .perf-bar .toolbar-btn {
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.15s ease;
 }
 
 .perf-bar.visible .toolbar-btn {
@@ -2409,13 +2398,11 @@
   background: rgba(30, 30, 30, 0.92);
   border: 1px solid #555;
   border-radius: 4px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
   min-width: 200px;
   min-height: 100px;
   overflow: hidden;
-  backdrop-filter: blur(4px);
 }
 
 .fp-titlebar {
@@ -2525,7 +2512,6 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  transition: background 0.1s, border-color 0.1s;
 }
 
 .vj-matrix-cell:hover {
@@ -2537,19 +2523,12 @@
   background: #1a3a2a;
   border-color: #4a9a6a;
   color: #afa;
-  box-shadow: 0 0 6px rgba(74, 154, 106, 0.3);
 }
 
 .vj-matrix-cell--listening {
   background: #3a2a1a;
   border-color: #da8a3a;
   color: #fca;
-  animation: vj-pulse 0.8s ease-in-out infinite;
-}
-
-@keyframes vj-pulse {
-  0%, 100% { box-shadow: 0 0 4px rgba(218, 138, 58, 0.3); }
-  50% { box-shadow: 0 0 12px rgba(218, 138, 58, 0.7); }
 }
 
 .vj-matrix-cell--mapped {
@@ -2656,7 +2635,6 @@
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s;
   letter-spacing: 0.5px;
 }
 
@@ -2812,7 +2790,6 @@
   background: #2d2d2d;
   border: 1px solid #555;
   border-radius: 6px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
   overflow: hidden;
   font-size: 13px;
 }
@@ -2895,7 +2872,6 @@
   gap: 8px;
   padding: 6px 10px 6px 34px;
   cursor: pointer;
-  transition: background 0.1s;
 }
 
 .module-menu-item:hover {

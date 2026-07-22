@@ -63,6 +63,7 @@ export default function PerformanceOverlay({
   const [focusIndex, setFocusIndex] = useState(0)
   const overlayRef = useRef(null)
   const menuRef = useRef(null)
+  const ctxRef = useRef({})
 
   useEffect(() => {
     const el = overlayRef.current
@@ -91,51 +92,60 @@ export default function PerformanceOverlay({
 
   const totalItems = F_ISF_START + isfInputs.length
 
+  ctxRef.current = {
+    focusIndex, tabs, activeTabId, ccValues, volume, bpm, noteDivider, presetIndex,
+    renderQuality, fps, isfInputs, isfValues, midiChannel,
+    onSwitchTab, onMidiChannelChange, onPresetChange, onVolumeChange, onBpmChange,
+    onNoteDividerChange, onCcChange, onRenderQualityChange, onFpsChange,
+    onIsfValueChange, onToggleRandomGen, onToggleMidiLearn, onClose, onImport,
+  }
+
   const wrap = useCallback((idx) => {
     if (totalItems === 0) return 0
     return ((idx % totalItems) + totalItems) % totalItems
   }, [totalItems])
 
   const handleAdjust = useCallback((dir) => {
-    switch (focusIndex) {
+    const c = ctxRef.current
+    switch (c.focusIndex) {
       case F_SHADER: {
-        if (!tabs || tabs.length === 0) break
-        const activeIdx = tabs.findIndex(t => t.id === activeTabId)
-        const newIdx = (activeIdx + dir + tabs.length) % tabs.length
-        onSwitchTab?.(tabs[newIdx]?.id)
+        if (!c.tabs || c.tabs.length === 0) break
+        const activeIdx = c.tabs.findIndex(t => t.id === c.activeTabId)
+        const newIdx = (activeIdx + dir + c.tabs.length) % c.tabs.length
+        c.onSwitchTab?.(c.tabs[newIdx]?.id)
         break
       }
       case F_MIDI_CH_IN: {
-        const cur = midiChannel ?? 0
+        const cur = c.midiChannel ?? 0
         let next = cur + dir
         if (next < -1) next = 15
         if (next > 15) next = -1
-        onMidiChannelChange?.(next)
+        c.onMidiChannelChange?.(next)
         break
       }
       case F_INSTR: {
-        const cur = presetIndex ?? 0
+        const cur = c.presetIndex ?? 0
         const next = (cur + dir + INSTRUMENT_NAMES.length) % INSTRUMENT_NAMES.length
-        onPresetChange?.(next)
+        c.onPresetChange?.(next)
         break
       }
       case F_VOLUME: {
-        const cur = volume ?? 50
+        const cur = c.volume ?? 50
         const next = Math.max(0, Math.min(100, cur + dir * 5))
-        onVolumeChange?.(next)
+        c.onVolumeChange?.(next)
         break
       }
       case F_BPM: {
-        const cur = bpm ?? 120
+        const cur = c.bpm ?? 120
         const next = Math.max(40, Math.min(240, cur + dir * 5))
-        onBpmChange?.(next)
+        c.onBpmChange?.(next)
         break
       }
       case F_NOTE_DIV: {
-        const cur = noteDivider ?? 2
+        const cur = c.noteDivider ?? 2
         const idx = NOTE_DIVIDER_VALUES.indexOf(cur)
         const newIdx = (idx + dir + NOTE_DIVIDER_LABELS.length) % NOTE_DIVIDER_LABELS.length
-        onNoteDividerChange?.(NOTE_DIVIDER_VALUES[newIdx])
+        c.onNoteDividerChange?.(NOTE_DIVIDER_VALUES[newIdx])
         break
       }
       case F_CC_SLIDERS_START:
@@ -146,111 +156,89 @@ export default function PerformanceOverlay({
       case F_CC_SLIDERS_START + 5:
       case F_CC_SLIDERS_START + 6:
       case F_CC_SLIDERS_START + 7: {
-        const ccNum = focusIndex - F_CC_SLIDERS_START + 1
+        const ccNum = c.focusIndex - F_CC_SLIDERS_START + 1
         const key = `u_cc${ccNum}`
-        const cur = ccValues?.[key] ?? 0.5
+        const cur = c.ccValues?.[key] ?? 0.5
         const next = Math.max(0, Math.min(1, cur + dir * 0.02))
-        onCcChange?.(key, parseFloat(next.toFixed(3)))
+        c.onCcChange?.(key, parseFloat(next.toFixed(3)))
         break
       }
       case F_RENDER: {
-        const idx = RENDER_LABELS.indexOf(renderQuality ?? 'Full')
+        const idx = RENDER_LABELS.indexOf(c.renderQuality ?? 'Full')
         const newIdx = (idx + dir + RENDER_LABELS.length) % RENDER_LABELS.length
-        onRenderQualityChange?.(RENDER_LABELS[newIdx])
+        c.onRenderQualityChange?.(RENDER_LABELS[newIdx])
         break
       }
       case F_FPS: {
-        const idx = FPS_LABELS.indexOf(String(fps ?? 60))
+        const idx = FPS_LABELS.indexOf(String(c.fps ?? 60))
         const newIdx = (idx + dir + FPS_LABELS.length) % FPS_LABELS.length
-        onFpsChange?.(parseInt(FPS_LABELS[newIdx]))
+        c.onFpsChange?.(parseInt(FPS_LABELS[newIdx]))
         break
       }
       default: {
-        if (focusIndex >= F_ISF_START) {
-          const inputIdx = focusIndex - F_ISF_START
-          const input = isfInputs[inputIdx]
+        if (c.focusIndex >= F_ISF_START) {
+          const inputIdx = c.focusIndex - F_ISF_START
+          const input = c.isfInputs[inputIdx]
           if (input) {
-            const cur = isfValues?.[input.NAME] ?? input.DEFAULT ?? 0
+            const cur = c.isfValues?.[input.NAME] ?? input.DEFAULT ?? 0
             const min = input.MIN ?? 0
             const max = input.MAX ?? 1
             const step = (max - min) * 0.02 * dir
             const next = Math.max(min, Math.min(max, cur + step))
-            onIsfValueChange?.(input.NAME, parseFloat(next.toFixed(3)))
+            c.onIsfValueChange?.(input.NAME, parseFloat(next.toFixed(3)))
           }
         }
         break
       }
     }
-  }, [focusIndex, tabs, activeTabId, ccValues, volume, bpm, noteDivider, presetIndex, renderQuality, fps, isfInputs, isfValues, midiChannel, onSwitchTab, onMidiChannelChange, onPresetChange, onVolumeChange, onBpmChange, onNoteDividerChange, onCcChange, onRenderQualityChange, onFpsChange, onIsfValueChange])
+  }, [])
 
   const handleSelect = useCallback(() => {
-    switch (focusIndex) {
+    const c = ctxRef.current
+    switch (c.focusIndex) {
       case F_RND_GEN:
-        onToggleRandomGen?.()
+        c.onToggleRandomGen?.()
         break
       case F_MIDI_LEARN:
-        onToggleMidiLearn?.()
+        c.onToggleMidiLearn?.()
         break
       case F_CLOSE:
-        onClose?.()
+        c.onClose?.()
         break
       case F_IMPORT:
-        onImport?.()
+        c.onImport?.()
         break
       case F_ISF_START: {
-        const input = isfInputs[0]
+        const input = c.isfInputs[0]
         if (input && (input.TYPE === 'bool' || input.TYPE === 'event')) {
-          const cur = isfValues?.[input.NAME] ?? input.DEFAULT ?? 0
-          onIsfValueChange?.(input.NAME, cur > 0.5 ? 0 : 1)
+          const cur = c.isfValues?.[input.NAME] ?? input.DEFAULT ?? 0
+          c.onIsfValueChange?.(input.NAME, cur > 0.5 ? 0 : 1)
         }
         break
       }
       default: {
-        if (focusIndex >= F_ISF_START) {
-          const inputIdx = focusIndex - F_ISF_START
-          const input = isfInputs[inputIdx]
+        if (c.focusIndex >= F_ISF_START) {
+          const inputIdx = c.focusIndex - F_ISF_START
+          const input = c.isfInputs[inputIdx]
           if (input && (input.TYPE === 'bool' || input.TYPE === 'event')) {
-            const cur = isfValues?.[input.NAME] ?? input.DEFAULT ?? 0
-            onIsfValueChange?.(input.NAME, cur > 0.5 ? 0 : 1)
+            const cur = c.isfValues?.[input.NAME] ?? input.DEFAULT ?? 0
+            c.onIsfValueChange?.(input.NAME, cur > 0.5 ? 0 : 1)
           }
         }
         break
       }
     }
-  }, [focusIndex, onToggleRandomGen, onToggleMidiLearn, onClose, onImport, isfInputs, isfValues, onIsfValueChange])
+  }, [])
 
   const handleKeyDown = useCallback((e) => {
     if (!visible) return
-
-    if (e.key === 'Escape') {
-      e.preventDefault()
-      e.stopPropagation()
-      onClose?.()
-      return
-    }
-
-    if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      e.stopPropagation()
-      setFocusIndex(prev => wrap(prev - 1))
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      e.stopPropagation()
-      setFocusIndex(prev => wrap(prev + 1))
-    } else if (e.key === 'ArrowLeft') {
-      e.preventDefault()
-      e.stopPropagation()
-      handleAdjust(-1)
-    } else if (e.key === 'ArrowRight') {
-      e.preventDefault()
-      e.stopPropagation()
-      handleAdjust(1)
-    } else if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      e.stopPropagation()
-      handleSelect()
-    }
-  }, [visible, wrap, handleAdjust, handleSelect, onClose])
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); ctxRef.current.onClose?.(); return }
+    if (e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); setFocusIndex(prev => wrap(prev - 1)) }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); setFocusIndex(prev => wrap(prev + 1)) }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); e.stopPropagation(); handleAdjust(-1) }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); handleAdjust(1) }
+    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); handleSelect() }
+  }, [visible, wrap, handleAdjust, handleSelect])
 
   useEffect(() => {
     if (!visible) return

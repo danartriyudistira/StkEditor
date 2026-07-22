@@ -20,6 +20,7 @@ export default function Controls({
   const [animTick, setAnimTick] = useState(0)
   const startTimeRef = useRef(Date.now())
   const displayRef = useRef({})
+  const inputsRef = useRef(null)
 
   const hasAnyAnim = useMemo(
     () => Object.values(paramAnimation).some(c => c && c.mode !== 'off' && c.mode !== 'link'),
@@ -83,9 +84,7 @@ export default function Controls({
     function tick() {
       frame++
       const ctx = animCtxRef.current
-      const list = ctx.isHydra
-        ? Object.entries(ctx.hydraParams || {}).map(([n, p]) => ({ NAME: n, MIN: p.min, MAX: p.max }))
-        : ctx.metadata?.inputs
+      const list = inputsRef.current
       if (list) {
         const time = (Date.now() - startTimeRef.current) / 1000
         let fired = false
@@ -131,6 +130,7 @@ export default function Controls({
     }
     return metadata?.inputs
   }, [isHydra, hydraParams, metadata])
+  inputsRef.current = inputs
 
   function getDisplayValue(inputName) {
     const config = paramAnimation?.[inputName]

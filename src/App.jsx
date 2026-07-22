@@ -191,6 +191,13 @@ export default function App() {
   const midiOutputRef = useRef(null)
   const midiChannelRef = useRef(0)
   const noteTriggerRef = useRef({ triggerNote: () => {} })
+
+  useEffect(() => {
+    return () => {
+      wsRef.current?.close()
+      clearTimeout(window._glitchDebounce)
+    }
+  }, [])
   const handleRefresh = useCallback(() => {
     setRefreshKey(k => k + 1)
   }, [])
@@ -1034,45 +1041,13 @@ export default function App() {
       wsRef.current.send(payload)
       return
     }
+    if (wsRef.current) { wsRef.current.close(); wsRef.current = null }
     const ws = new WebSocket(`ws://${consoleConfig.host}:${consoleConfig.port}`)
     ws.onopen = () => { setConsoleConnected(true); ws.send(payload) }
-    ws.onclose = () => { setConsoleConnected(false); wsRef.current = null }
-    ws.onerror = () => { setConsoleConnected(false); wsRef.current = null }
+    ws.onclose = () => { setConsoleConnected(false) }
+    ws.onerror = () => { setConsoleConnected(false) }
     wsRef.current = ws
   }, [code, ccValues, uniformValues, triggers, consoleConfig])
-
-  const appliedUniformValues = useMemo(() => {
-    const result = { ...ccValues }
-
-    for (const [inputName, channel] of Object.entries(ccMapping)) {
-      if (channel && ccValues[`u_${channel}`] !== undefined) {
-        const input = isfMetadata?.inputs?.find(i => i.NAME === inputName)
-        if (input) {
-          const ccVal = ccValues[`u_${channel}`]
-          const min = input.MIN ?? 0
-          const max = input.MAX ?? 1
-          result[inputName] = min + ccVal * (max - min)
-        }
-      }
-    }
-    for (const [paramName, cfg] of Object.entries(parameterConfig)) {
-      if (cfg.cc && ccValues[`u_cc${cfg.cc}`] !== undefined) {
-        const input = isfMetadata?.inputs?.find(i => i.NAME === paramName)
-        if (input) {
-          const ccVal = ccValues[`u_cc${cfg.cc}`]
-          const min = input.MIN ?? 0
-          const max = input.MAX ?? 1
-          result[paramName] = min + ccVal * (max - min)
-        }
-      }
-    }
-    for (const [name, val] of Object.entries(uniformValues)) {
-      if (!ccMapping[name] && !parameterConfig[name]?.cc && !name.startsWith('u_cc')) {
-        result[name] = val
-      }
-    }
-    return result
-  }, [ccValues, ccMapping, parameterConfig, uniformValues, isfMetadata])
 
   const allUniformValues = useMemo(
     () => ({ ...uniformValues, ...ccValues }),
