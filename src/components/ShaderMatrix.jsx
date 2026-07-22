@@ -8,6 +8,7 @@ const ShaderMatrix = forwardRef(function ShaderMatrix({
   onShaderKeyMapChange,
   midiLearnActive,
   setMidiLearnActive,
+  thumbnails,
 }, ref) {
   const [listeningCell, setListeningCell] = useState(null)
   const learnRef = useRef(null)
@@ -87,7 +88,7 @@ const ShaderMatrix = forwardRef(function ShaderMatrix({
         <span className="vj-matrix-title">Shader Matrix</span>
         <span className="vj-matrix-count">{tabs?.length || 0}</span>
       </div>
-      <div className="vj-matrix-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      <div className="vj-matrix-grid">
         {tabs?.map(tab => {
           const isActive = tab.id === activeTabId
           const isListening = listeningCell === tab.id
@@ -99,6 +100,7 @@ const ShaderMatrix = forwardRef(function ShaderMatrix({
               onClick={() => handleCellClick(tab.id)}
               onContextMenu={e => handleCellContext(e, tab.id)}
               title={`${tab.name}${meta ? ' [' + meta.label + ']' : ''}${midiLearnActive ? '\nClick to learn MIDI' : ''}`}
+              style={thumbnails?.[tab.id] ? { backgroundImage: `url(${thumbnails[tab.id]})` } : undefined}
             >
               <span className="vj-matrix-cell-name">{tab.name}</span>
               {meta && (

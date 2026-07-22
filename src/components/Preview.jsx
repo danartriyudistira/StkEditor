@@ -1,31 +1,8 @@
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react'
 import FxProcessor from '../fx/FxProcessor.js'
 import { computeAnimatedValue } from '../utils/animation.js'
 import ISFEngine from '../engine/ISFEngine.js'
 import HydraEngine from '../engine/HydraEngine.js'
-
-function createPlaceholderTexture(gl) {
-  const size = 256
-  const data = new Uint8Array(size * size * 4)
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const i = (y * size + x) * 4
-      const t = x / size
-      data[i]     = Math.floor(60 + 140 * t)
-      data[i + 1] = Math.floor(40 + 60 * Math.sin(t * Math.PI))
-      data[i + 2] = Math.floor(180 - 80 * t)
-      data[i + 3] = 255
-    }
-  }
-  const tex = gl.createTexture()
-  gl.bindTexture(gl.TEXTURE_2D, tex)
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, data)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-  return tex
-}
 
 function createPlaceholderImage() {
   const canvas = document.createElement('canvas')
@@ -57,11 +34,12 @@ function flipSourceVertically(source) {
   return flipCanvas
 }
 
-export default function Preview({ code, uniformValues, hydraParams, fxChain, onMetadata, onError, sourceType, sourceElement, paramAnimation, bpm, engineMode, noteTriggerRef }) {
+const Preview = forwardRef(function Preview({ code, uniformValues, hydraParams, fxChain, onMetadata, onError, sourceType, sourceElement, paramAnimation, bpm, engineMode, noteTriggerRef, canvasSettings }, ref) {
   const canvasRef = useRef(null)
   const engineRef = useRef(null)
   const fxProcessorRef = useRef(null)
   const rafRef = useRef(null)
+  const mainGLRef = useRef(null)
   const codeRef = useRef(code)
   const uniformValuesRef = useRef(uniformValues)
   const fxChainRef = useRef(fxChain)
@@ -71,8 +49,28 @@ export default function Preview({ code, uniformValues, hydraParams, fxChain, onM
   const bpmRef = useRef(bpm)
   const engineModeRef = useRef(engineMode)
   const hydraParamsRef = useRef(hydraParams)
+  const canvasSettingsRef = useRef(canvasSettings)
+  const lastFrameTimeRef = useRef(0)
   const placeholderImageRef = useRef(null)
   const activeNoteTriggersRef = useRef({})
+  const resizeRef = useRef(null)
+  const thumbCanvasRef = useRef(null)
+  const thumbCtxRef = useRef(null)
+  const capturePendingRef = useRef(false)
+  const lastThumbCopyRef = useRef(0)
+
+  useImperativeHandle(ref, () => ({
+    capture() {
+      const tc = thumbCanvasRef.current
+      if (!tc) return null
+      capturePendingRef.current = true
+      return null
+    },
+    getThumbnail() {
+      const tc = thumbCanvasRef.current
+      return tc ? tc.toDataURL('image/jpeg', 0.6) : null
+    }
+  }))
 
   codeRef.current = code
   uniformValuesRef.current = uniformValues
@@ -83,6 +81,7 @@ export default function Preview({ code, uniformValues, hydraParams, fxChain, onM
   bpmRef.current = bpm
   engineModeRef.current = engineMode
   hydraParamsRef.current = hydraParams
+  canvasSettingsRef.current = canvasSettings
 
   if (noteTriggerRef) {
     noteTriggerRef.current.triggerNote = (paramName, peakFraction, paramMin, paramMax) => {
@@ -115,8 +114,16 @@ export default function Preview({ code, uniformValues, hydraParams, fxChain, onM
       return
     }
 
+    mainGLRef.current = mainGL
+
     const fxProcessor = new FxProcessor(mainGL)
     fxProcessorRef.current = fxProcessor
+
+    const tc = document.createElement('canvas')
+    tc.width = 128
+    tc.height = 128
+    thumbCanvasRef.current = tc
+    thumbCtxRef.current = tc.getContext('2d', { willReadFrequently: true })
 
     placeholderImageRef.current = createPlaceholderImage()
 
@@ -167,6 +174,17 @@ export default function Preview({ code, uniformValues, hydraParams, fxChain, onM
       if (c.width === 0 || c.height === 0) {
         rafRef.current = requestAnimationFrame(render)
         return
+      }
+
+      const cfg = canvasSettingsRef.current || {}
+      if (cfg.fps > 0) {
+        const now = performance.now()
+        const interval = 1000 / cfg.fps
+        if (now - lastFrameTimeRef.current < interval) {
+          rafRef.current = requestAnimationFrame(render)
+          return
+        }
+        lastFrameTimeRef.current = now
       }
 
       const ccValues = uniformValuesRef.current || {}
@@ -250,6 +268,27 @@ export default function Preview({ code, uniformValues, hydraParams, fxChain, onM
         console.warn('FxProcessor error:', e)
       }
 
+      if (capturePendingRef.current) {
+        const tc = thumbCanvasRef.current
+        const tctx = thumbCtxRef.current
+        if (tc && tctx && c.width > 0 && c.height > 0) {
+          const size = Math.min(c.width, c.height, 128)
+          tctx.drawImage(c, (c.width - size) / 2, (c.height - size) / 2, size, size, 0, 0, 128, 128)
+          capturePendingRef.current = false
+        }
+      } else {
+        const now = performance.now()
+        if (now - lastThumbCopyRef.current > 2000) {
+          const tc = thumbCanvasRef.current
+          const tctx = thumbCtxRef.current
+          if (tc && tctx && c.width > 0 && c.height > 0) {
+            const size = Math.min(c.width, c.height, 128)
+            tctx.drawImage(c, (c.width - size) / 2, (c.height - size) / 2, size, size, 0, 0, 128, 128)
+            lastThumbCopyRef.current = now
+          }
+        }
+      }
+
       rafRef.current = requestAnimationFrame(render)
     }
     render()
@@ -268,7 +307,7 @@ export default function Preview({ code, uniformValues, hydraParams, fxChain, onM
       engine.destroy()
       fxProcessor.destroy()
     }
-  }, [onError, engineMode])
+  }, [onError, onMetadata, engineMode])
 
   // Load code into engine (only when engine is ready)
   const loadCode = useCallback((src) => {
@@ -298,8 +337,15 @@ export default function Preview({ code, uniformValues, hydraParams, fxChain, onM
       if (!canvas) return
       const parent = canvas.parentElement
       if (!parent) return
-      const w = parent.clientWidth
-      const h = parent.clientHeight
+      const cfg = canvasSettingsRef.current || {}
+      let w, h
+      if (cfg.width > 0 && cfg.height > 0) {
+        w = cfg.width
+        h = cfg.height
+      } else {
+        w = parent.clientWidth
+        h = parent.clientHeight
+      }
       if (w > 0 && h > 0 && (canvas.width !== w || canvas.height !== h)) {
         canvas.width = w
         canvas.height = h
@@ -316,6 +362,7 @@ export default function Preview({ code, uniformValues, hydraParams, fxChain, onM
       }
     }
     resize()
+    resizeRef.current = resize
 
     const parent = canvasRef.current?.parentElement
     let ro = null
@@ -331,14 +378,60 @@ export default function Preview({ code, uniformValues, hydraParams, fxChain, onM
     }
   }, [])
 
+  useEffect(() => {
+    resizeRef.current?.()
+  }, [canvasSettings])
+
+  const isCustomRes = canvasSettings && canvasSettings.width > 0 && canvasSettings.height > 0
+  const scaleMode = canvasSettings?.scaleMode || 'fit'
+
+  function getCanvasStyle() {
+    if (!isCustomRes) return { width: '100%', height: '100%', display: 'block' }
+    switch (scaleMode) {
+      case 'fill':
+        return {
+          width: '100%',
+          height: '100%',
+          display: 'block',
+          objectFit: 'cover',
+        }
+      case 'stretch':
+        return {
+          width: '100%',
+          height: '100%',
+          display: 'block',
+          objectFit: 'fill',
+        }
+      case 'original':
+        return {
+          display: 'block',
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          imageRendering: 'pixelated',
+        }
+      case 'fit':
+      default:
+        return {
+          maxWidth: '100%',
+          maxHeight: '100%',
+          display: 'block',
+          objectFit: 'contain',
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+        }
+    }
+  }
+
   return (
     <canvas
       ref={canvasRef}
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'block',
-      }}
+      style={getCanvasStyle()}
     />
   )
-}
+})
+
+export default Preview

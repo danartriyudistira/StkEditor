@@ -147,6 +147,9 @@ export default function App() {
   const [consoleConfig, setConsoleConfig] = useState(() => {
     try { return JSON.parse(localStorage.getItem('consoleConfig')) || { host: 'localhost', port: 8765 } } catch { return { host: 'localhost', port: 8765 } }
   })
+  const [canvasSettings, setCanvasSettings] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('canvasSettings')) || { width: 0, height: 0, fps: 0, scaleMode: 'fit' } } catch { return { width: 0, height: 0, fps: 0, scaleMode: 'fit' } }
+  })
   const [triggers, setTriggers] = useState([])
   const [leftOpen, setLeftOpen] = useState(true)
   const [rightOpen, setRightOpen] = useState(true)
@@ -191,6 +194,8 @@ export default function App() {
   const midiOutputRef = useRef(null)
   const midiChannelRef = useRef(0)
   const noteTriggerRef = useRef({ triggerNote: () => {} })
+  const previewRef = useRef(null)
+  const [thumbnails, setThumbnails] = useState({})
 
   useEffect(() => {
     return () => {
@@ -466,6 +471,19 @@ export default function App() {
   const handleSwitchTab = useCallback((tabId) => {
     setActiveTabId(tabId)
   }, [])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      previewRef.current?.capture?.()
+      setTimeout(() => {
+        const dataUrl = previewRef.current?.getThumbnail?.()
+        if (dataUrl) {
+          setThumbnails(prev => ({ ...prev, [activeTabId]: dataUrl }))
+        }
+      }, 100)
+    }, 800)
+    return () => clearTimeout(timer)
+  }, [activeTabId])
 
   const handleRename = useCallback((tabId, newName) => {
     setTabs(prev => prev.map(t => t.id === tabId ? { ...t, name: newName } : t))
@@ -891,7 +909,7 @@ export default function App() {
     setFxChain(prev => [...(prev || []), newFx])
     setShowIsfLibraryForFx(false)
     setError(null)
-  }, [fxChain])
+  }, [])
 
   const handleSaveStkfx = useCallback(() => {
     const data = {
@@ -1002,6 +1020,11 @@ export default function App() {
     localStorage.setItem('consoleConfig', JSON.stringify(newConfig))
   }, [])
 
+  const handleCanvasSettingsChange = useCallback((newSettings) => {
+    setCanvasSettings(newSettings)
+    localStorage.setItem('canvasSettings', JSON.stringify(newSettings))
+  }, [])
+
   const handleOverlayClose = useCallback(() => { setShowOverlay(false) }, [])
 
   const handlePerfBarEnter = useCallback(() => {
@@ -1029,7 +1052,9 @@ export default function App() {
     }
   }, [])
 
-  const handleSendToConsole = useCallback(() => {
+  const handleSendToConsole = useCallback((hostOverride, portOverride) => {
+    const host = hostOverride ?? consoleConfig.host
+    const port = portOverride ?? consoleConfig.port
     const payload = JSON.stringify({
       type: 'shader',
       code,
@@ -1042,7 +1067,7 @@ export default function App() {
       return
     }
     if (wsRef.current) { wsRef.current.close(); wsRef.current = null }
-    const ws = new WebSocket(`ws://${consoleConfig.host}:${consoleConfig.port}`)
+    const ws = new WebSocket(`ws://${host}:${port}`)
     ws.onopen = () => { setConsoleConnected(true); ws.send(payload) }
     ws.onclose = () => { setConsoleConnected(false) }
     ws.onerror = () => { setConsoleConnected(false) }
@@ -1146,12 +1171,15 @@ export default function App() {
           onPerformanceToggle={handlePerformanceToggle}
           vjMode={vjMode}
           onVjToggle={() => { setVjMode(v => { if (!v) setPerformanceMode(false); return !v }) }}
+          canvasSettings={canvasSettings}
+          onCanvasSettingsChange={handleCanvasSettingsChange}
         />
         )}
 
         <div className="main">
           <div className="preview-bg">
             <Preview
+              ref={previewRef}
               key={refreshKey}
               code={code}
               uniformValues={allUniformValues}
@@ -1165,6 +1193,7 @@ export default function App() {
               bpm={bpm}
               engineMode={engineMode}
               noteTriggerRef={noteTriggerRef}
+              canvasSettings={canvasSettings}
             />
           </div>
 
@@ -1360,16 +1389,17 @@ export default function App() {
         {vjMode && (
           <div className="vj-overlay">
             <FloatingPanel key="vj-matrix" title="Shader Matrix" defaultPos={VJ_POSITIONS.matrix}>
-              <ShaderMatrix
-                ref={vjMatrixRef}
-                tabs={tabs}
-                activeTabId={activeTabId}
-                onSwitchTab={handleSwitchTab}
-                shaderKeyMap={shaderKeyMap}
-                onShaderKeyMapChange={setShaderKeyMap}
-                midiLearnActive={vjMidiLearn}
-                setMidiLearnActive={setVjMidiLearn}
-              />
+                <ShaderMatrix
+                  ref={vjMatrixRef}
+                  tabs={tabs}
+                  activeTabId={activeTabId}
+                  onSwitchTab={handleSwitchTab}
+                  shaderKeyMap={shaderKeyMap}
+                  onShaderKeyMapChange={setShaderKeyMap}
+                  midiLearnActive={vjMidiLearn}
+                  setMidiLearnActive={setVjMidiLearn}
+                  thumbnails={thumbnails}
+                />
             </FloatingPanel>
             <FloatingPanel key="vj-shader" title="Shader Parameters" defaultPos={VJ_POSITIONS.shaderParams}>
               <Controls
@@ -1405,9 +1435,6 @@ export default function App() {
                       step={0.01}
                       onChange={(v) => handleCcValueChange(`u_cc${ch}`, v)}
                     />
-                    <span className="td-slider-control-value" style={{ color: '#4fc3f7' }}>
-                      {(ccValues?.[`u_cc${ch}`] ?? 0.5).toFixed(3)}
-                    </span>
                   </div>
                 ))}
               </div>

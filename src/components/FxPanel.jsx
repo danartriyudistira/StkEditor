@@ -10,6 +10,7 @@ const FX_CATEGORIES = getEffectsByCategory()
 
 export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkfx, onLoadStkfx, onLoadIsf, onAnimGlitch, glitchParamConfig, onGlitchConfigChange, bpm, resetBeatKey }) {
   const [expanded, setExpanded] = useState(false)
+  const [collapsedFx, setCollapsedFx] = useState({})
   const [activeFxParam, setActiveFxParam] = useState(null)
   const [activeFxSettings, setActiveFxSettings] = useState(null)
   const categories = FX_CATEGORIES
@@ -31,7 +32,6 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
   useEffect(() => {
     if (!hasAnyAnim) return
     let raf
-    let frame = 0
     function tick() {
       const { fxChain: chain, bpm: bpmVal, onAnimGlitch: glitchFn, onFxChainChange: changeFn } = animCtxRef.current || {}
       if (!chain) { raf = requestAnimationFrame(tick); return }
@@ -98,7 +98,6 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
       }
 
       animValuesRef.current = prev
-      frame++
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
@@ -212,9 +211,16 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
         <div className="fx-body">
           {fxChain && fxChain.length > 0 && (
             <div className="fx-chain">
-              {fxChain.map((fx, i) => { const fxDef = getEffectById(fx.id); return (
-                <div key={`${fx.id}-${i}`} className={`fx-item ${fx.enabled ? '' : 'fx-item--disabled'}`}>
+              {fxChain.map((fx, i) => { const fxDef = getEffectById(fx.id); const cellKey = `${fx.id}-${i}`; return (
+                <div key={cellKey} className={`fx-item ${fx.enabled ? '' : 'fx-item--disabled'}`}>
                   <div className="fx-item-header">
+                    <button
+                      className="fx-collapse"
+                      onClick={() => setCollapsedFx(prev => ({ ...prev, [cellKey]: !prev[cellKey] }))}
+                      title={collapsedFx[cellKey] ? 'Expand' : 'Collapse'}
+                    >
+                      {collapsedFx[cellKey] ? '▸' : '▾'}
+                    </button>
                     <button
                       className="fx-toggle"
                       onClick={() => handleToggleFx(i)}
@@ -245,7 +251,7 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
                     </div>
                   )}
 
-                  {fx.enabled && fx.paramValues && Object.keys(fx.paramValues).length > 0 && (
+                  {!collapsedFx[i] && fx.paramValues && Object.keys(fx.paramValues).length > 0 && (
 <div className="fx-params">
                        {Object.entries(fx.paramValues).map(([paramName, val]) => {
                          const fxDef = getEffectById(fx.id)

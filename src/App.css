@@ -36,8 +36,8 @@
 }
 
 .toolbar-actions button {
-  background: #333;
-  border: 1px solid #555;
+  background: transparent;
+  border: 1px solid transparent;
   color: #ccc;
   padding: 4px 12px;
   border-radius: 3px;
@@ -46,7 +46,8 @@
 }
 
 .toolbar-actions button:hover {
-  background: #444;
+  background: #333;
+  border-color: #555;
 }
 
 .toolbar-actions .tv-connected {
@@ -1120,6 +1121,20 @@
   padding: 0;
 }
 
+.fx-collapse {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 0;
+  width: 10px;
+}
+
+.fx-collapse:hover {
+  color: #ccc;
+}
+
 .fx-item-label {
   flex: 1;
   font-size: 12px;
@@ -1462,18 +1477,19 @@
   gap: 2px;
 }
 
-.console-config-btn {
-  background: #333 !important;
-  border: 1px solid #555 !important;
-  color: #ccc !important;
-  padding: 4px 6px !important;
-  border-radius: 3px !important;
-  cursor: pointer !important;
-  font-size: 12px !important;
+.toolbar-actions .console-config-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #ccc;
+  padding: 4px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
 }
 
-.console-config-btn:hover {
-  background: #444 !important;
+.toolbar-actions .console-config-btn:hover {
+  background: #333;
+  border-color: #555;
 }
 
 /* Console Config Dialog */
@@ -2012,7 +2028,8 @@
 .tabbar-new:hover {
   background: #383838;
   color: #ccc;
-}.tabbar-rename-input {
+}
+.tabbar-rename-input {
   background: #1e1e1e;
   border: 1px solid #007acc;
   color: #ccc;
@@ -2051,8 +2068,8 @@
 }
 
 .toolbar-btn {
-  background: #333;
-  border: 1px solid #555;
+  background: transparent;
+  border: 1px solid transparent;
   color: #ccc;
   padding: 4px 12px;
   border-radius: 3px;
@@ -2061,7 +2078,8 @@
 }
 
 .toolbar-btn:hover {
-  background: #444;
+  background: #333;
+  border-color: #555;
 }
 
 /* MIDI Output */
@@ -2492,21 +2510,24 @@
 
 .vj-matrix-grid {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
   gap: 3px;
 }
 
 .vj-matrix-cell {
+  aspect-ratio: 1;
   background: #2a2a2a;
+  background-size: cover;
+  background-position: center;
   border: 1px solid #444;
   color: #aaa;
   border-radius: 3px;
-  padding: 5px 4px;
+  padding: 3px;
   cursor: pointer;
   font-family: monospace;
   font-size: 10px;
   text-align: center;
   position: relative;
-  min-height: 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2515,18 +2536,19 @@
 }
 
 .vj-matrix-cell:hover {
-  background: #3a3a3a;
+  background-color: #3a3a3a;
+  background-blend-mode: overlay;
   border-color: #666;
 }
 
 .vj-matrix-cell--active {
-  background: #1a3a2a;
+  background-color: #1a3a2a;
   border-color: #4a9a6a;
   color: #afa;
 }
 
 .vj-matrix-cell--listening {
-  background: #3a2a1a;
+  background-color: #3a2a1a;
   border-color: #da8a3a;
   color: #fca;
 }
