@@ -3,6 +3,7 @@ import FxProcessor from '../fx/FxProcessor.js'
 import { computeAnimatedValue } from '../utils/animation.js'
 import ISFEngine from '../engine/ISFEngine.js'
 import HydraEngine from '../engine/HydraEngine.js'
+import HtmlEngine from '../engine/HtmlEngine.js'
 
 function createPlaceholderImage() {
   const canvas = document.createElement('canvas')
@@ -36,6 +37,7 @@ function flipSourceVertically(source) {
 
 const Preview = forwardRef(function Preview({ code, uniformValues, hydraParams, fxChain, onMetadata, onError, sourceType, sourceElement, paramAnimation, bpm, engineMode, noteTriggerRef, canvasSettings }, ref) {
   const canvasRef = useRef(null)
+  const iframeRef = useRef(null)
   const engineRef = useRef(null)
   const fxProcessorRef = useRef(null)
   const rafRef = useRef(null)
@@ -100,6 +102,16 @@ const Preview = forwardRef(function Preview({ code, uniformValues, hydraParams, 
     if (!canvas) return
 
     const mode = engineModeRef.current || 'isf'
+
+    if (mode === 'html') {
+      const engine = new HtmlEngine()
+      engine.init(canvas)
+      engine.loadCode(codeRef.current || '')
+      engineRef.current = engine
+      onMetadata?.(engine.getMetadata())
+      return () => { engine.destroy() }
+    }
+
     const engine = mode === 'hydra' ? new HydraEngine() : new ISFEngine()
     engineRef.current = engine
 
@@ -327,8 +339,37 @@ const Preview = forwardRef(function Preview({ code, uniformValues, hydraParams, 
   }, [onMetadata, onError])
 
   useEffect(() => {
-    if (code) loadCode(code)
+    if (!code) return
+    const engine = engineRef.current
+    if (!engine) return
+    if (engine.name === 'html') {
+      engine.loadCode(code)
+      onMetadata?.(engine.getMetadata())
+      return
+    }
+    loadCode(code)
   }, [code, loadCode])
+
+  // Post uniformValues to HTML iframe + scroll
+  useEffect(() => {
+    if (engineMode !== 'html') return
+    const iframe = iframeRef.current
+    if (!iframe) return
+    const cw = iframe.contentWindow
+    if (cw) {
+      cw.postMessage({
+        type: 'stk_params',
+        values: uniformValues || {},
+      }, '*')
+      if (uniformValues?.scroll !== undefined) {
+        const doc = iframe.contentDocument
+        if (doc) {
+          const maxScroll = Math.max(0, (doc.documentElement.scrollHeight || doc.body?.scrollHeight || 0) - cw.innerHeight)
+          cw.scrollTo(0, ((uniformValues.scroll + 1) / 2) * maxScroll)
+        }
+      }
+    }
+  }, [uniformValues, engineMode])
 
   // Resize observer
   useEffect(() => {
@@ -427,10 +468,28 @@ const Preview = forwardRef(function Preview({ code, uniformValues, hydraParams, 
   }
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={getCanvasStyle()}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        style={{ ...getCanvasStyle(), display: engineMode === 'html' ? 'none' : getCanvasStyle().display }}
+      />
+      {engineMode === 'html' && (
+        <iframe
+          ref={iframeRef}
+          title="HTML Preview"
+          srcDoc={code}
+          sandbox="allow-scripts allow-same-origin"
+          style={{
+            width: '100%',
+            height: '100%',
+            border: 'none',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+          }}
+        />
+      )}
+    </>
   )
 })
 

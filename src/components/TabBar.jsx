@@ -61,7 +61,7 @@ export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, on
               ) : (
                 <>
                   {tab.modified && <span className="tabbar-modified">{'\u25CF'} </span>}
-                  <span className={`tabbar-type-badge ${tab.type || 'isf'}`}>{tab.type === 'hydra' ? 'H' : 'I'}</span>
+                  <span className={`tabbar-type-badge ${tab.type || 'isf'}`}>{tab.type === 'hydra' ? 'H' : tab.type === 'html' ? 'W' : 'I'}</span>
                   {tab.name}
                 </>
               )}
@@ -81,7 +81,7 @@ export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, on
       </div>
       <div className="tabbar-actions">
         <button className="tabbar-action" onClick={onOpen} title="Open file">Open</button>
-        {libraryFiles && libraryFiles.length > 0 && activeTabType !== 'hydra' && (
+        {libraryFiles && libraryFiles.length > 0 && activeTabType !== 'hydra' && activeTabType !== 'html' && (
           <button className="tabbar-action" onClick={onLoadFromLibrary} title="Browse ISF library">ISF Lib</button>
         )}
         {activeTabType === 'hydra' && (
@@ -91,7 +91,7 @@ export default function TabBar({ tabs, activeTabId, onSwitch, onClose, onNew, on
             <button className="tabbar-action" onClick={onMutate} title="Mutate current sketch">Mutate</button>
           </>
         )}
-        {activeTabType !== 'hydra' && (
+        {activeTabType !== 'hydra' && activeTabType !== 'html' && (
           <button
             className={`tabbar-action source-btn ${sourceType !== 'placeholder' ? 'active' : ''}`}
             onClick={onSourceClick}

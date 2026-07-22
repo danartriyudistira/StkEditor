@@ -4,6 +4,7 @@ import { buildModules, getModulesByCategory, MODULE_CATEGORIES } from '../data/m
 const MODE_CATEGORIES = {
   hydra: MODULE_CATEGORIES.filter(c => c.id.startsWith('hydra')),
   isf: MODULE_CATEGORIES.filter(c => c.id.startsWith('fx')),
+  html: [],
 }
 
 export default function ModuleMenu({ x, y, mode, word, onSelect, onCreateSlider, onClose }) {

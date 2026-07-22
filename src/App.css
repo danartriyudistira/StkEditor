@@ -1962,6 +1962,11 @@
   color: #1a1a2e;
 }
 
+.tabbar-type-badge.html {
+  background: #f48771;
+  color: #1e1e1e;
+}
+
 .tabbar-modified {
   color: #e8a838;
   font-size: 8px;
