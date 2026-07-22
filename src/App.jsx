@@ -1217,7 +1217,7 @@ export default function App() {
         )}
 
         <div className="main">
-          <div className="preview-bg">
+          <div className="preview-bg" style={vjMode ? { pointerEvents: 'none' } : undefined}>
             <Preview
               ref={previewRef}
               key={refreshKey}
