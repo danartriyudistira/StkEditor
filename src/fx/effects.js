@@ -249,22 +249,6 @@ export function registerIsfEffect(id, def) {
   customEffects.set(id, def)
 }
 
-/**
- * Unregister a custom ISF effect.
- * @param {string} id - Effect ID to remove
- */
-export function unregisterIsfEffect(id) {
-  customEffects.delete(id)
-}
-
-/**
- * Get all registered custom ISF effects.
- * @returns {object[]} Array of custom effect definitions
- */
-export function getCustomEffects() {
-  return Array.from(customEffects.values())
-}
-
 export function getEffectById(id) {
   return effects.find(e => e.id === id) || customEffects.get(id) || null
 }

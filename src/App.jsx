@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo, lazy, Suspense } from 'react'
 import ShaderEditor from './components/Editor.jsx'
 import Preview from './components/Preview.jsx'
 import Controls from './components/Controls.jsx'
@@ -11,18 +11,21 @@ import OscPanel from './components/OscPanel.jsx'
 
 import Toolbar from './components/Toolbar.jsx'
 import PerformanceOverlay from './components/PerformanceOverlay.jsx'
-import ISFLibrary from './components/ISFLibrary.jsx'
+const ISFLibrary = lazy(() => import('./components/ISFLibrary.jsx'))
 import TabBar from './components/TabBar.jsx'
 import SourcePopup from './components/SourcePopup.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Slider from './components/Slider.jsx'
 import ModuleMenu from './components/ModuleMenu.jsx'
+import ShaderMatrix from './components/ShaderMatrix.jsx'
+import FloatingPanel from './components/FloatingPanel.jsx'
+import TempoPanel from './components/TempoPanel.jsx'
 import { exportStk, importStk } from './lib/stkArchive.js'
 import { DEFAULT_CONFIG } from './utils/animation.js'
 import { extractIsfMetadata, adaptIsfToFx, validateIsfForFx } from './fx/isfAdapter.js'
 import { registerIsfEffect } from './fx/effects.js'
 import HydraEditor from './components/HydraEditor.jsx'
-import HydraLibrary from './components/HydraLibrary.jsx'
+const HydraLibrary = lazy(() => import('./components/HydraLibrary.jsx'))
 import { DEFAULT_HYDRA_CODE, getRandomExample } from './data/hydraExamples.js'
 import { MODULE_CATEGORIES } from './data/moduleRegistry.js'
 import { mutateCode } from './utils/hydraMutator.js'
@@ -53,15 +56,28 @@ const defaultCcValues = Object.fromEntries(
   [1,2,3,4,5,6,7,8].map(ch => [`u_cc${ch}`, 0.5])
 )
 
+const VJ_POSITIONS = {
+  matrix: { x: 20, y: 50 },
+  shaderParams: { x: 320, y: 50 },
+  ccSliders: { x: 620, y: 50 },
+  tempo: { x: 20, y: 360 },
+  fxSliders: { x: 620, y: 360 },
+}
+
 export default function App() {
   const [projectName, setProjectName] = useState('untitled')
   const [tabs, setTabs] = useState([{ id: 1, name: 'untitled.js', code: DEFAULT_HYDRA_CODE, type: 'hydra', modified: false }])
   const [activeTabId, setActiveTabId] = useState(1)
   const nextTabIdRef = useRef(2)
-  const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0]
+  const activeTab = useMemo(
+    () => tabs.find(t => t.id === activeTabId) || tabs[0],
+    [tabs, activeTabId]
+  )
   const code = activeTab?.code || ''
   const fileName = activeTab?.name || 'untitled.fs'
   const engineMode = activeTab?.type || 'isf'
+  const codeRef = useRef(code)
+  codeRef.current = code
   const [isfMetadata, setIsfMetadata] = useState(null)
   const [uniformValues, setUniformValues] = useState({})
   const [ccValues, setCcValues] = useState(defaultCcValues)
@@ -150,6 +166,15 @@ export default function App() {
   const [showPerfBar, setShowPerfBar] = useState(false)
   const perfBarTimerRef = useRef(null)
   const savedPanelsRef = useRef({ left: true, right: true })
+  const [vjMode, setVjMode] = useState(false)
+  const [vjMidiLearn, setVjMidiLearn] = useState(false)
+  const [shaderKeyMap, setShaderKeyMap] = useState({})
+  const vjMatrixRef = useRef(null)
+  const kbdRef = useRef({ tabs, activeTabId, shaderKeyMap, vjMode, performanceMode, showOverlay })
+  kbdRef.current = { tabs, activeTabId, shaderKeyMap, vjMode, performanceMode, showOverlay }
+  const triggerRef = useRef({ tabs, shaderKeyMap, vjMode, paramAnimation, hydraParams, isfMetadata })
+  triggerRef.current = { tabs, shaderKeyMap, vjMode, paramAnimation, hydraParams, isfMetadata }
+  const handlerRef = useRef({})
   const [pfRenderQuality, setPfRenderQuality] = useState('Full')
   const [pfFps, setPfFps] = useState(60)
   const [pfVolume, setPfVolume] = useState(50)
@@ -171,21 +196,22 @@ export default function App() {
   }, [])
 
   const handlePerformanceToggle = useCallback(() => {
-    setPerformanceMode(prev => {
-      const next = !prev
-      if (next) {
-        savedPanelsRef.current = { left: leftOpen, right: rightOpen }
-        setShowOverlay(false)
-        setLeftOpen(false)
-        setRightOpen(false)
-      } else {
-        setShowOverlay(false)
-        setLeftOpen(savedPanelsRef.current.left)
-        setRightOpen(savedPanelsRef.current.right)
-      }
-      return next
-    })
-  }, [leftOpen, rightOpen])
+    setPerformanceMode(prev => !prev)
+  }, [])
+
+  useEffect(() => {
+    if (performanceMode) {
+      setVjMode(false)
+      savedPanelsRef.current = { left: leftOpen, right: rightOpen }
+      setShowOverlay(false)
+      setLeftOpen(false)
+      setRightOpen(false)
+    } else {
+      setShowOverlay(false)
+      setLeftOpen(savedPanelsRef.current.left)
+      setRightOpen(savedPanelsRef.current.right)
+    }
+  }, [performanceMode])
 
   // Tab helpers
   const updateActiveTab = useCallback((updates) => {
@@ -459,35 +485,55 @@ export default function App() {
   }, [updateActiveTab])
 
   const handleHydraMutate = useCallback(() => {
-    const currentCode = code || ''
+    const currentCode = codeRef.current || ''
     const mutated = mutateCode(currentCode, 0.3)
     updateActiveTab({ code: mutated, modified: true })
-  }, [code, updateActiveTab])
+  }, [updateActiveTab])
 
   useEffect(() => {
     const handler = (e) => {
+      const k = kbdRef.current
+      const h = handlerRef.current
       if (e.ctrlKey && e.key === 'b') { e.preventDefault(); setLeftOpen(v => !v) }
       if (e.ctrlKey && e.key === '.') { e.preventDefault(); setRightOpen(v => !v) }
-      if (e.ctrlKey && e.key === 's') { e.preventDefault(); handleExportStk() }
-      if (e.ctrlKey && e.key === 'o') { e.preventDefault(); handleImportStk() }
-      if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); handleRefresh() }
+      if (e.ctrlKey && e.key === 's') { e.preventDefault(); h.handleExportStk?.() }
+      if (e.ctrlKey && e.key === 'o') { e.preventDefault(); h.handleImportStk?.() }
+      if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); h.handleRefresh?.() }
 
-      if (performanceMode && !showOverlay) {
+      if (k.vjMode) {
+        const key = e.key.toLowerCase()
+        const mappedId = k.shaderKeyMap?.['key_' + key]
+        if (mappedId && k.tabs.find(t => t.id === mappedId)) {
+          e.preventDefault()
+          setActiveTabId(mappedId)
+          return
+        }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+          e.preventDefault()
+          const currentIdx = k.tabs.findIndex(t => t.id === k.activeTabId)
+          if (currentIdx === -1) return
+          const dir = e.key === 'ArrowRight' ? 1 : -1
+          const nextIdx = (currentIdx + dir + k.tabs.length) % k.tabs.length
+          setActiveTabId(k.tabs[nextIdx].id)
+        }
+      }
+
+      if (k.performanceMode && !k.showOverlay) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
           setShowOverlay(true)
         } else if (e.key === 'Escape') {
           e.preventDefault()
-          handlePerformanceToggle()
+          h.handlePerformanceToggle?.()
         } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
           e.preventDefault()
-          const currentIdx = tabs.findIndex(t => t.id === activeTabId)
+          const currentIdx = k.tabs.findIndex(t => t.id === k.activeTabId)
           if (currentIdx === -1) return
           const dir = e.key === 'ArrowRight' ? 1 : -1
-          const nextIdx = (currentIdx + dir + tabs.length) % tabs.length
-          setActiveTabId(tabs[nextIdx].id)
+          const nextIdx = (currentIdx + dir + k.tabs.length) % k.tabs.length
+          setActiveTabId(k.tabs[nextIdx].id)
         }
-      } else if (performanceMode && showOverlay) {
+      } else if (k.performanceMode && k.showOverlay) {
         if (e.key === 'Escape') {
           e.preventDefault()
           setShowOverlay(false)
@@ -496,7 +542,7 @@ export default function App() {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [performanceMode, showOverlay, handlePerformanceToggle, handleRefresh, tabs, activeTabId])
+  }, [])
 
   useEffect(() => {
     const base = import.meta.env.BASE_URL || '/'
@@ -627,6 +673,18 @@ export default function App() {
   }, [])
 
   const handleTrigger = useCallback((trigger) => {
+    const t = triggerRef.current
+    // VJ mode MIDI handling
+    if (t.vjMode && trigger.type === 'noteOn' && trigger.velocity > 0) {
+      const handled = vjMatrixRef.current?.handleMidiNote(trigger.note)
+      if (!handled) {
+        const mappedId = t.shaderKeyMap?.['midi_' + trigger.note]
+        if (mappedId && t.tabs.find(tab => tab.id === mappedId)) {
+          setActiveTabId(mappedId)
+        }
+      }
+    }
+
     if (trigger.type === 'noteOn' && trigger.velocity > 0) {
       synthRef.current?.noteOn(trigger.note, Math.round(trigger.velocity * 127))
     } else if (trigger.type === 'noteOff') {
@@ -658,7 +716,7 @@ export default function App() {
         }]
         return next.slice(-6)
       } else {
-        return prev.filter(t => t.note !== trigger.note)
+        return prev.filter(tr => tr.note !== trigger.note)
       }
     })
     if (trigger.effectId) {
@@ -669,24 +727,24 @@ export default function App() {
         return fx
       }))
     }
-    // Note Trigger: cari param dengan mode 'note', trigger envelope di Preview
+    // Note Trigger
     if (trigger.type === 'noteOn' && trigger.velocity > 0) {
-      for (const [paramName, anim] of Object.entries(paramAnimation)) {
+      for (const [paramName, anim] of Object.entries(t.paramAnimation || {})) {
         if (anim?.mode !== 'note') continue
         const nt = anim
-        if (!nt.any && !nt.notes?.hasOwnProperty(trigger.note)) continue
+        if (!nt.any && !Object.prototype.hasOwnProperty.call(nt.notes || {}, trigger.note)) continue
         const peakFraction = nt.useVelocity
           ? (nt.velocityMin ?? 0) + trigger.velocity * ((nt.velocityMax ?? 1) - (nt.velocityMin ?? 0))
           : (nt.notes?.[trigger.note] ?? nt.fixedValue ?? 1)
-        const p = hydraParams?.[paramName]
-        const input = isfMetadata?.inputs?.find(i => i.NAME === paramName)
+        const p = t.hydraParams?.[paramName]
+        const input = t.isfMetadata?.inputs?.find(i => i.NAME === paramName)
         if (!p && !input) continue
         const paramMin = p ? p.min : (input.MIN ?? 0)
         const paramMax = p ? p.max : (input.MAX ?? 1)
         noteTriggerRef.current.triggerNote(paramName, peakFraction, paramMin, paramMax)
       }
     }
-  }, [paramAnimation, hydraParams, isfMetadata])
+  }, [])
 
   const handleSourceSelectImage = useCallback((img) => {
     setSourceType('image')
@@ -903,6 +961,10 @@ export default function App() {
         setProjectName(project.projectName)
         const restoredTabs = (project.tabs || []).map(t => ({ ...t, id: Date.now() + Math.random(), modified: false }))
         setTabs(restoredTabs.length > 0 ? restoredTabs : [{ id: 1, name: 'untitled.fs', code: DEFAULT_SHADER, type: 'isf', modified: false }])
+        if (restoredTabs.length > 0) {
+          setActiveTabId(restoredTabs[0].id)
+          nextTabIdRef.current = Math.max(...restoredTabs.map(t => t.id)) + 1
+        }
         if (project.ccValues) setCcValues(prev => ({ ...prev, ...project.ccValues }))
         if (project.ccMapping) setCcMapping(project.ccMapping)
         if (project.paramAnimation) setParamAnimation(project.paramAnimation)
@@ -979,41 +1041,109 @@ export default function App() {
     wsRef.current = ws
   }, [code, ccValues, uniformValues, triggers, consoleConfig])
 
-  const allUniformValues = { ...uniformValues, ...ccValues }
-  const appliedUniformValues = { ...ccValues }
+  const appliedUniformValues = useMemo(() => {
+    const result = { ...ccValues }
 
-  for (const [inputName, channel] of Object.entries(ccMapping)) {
-    if (channel && ccValues[`u_${channel}`] !== undefined) {
-      const input = isfMetadata?.inputs?.find(i => i.NAME === inputName)
-      if (input) {
-        const ccVal = ccValues[`u_${channel}`]
-        const min = input.MIN ?? 0
-        const max = input.MAX ?? 1
-        appliedUniformValues[inputName] = min + ccVal * (max - min)
+    for (const [inputName, channel] of Object.entries(ccMapping)) {
+      if (channel && ccValues[`u_${channel}`] !== undefined) {
+        const input = isfMetadata?.inputs?.find(i => i.NAME === inputName)
+        if (input) {
+          const ccVal = ccValues[`u_${channel}`]
+          const min = input.MIN ?? 0
+          const max = input.MAX ?? 1
+          result[inputName] = min + ccVal * (max - min)
+        }
       }
     }
-  }
-  for (const [paramName, cfg] of Object.entries(parameterConfig)) {
-    if (cfg.cc && ccValues[`u_cc${cfg.cc}`] !== undefined) {
-      const input = isfMetadata?.inputs?.find(i => i.NAME === paramName)
-      if (input) {
-        const ccVal = ccValues[`u_cc${cfg.cc}`]
-        const min = input.MIN ?? 0
-        const max = input.MAX ?? 1
-        appliedUniformValues[paramName] = min + ccVal * (max - min)
+    for (const [paramName, cfg] of Object.entries(parameterConfig)) {
+      if (cfg.cc && ccValues[`u_cc${cfg.cc}`] !== undefined) {
+        const input = isfMetadata?.inputs?.find(i => i.NAME === paramName)
+        if (input) {
+          const ccVal = ccValues[`u_cc${cfg.cc}`]
+          const min = input.MIN ?? 0
+          const max = input.MAX ?? 1
+          result[paramName] = min + ccVal * (max - min)
+        }
       }
     }
-  }
-  for (const [name, val] of Object.entries(uniformValues)) {
-    if (!ccMapping[name] && !name.startsWith('u_cc')) {
-      appliedUniformValues[name] = val
+    for (const [name, val] of Object.entries(uniformValues)) {
+      if (!ccMapping[name] && !parameterConfig[name]?.cc && !name.startsWith('u_cc')) {
+        result[name] = val
+      }
     }
-  }
+    return result
+  }, [ccValues, ccMapping, parameterConfig, uniformValues, isfMetadata])
+
+  const allUniformValues = useMemo(
+    () => ({ ...uniformValues, ...ccValues }),
+    [uniformValues, ccValues]
+  )
+
+  const handleLeftResizeStart = useCallback((e) => {
+    e.preventDefault()
+    const sx = e.clientX, sw = leftPanelWidthRef.current
+    const parent = e.currentTarget.parentElement.parentElement
+    const pw = parent.clientWidth
+    const move = ev => setLeftPanelWidth(Math.max(20, Math.min(80, sw + ((ev.clientX - sx) / pw) * 100)))
+    const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up) }
+    document.addEventListener('mousemove', move)
+    document.addEventListener('mouseup', up)
+  }, [])
+
+  const handleLeftResizeTouch = useCallback((e) => {
+    const t = e.touches[0]
+    const sx = t.clientX, sw = leftPanelWidthRef.current
+    const parent = e.currentTarget.parentElement.parentElement
+    const pw = parent.clientWidth
+    const move = ev => { ev.preventDefault(); setLeftPanelWidth(Math.max(20, Math.min(80, sw + ((ev.touches[0].clientX - sx) / pw) * 100))) }
+    const up = () => { document.removeEventListener('touchmove', move); document.removeEventListener('touchend', up) }
+    document.addEventListener('touchmove', move, { passive: false })
+    document.addEventListener('touchend', up)
+  }, [])
+
+  const handleRightResizeStart = useCallback((e) => {
+    e.preventDefault()
+    const sx = e.clientX, sw = rightPanelWidthRef.current
+    const move = ev => setRightPanelWidth(Math.max(180, Math.min(800, sw - (ev.clientX - sx))))
+    const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up) }
+    document.addEventListener('mousemove', move)
+    document.addEventListener('mouseup', up)
+  }, [])
+
+  const handleRightResizeTouch = useCallback((e) => {
+    const t = e.touches[0]
+    const sx = t.clientX, sw = rightPanelWidthRef.current
+    const move = ev => { ev.preventDefault(); setRightPanelWidth(Math.max(180, Math.min(800, sw - (ev.touches[0].clientX - sx)))) }
+    const up = () => { document.removeEventListener('touchmove', move); document.removeEventListener('touchend', up) }
+    document.addEventListener('touchmove', move, { passive: false })
+    document.addEventListener('touchend', up)
+  }, [])
+
+  handlerRef.current = { handleExportStk, handleImportStk, handleRefresh, handlePerformanceToggle }
 
   return (
     <ErrorBoundary>
-      <div className={`app${performanceMode ? ' performance-mode' : ''}`}>
-        {performanceMode ? (
+      <div className={`app${performanceMode ? ' performance-mode' : ''}${vjMode ? ' vj-mode' : ''}`}>
+        {vjMode ? (
+          <div className="vj-topbar">
+            <span className="vj-topbar-title">VJ Mode</span>
+            <button
+              className={`vj-topbar-btn vj-topbar-btn--midi${vjMidiLearn ? ' active' : ''}`}
+              onClick={() => setVjMidiLearn(v => !v)}
+            >
+              {vjMidiLearn ? 'Learn ON' : 'MIDI Learn'}
+            </button>
+            <div className="vj-topbar-bpm">
+              <span className="vj-topbar-label">BPM</span>
+              <button className="vj-topbar-btn" onClick={() => setBpm(b => Math.max(40, b - 1))}>-</button>
+              <span className="vj-topbar-value">{bpm}</span>
+              <button className="vj-topbar-btn" onClick={() => setBpm(b => Math.min(240, b + 1))}>+</button>
+            </div>
+            <button className="vj-topbar-btn vj-topbar-btn--exit" onClick={() => setVjMode(false)}>
+              Exit VJ
+            </button>
+          </div>
+        ) : performanceMode ? (
           <div
             className={`perf-bar ${showPerfBar ? 'visible' : ''}`}
             onMouseEnter={handlePerfBarEnter}
@@ -1039,6 +1169,8 @@ export default function App() {
           onExportStk={handleExportStk}
           performanceMode={performanceMode}
           onPerformanceToggle={handlePerformanceToggle}
+          vjMode={vjMode}
+          onVjToggle={() => { setVjMode(v => { if (!v) setPerformanceMode(false); return !v }) }}
         />
         )}
 
@@ -1048,7 +1180,7 @@ export default function App() {
               key={refreshKey}
               code={code}
               uniformValues={allUniformValues}
-              hydraParams={Object.fromEntries(Object.entries(hydraParams).map(([k, v]) => [k, v.value]))}
+              hydraParams={hydraValues}
               fxChain={fxChain}
               onMetadata={handleMetadata}
               onError={handleError}
@@ -1061,33 +1193,15 @@ export default function App() {
             />
           </div>
 
-          {!performanceMode && (
+          {!performanceMode && !vjMode && (
           <div
             className={`left-panel${leftOpen ? '' : ' collapsed'}`}
             style={{ width: `${leftPanelWidth}%`, background: `rgba(30, 30, 30, ${panelOpacity})` }}
           >
             <div
               className="panel-resize-handle panel-resize-handle--right"
-              onMouseDown={e => {
-                e.preventDefault()
-                const sx = e.clientX, sw = leftPanelWidthRef.current
-                const parent = e.currentTarget.parentElement.parentElement
-                const pw = parent.clientWidth
-                const move = ev => setLeftPanelWidth(Math.max(20, Math.min(80, sw + ((ev.clientX - sx) / pw) * 100)))
-                const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up) }
-                document.addEventListener('mousemove', move)
-                document.addEventListener('mouseup', up)
-              }}
-              onTouchStart={e => {
-                const t = e.touches[0]
-                const sx = t.clientX, sw = leftPanelWidthRef.current
-                const parent = e.currentTarget.parentElement.parentElement
-                const pw = parent.clientWidth
-                const move = ev => { ev.preventDefault(); setLeftPanelWidth(Math.max(20, Math.min(80, sw + ((ev.touches[0].clientX - sx) / pw) * 100))) }
-                const up = () => { document.removeEventListener('touchmove', move); document.removeEventListener('touchend', up) }
-                document.addEventListener('touchmove', move, { passive: false })
-                document.addEventListener('touchend', up)
-              }}
+              onMouseDown={handleLeftResizeStart}
+              onTouchStart={handleLeftResizeTouch}
             />
             <div className="editor-pane">
               <TabBar
@@ -1144,29 +1258,17 @@ export default function App() {
           </div>
           )}
 
+          {!vjMode && (
           <div
             className={`right-panel${rightOpen ? '' : ' collapsed'}${performanceMode ? ' perf-hidden' : ''}`}
             style={{ width: `${rightPanelWidth}px`, background: `rgba(37, 37, 38, ${panelOpacity})` }}
           >
             <div
               className="panel-resize-handle panel-resize-handle--left"
-              onMouseDown={e => {
-                e.preventDefault()
-                const sx = e.clientX, sw = rightPanelWidthRef.current
-                const move = ev => setRightPanelWidth(Math.max(180, Math.min(800, sw - (ev.clientX - sx))))
-                const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up) }
-                document.addEventListener('mousemove', move)
-                document.addEventListener('mouseup', up)
-              }}
-              onTouchStart={e => {
-                const t = e.touches[0]
-                const sx = t.clientX, sw = rightPanelWidthRef.current
-                const move = ev => { ev.preventDefault(); setRightPanelWidth(Math.max(180, Math.min(800, sw - (ev.touches[0].clientX - sx)))) }
-                const up = () => { document.removeEventListener('touchmove', move); document.removeEventListener('touchend', up) }
-                document.addEventListener('touchmove', move, { passive: false })
-                document.addEventListener('touchend', up)
-              }}
+              onMouseDown={handleRightResizeStart}
+              onTouchStart={handleRightResizeTouch}
             />
+
             <Controls
               metadata={isfMetadata}
               values={engineMode === 'hydra' ? hydraValues : uniformValues}
@@ -1186,6 +1288,7 @@ export default function App() {
               resetBeatKey={resetBeatKey}
               onResetBeat={() => setResetBeatKey(k => k + 1)}
             />
+
             <CcPanel
               inputs={isfMetadata?.inputs}
               mapping={ccMapping}
@@ -1245,8 +1348,9 @@ export default function App() {
               }}
             />
           </div>
+          )}
 
-          {!performanceMode && (
+          {!performanceMode && !vjMode && (
           <>
           <button
             className={`panel-toggle panel-toggle--left${leftOpen ? ' at-edge' : ''}`}
@@ -1277,27 +1381,116 @@ export default function App() {
           </div>
           </>
           )}
+
+        {vjMode && (
+          <div className="vj-overlay">
+            <FloatingPanel key="vj-matrix" title="Shader Matrix" defaultPos={VJ_POSITIONS.matrix}>
+              <ShaderMatrix
+                ref={vjMatrixRef}
+                tabs={tabs}
+                activeTabId={activeTabId}
+                onSwitchTab={handleSwitchTab}
+                shaderKeyMap={shaderKeyMap}
+                onShaderKeyMapChange={setShaderKeyMap}
+                midiLearnActive={vjMidiLearn}
+                setMidiLearnActive={setVjMidiLearn}
+              />
+            </FloatingPanel>
+            <FloatingPanel key="vj-shader" title="Shader Parameters" defaultPos={VJ_POSITIONS.shaderParams}>
+              <Controls
+                metadata={isfMetadata}
+                values={engineMode === 'hydra' ? hydraValues : uniformValues}
+                onChange={engineMode === 'hydra' ? handleHydraParamChange : handleControlChange}
+                paramAnimation={paramAnimation}
+                onParamAnimationChange={handleParamAnimationChange}
+                parameterConfig={parameterConfig}
+                onParameterConfigChange={handleParameterConfigChange}
+                onParamOscChange={handleParamOscChange}
+                bpm={bpm}
+                onBpmChange={setBpm}
+                hydraParams={hydraParams}
+                engineMode={engineMode}
+                glitchParamConfig={glitchParamConfig}
+                onGlitchConfigChange={handleGlitchConfigChange}
+                onAnimGlitch={handleAnimGlitch}
+                resetBeatKey={resetBeatKey}
+                onResetBeat={() => setResetBeatKey(k => k + 1)}
+                hideTempo
+              />
+            </FloatingPanel>
+            <FloatingPanel key="vj-cc" title="CC Sliders" defaultPos={VJ_POSITIONS.ccSliders}>
+              <div className="vj-cc-section">
+                {[1,2,3,4,5,6,7,8].map(ch => (
+                  <div key={ch} className="vj-cc-row">
+                    <label className="vj-cc-label">CC{ch}</label>
+                    <Slider
+                      value={ccValues?.[`u_cc${ch}`] ?? 0.5}
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      onChange={(v) => handleCcValueChange(`u_cc${ch}`, v)}
+                    />
+                    <span className="td-slider-control-value" style={{ color: '#4fc3f7' }}>
+                      {(ccValues?.[`u_cc${ch}`] ?? 0.5).toFixed(3)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </FloatingPanel>
+            <FloatingPanel key="vj-tempo" title="Tempo" defaultPos={VJ_POSITIONS.tempo}>
+              <TempoPanel
+                bpm={bpm}
+                onBpmChange={setBpm}
+                resetBeatKey={resetBeatKey}
+                onResetBeat={() => setResetBeatKey(k => k + 1)}
+              />
+            </FloatingPanel>
+            <FloatingPanel key="vj-fx" title="FX Sliders" defaultPos={VJ_POSITIONS.fxSliders}>
+              <FxPanel
+                fxChain={fxChain}
+                onFxChainChange={setFxChain}
+                ccValues={ccValues}
+                onSaveStkfx={handleSaveStkfx}
+                onLoadStkfx={handleLoadStkfx}
+                onExportStk={handleExportStk}
+                onImportStk={handleImportStk}
+                onLoadIsf={() => setShowIsfLibraryForFx(true)}
+                onAnimGlitch={handleAnimGlitch}
+                glitchParamConfig={glitchParamConfig}
+                onGlitchConfigChange={handleGlitchConfigChange}
+                bpm={bpm}
+                resetBeatKey={resetBeatKey}
+              />
+            </FloatingPanel>
+          </div>
+        )}
         </div>
 
         {showLibrary && (
+          <Suspense fallback={<div className="loading" />}>
           <ISFLibrary
             files={libraryFiles}
             onSelect={handleLibrarySelect}
             onClose={() => setShowLibrary(false)}
           />
+          </Suspense>
         )}
         {showIsfLibraryForFx && (
+          <Suspense fallback={<div className="loading" />}>
           <ISFLibrary
             files={libraryFiles}
             onSelect={handleIsfSelectForFx}
             onClose={() => setShowIsfLibraryForFx(false)}
           />
+          </Suspense>
         )}
         {showHydraLibrary && (
+          <Suspense fallback={<div className="loading" />}>
           <HydraLibrary
             onSelect={handleHydraLibrarySelect}
             onClose={() => setShowHydraLibrary(false)}
           />
+          </Suspense>
         )}
         {showSourcePopup && (
           <SourcePopup

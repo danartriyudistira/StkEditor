@@ -16,11 +16,6 @@ export const MODULE_CATEGORIES = [
   { id: 'fx-distort', label: 'FX — Distort', icon: '\u25B3', color: '#ba68c8' },
 ]
 
-export function getCategoryColor(categoryId) {
-  const cat = MODULE_CATEGORIES.find(c => c.id === categoryId)
-  return cat?.color || '#888'
-}
-
 const CATEGORY_MAP = {
   'Basics': 'hydra-basics',
   'Source': 'hydra-source',

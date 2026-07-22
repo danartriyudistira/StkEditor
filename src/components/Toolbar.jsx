@@ -15,6 +15,8 @@ export default function Toolbar({
   onLoadPreset,
   performanceMode,
   onPerformanceToggle,
+  vjMode,
+  onVjToggle,
 }) {
   const [showConfig, setShowConfig] = useState(false)
   const [configDraft, setConfigDraft] = useState({ host: '', port: '' })
@@ -94,6 +96,17 @@ export default function Toolbar({
             \u2699
           </button>
         </div>
+
+        <div className="toolbar-separator" />
+
+        {/* VJ Mode */}
+        <button
+          className={`toolbar-btn ${vjMode ? 'vj-active' : ''}`}
+          onClick={onVjToggle}
+          title="VJ Mode (full-screen live performance with sliders + shader matrix)"
+        >
+          {vjMode ? 'Exit VJ' : 'VJ Mode'}
+        </button>
 
         <div className="toolbar-separator" />
 

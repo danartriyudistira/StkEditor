@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
 import ParameterPopup from './ParameterPopup.jsx'
 import Slider from './Slider.jsx'
 import { computeAnimatedValue } from '../utils/animation.js'
@@ -13,15 +13,20 @@ export default function Controls({
   onAnimGlitch,
   resetBeatKey,
   onResetBeat,
+  hideTempo,
 }) {
   const isHydra = engineMode === 'hydra'
   const [activeParam, setActiveParam] = useState(null)
   const [animTick, setAnimTick] = useState(0)
   const startTimeRef = useRef(Date.now())
+  const displayRef = useRef({})
 
-  const hasAnyAnim = Object.values(paramAnimation).some(c => c && c.mode !== 'off')
+  const hasAnyAnim = useMemo(
+    () => Object.values(paramAnimation).some(c => c && c.mode !== 'off' && c.mode !== 'link'),
+    [paramAnimation]
+  )
   const prevAnimRef = useRef({})
-  const animCtxRef = useRef({ isHydra, hydraParams, metadata, values, paramAnimation, bpm, onAnimGlitch, onChange })
+  const animCtxRef = useRef(null)
   animCtxRef.current = { isHydra, hydraParams, metadata, values, paramAnimation, bpm, onAnimGlitch, onChange }
   const bpmRef = useRef()
 
@@ -31,7 +36,6 @@ export default function Controls({
   }, [resetBeatKey])
 
   // Hold-repeat refs
-  const holdRef = useRef(null)
   const holdIntervalRef = useRef(null)
 
   function startHold(fn, interval = 120) {
@@ -74,34 +78,38 @@ export default function Controls({
 
   useEffect(() => {
     if (!hasAnyAnim) return
-    let raf, frame = 0
+    let raf
+    let frame = 0
     function tick() {
       frame++
-      if (frame % 2 === 0) {
-        setAnimTick(t => t + 1)
-        const ctx = animCtxRef.current
-          const list = ctx.isHydra
-            ? Object.entries(ctx.hydraParams || {}).map(([n, p]) => ({ NAME: n, MIN: p.min, MAX: p.max }))
-            : ctx.metadata?.inputs
-          if (list) {
-            const time = (Date.now() - startTimeRef.current) / 1000
-            for (const input of list) {
-              const animCfg = ctx.paramAnimation?.[input.NAME]
-              if (!animCfg || animCfg.mode === 'off' || animCfg.mode === 'link') continue
-              const base = ctx.values?.[input.NAME] ?? 0
-              const newVal = computeAnimatedValue(base, animCfg, time, ctx.bpm, input.NAME)
-              const prevVal = prevAnimRef.current[input.NAME]
-              if (prevVal !== undefined && Math.abs(newVal - prevVal) > 0.0001) {
-                ctx.onAnimGlitch(input.NAME, newVal)
-                ctx.onChange?.(input.NAME, newVal)
-                const links = animCfg.links || []
-                for (const linkName of links) {
-                  ctx.onChange?.(linkName, newVal)
-                }
-              }
-              prevAnimRef.current[input.NAME] = newVal
+      const ctx = animCtxRef.current
+      const list = ctx.isHydra
+        ? Object.entries(ctx.hydraParams || {}).map(([n, p]) => ({ NAME: n, MIN: p.min, MAX: p.max }))
+        : ctx.metadata?.inputs
+      if (list) {
+        const time = (Date.now() - startTimeRef.current) / 1000
+        let fired = false
+        for (const input of list) {
+          const animCfg = ctx.paramAnimation?.[input.NAME]
+          if (!animCfg || animCfg.mode === 'off' || animCfg.mode === 'link') continue
+          const base = ctx.values?.[input.NAME] ?? 0
+          const newVal = computeAnimatedValue(base, animCfg, time, ctx.bpm, input.NAME)
+          displayRef.current[input.NAME] = newVal
+          const prevVal = prevAnimRef.current[input.NAME]
+          if (prevVal !== undefined && Math.abs(newVal - prevVal) > 0.0001) {
+            fired = true
+            ctx.onAnimGlitch(input.NAME, newVal)
+            ctx.onChange?.(input.NAME, newVal)
+            const links = animCfg.links || []
+            for (const linkName of links) {
+              ctx.onChange?.(linkName, newVal)
             }
           }
+          prevAnimRef.current[input.NAME] = newVal
+        }
+        if (fired || frame % 3 === 0) {
+          setAnimTick(t => t + 1)
+        }
       }
       raf = requestAnimationFrame(tick)
     }
@@ -109,8 +117,9 @@ export default function Controls({
     return () => cancelAnimationFrame(raf)
   }, [hasAnyAnim])
 
-  const inputs = isHydra
-    ? Object.entries(hydraParams || {}).map(([name, p]) => ({
+  const inputs = useMemo(() => {
+    if (isHydra) {
+      return Object.entries(hydraParams || {}).map(([name, p]) => ({
         NAME: name,
         LABEL: name,
         MIN: p.min,
@@ -119,18 +128,19 @@ export default function Controls({
         TYPE: 'float',
         STEP: (p.max - p.min) / 100 || 0.01,
       }))
-    : metadata?.inputs
+    }
+    return metadata?.inputs
+  }, [isHydra, hydraParams, metadata])
 
   function getDisplayValue(inputName) {
     const config = paramAnimation?.[inputName]
     if (!config || config.mode === 'off') return values?.[inputName] ?? 0
-    const time = (Date.now() - startTimeRef.current) / 1000
-    return computeAnimatedValue(values?.[inputName] ?? 0, config, time, bpm, inputName)
+    return displayRef.current[inputName] ?? values?.[inputName] ?? 0
   }
 
   return (
     <div className="controls">
-      <div className="tempo-bar">
+      {!hideTempo && <div className="tempo-bar">
         <div className="tempo-bar-bpm">
           <button className="tempo-btn"
             onMouseDown={() => startHold(() => onBpmChange?.(Math.max(40, (bpm ?? 120) - 1)))}
@@ -194,7 +204,7 @@ export default function Controls({
             onTouchEnd={() => { stopHold(); const v = bpmRef.current; if (v !== undefined) onBpmChange?.(v); }}
             title="Nudge up">Nudge {'\u203A'}</button>
         </div>
-      </div>
+      </div>}
 
       {!inputs || inputs.length === 0 ? (
         <div className="controls-empty">
@@ -204,16 +214,17 @@ export default function Controls({
         <ControlRow
           key={input.NAME}
           input={input}
-          value={getDisplayValue(input.NAME)}
-          onChange={(val) => onChange?.(input.NAME, val)}
+          displayValue={getDisplayValue(input.NAME)}
+          onChange={onChange}
+          inputName={input.NAME}
           animConfig={paramAnimation?.[input.NAME]}
           paramConfig={parameterConfig?.[input.NAME]}
-          onSettingsClick={() => setActiveParam(input.NAME)}
+          setActiveParam={setActiveParam}
         />
       ))}
 
       {activeParam !== null && (() => {
-        const input = inputs.find(i => i.NAME === activeParam)
+        const input = inputs?.find(i => i.NAME === activeParam)
         const cfg = parameterConfig?.[activeParam] || {}
         return (
           <ParameterPopup
@@ -237,9 +248,9 @@ export default function Controls({
   )
 }
 
-function ControlRow({ input, value, onChange, animConfig, paramConfig, onSettingsClick }) {
+const ControlRow = memo(function ControlRow({ input, displayValue, onChange, inputName, animConfig, paramConfig, setActiveParam }) {
   const label = input.LABEL || input.NAME
-  const val = value ?? input.DEFAULT ?? 0
+  const val = displayValue ?? input.DEFAULT ?? 0
   const min = input.MIN ?? 0
   const max = input.MAX ?? 1
   const step = input.STEP ?? (max - min) / 100
@@ -247,6 +258,9 @@ function ControlRow({ input, value, onChange, animConfig, paramConfig, onSetting
   const hasOsc = paramConfig?.oscAddr?.trim()
   const hasNote = animConfig?.mode === 'note'
   const hasBadge = hasAnim || hasOsc || hasNote
+
+  const handleChange = useCallback((v) => { onChange?.(inputName, v) }, [onChange, inputName])
+  const handleSettings = useCallback(() => { setActiveParam(inputName) }, [setActiveParam, inputName])
 
   const btnClass = `control-anim-btn${hasBadge ? ' active' : ''}${hasOsc ? ' has-osc' : ''}${hasNote ? ' has-note' : ''}`
 
@@ -260,12 +274,12 @@ function ControlRow({ input, value, onChange, animConfig, paramConfig, onSetting
             min={min}
             max={max}
             step={step}
-            onChange={onChange}
+            onChange={handleChange}
             className={hasAnim ? 'td-slider--anim' : ''}
           />
           <button
             className={btnClass}
-            onClick={onSettingsClick}
+            onClick={handleSettings}
             title="Control settings (Animation, CC, OSC)"
           >
             {'\u2699'}
@@ -282,12 +296,12 @@ function ControlRow({ input, value, onChange, animConfig, paramConfig, onSetting
             min={Math.round(min)}
             max={Math.round(max)}
             step={1}
-            onChange={(v) => onChange(Math.round(v))}
+            onChange={(v) => handleChange(Math.round(v))}
             className={hasAnim ? 'td-slider--anim' : ''}
           />
           <button
             className={btnClass}
-            onClick={onSettingsClick}
+            onClick={handleSettings}
             title="Control settings (Animation, CC, OSC)"
           >
             {'\u2699'}
@@ -303,7 +317,7 @@ function ControlRow({ input, value, onChange, animConfig, paramConfig, onSetting
           <input
             type="checkbox"
             checked={!!val}
-            onChange={(e) => onChange(e.target.checked ? 1 : 0)}
+            onChange={(e) => handleChange(e.target.checked ? 1 : 0)}
           />
         </div>
       )
@@ -316,7 +330,7 @@ function ControlRow({ input, value, onChange, animConfig, paramConfig, onSetting
           <input
             type="color"
             value={hex}
-            onChange={(e) => onChange(hexToRgba(e.target.value))}
+            onChange={(e) => handleChange(hexToRgba(e.target.value))}
           />
           <span className="control-value">
             {Array.isArray(val) ? val.map(v => v.toFixed(2)).join(', ') : ''}
@@ -337,7 +351,7 @@ function ControlRow({ input, value, onChange, animConfig, paramConfig, onSetting
               step={step}
               onChange={(v) => {
                 const cur = val || [0, 0]
-                onChange([v, cur[1]])
+                handleChange([v, cur[1]])
               }}
             />
             <Slider
@@ -347,7 +361,7 @@ function ControlRow({ input, value, onChange, animConfig, paramConfig, onSetting
               step={step}
               onChange={(v) => {
                 const cur = val || [0, 0]
-                onChange([cur[0], v])
+                handleChange([cur[0], v])
               }}
             />
           </div>
@@ -362,7 +376,7 @@ function ControlRow({ input, value, onChange, animConfig, paramConfig, onSetting
         </div>
       )
   }
-}
+})
 
 function rgbaToHex(rgba) {
   if (!Array.isArray(rgba) || rgba.length < 3) return '#ffffff'

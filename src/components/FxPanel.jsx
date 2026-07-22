@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { effects, getEffectById, getEffectsByCategory } from '../fx/effects.js'
 import ParameterPopup from './ParameterPopup.jsx'
@@ -6,12 +6,13 @@ import Slider from './Slider.jsx'
 import { computeAnimatedValue } from '../utils/animation.js'
 
 const CC_CHANNELS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+const FX_CATEGORIES = getEffectsByCategory()
 
 export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkfx, onLoadStkfx, onLoadIsf, onAnimGlitch, glitchParamConfig, onGlitchConfigChange, bpm, resetBeatKey }) {
   const [expanded, setExpanded] = useState(false)
   const [activeFxParam, setActiveFxParam] = useState(null)
   const [activeFxSettings, setActiveFxSettings] = useState(null)
-  const categories = getEffectsByCategory()
+  const categories = FX_CATEGORIES
   const startTimeRef = useRef(Date.now())
   const animValuesRef = useRef({})
   const animCtxRef = useRef()
@@ -23,7 +24,7 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
 
   const hasAnyAnim = useMemo(() => {
     return (fxChain || []).some(fx =>
-      fx.paramConfig && Object.values(fx.paramConfig).some(pc => pc.animation && pc.animation.mode !== 'off')
+      fx.paramConfig && Object.values(fx.paramConfig).some(pc => pc.animation && pc.animation.mode !== 'off' && pc.animation.mode !== 'link')
     )
   }, [fxChain])
 
@@ -35,17 +36,16 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
       const { fxChain: chain, bpm: bpmVal, onAnimGlitch: glitchFn, onFxChainChange: changeFn } = animCtxRef.current || {}
       if (!chain) { raf = requestAnimationFrame(tick); return }
       const time = (Date.now() - startTimeRef.current) / 1000
-      const nextChain = chain.map(fx => ({ ...fx, paramValues: { ...fx.paramValues } }))
       const prev = { ...animValuesRef.current }
       const updates = {}
 
-      for (let i = 0; i < nextChain.length; i++) {
-        const fx = nextChain[i]
+      for (let i = 0; i < chain.length; i++) {
+        const fx = chain[i]
         const fxDef = getEffectById(fx.id)
         if (!fxDef?.params) continue
         for (const [paramName, paramDef] of Object.entries(fxDef.params)) {
           const animCfg = fx.paramConfig?.[paramName]?.animation
-          if (!animCfg || animCfg.mode === 'off') continue
+          if (!animCfg || animCfg.mode === 'off' || animCfg.mode === 'link') continue
           const key = `fx${i}_${paramName}`
           const baseVal = fx.paramValues[paramName] ?? paramDef.default ?? 0
           const newVal = computeAnimatedValue(baseVal, animCfg, time, bpmVal, key)
@@ -57,6 +57,7 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
       }
 
       if (Object.keys(updates).length > 0) {
+        const nextChain = chain.map(fx => ({ ...fx, paramValues: { ...fx.paramValues } }))
         for (const [key, val] of Object.entries(updates)) {
           const parts = key.match(/^fx(\d+)_(.+)$/)
           if (parts) {
@@ -69,7 +70,6 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
           glitchFn?.(key, val)
         }
 
-        // Link mode: propagate values from source params to linked targets
         for (let i = 0; i < nextChain.length; i++) {
           const fx = nextChain[i]
           const fxDef = getEffectById(fx.id)
@@ -105,7 +105,7 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
     return () => cancelAnimationFrame(raf)
   }, [hasAnyAnim])
 
-  function handleAddFx(effectId) {
+  const handleAddFx = useCallback((effectId) => {
     const fx = getEffectById(effectId)
     if (!fx) return
 
@@ -116,73 +116,87 @@ export default function FxPanel({ fxChain, onFxChainChange, ccValues, onSaveStkf
       }
     }
 
-    onFxChainChange?.([
-      ...(fxChain || []),
+    onFxChainChange?.(prev => [
+      ...(prev || []),
       { id: fx.id, label: fx.label, enabled: true, paramValues, paramCc: {}, paramConfig: {} },
     ])
-  }
+  }, [onFxChainChange])
 
-  function handleRemoveFx(index) {
-    const next = [...(fxChain || [])]
-    next.splice(index, 1)
-    onFxChainChange?.(next)
-  }
+  const handleRemoveFx = useCallback((index) => {
+    onFxChainChange?.(prev => {
+      const next = [...prev]
+      next.splice(index, 1)
+      return next
+    })
+  }, [onFxChainChange])
 
-  function handleToggleFx(index) {
-    const next = [...(fxChain || [])]
-    next[index] = { ...next[index], enabled: !next[index].enabled }
-    onFxChainChange?.(next)
-  }
+  const handleToggleFx = useCallback((index) => {
+    onFxChainChange?.(prev => {
+      const next = [...prev]
+      next[index] = { ...next[index], enabled: !next[index].enabled }
+      return next
+    })
+  }, [onFxChainChange])
 
-  function handleParamChange(index, paramName, value) {
-    const next = [...(fxChain || [])]
-    const fx = { ...next[index] }
-    fx.paramValues = { ...fx.paramValues, [paramName]: value }
-    next[index] = fx
-    onFxChainChange?.(next)
+  const handleParamChange = useCallback((index, paramName, value) => {
     onAnimGlitch?.(`fx${index}_${paramName}`, value)
-  }
+    onFxChainChange?.(prev => {
+      const next = [...prev]
+      const fx = { ...next[index] }
+      fx.paramValues = { ...fx.paramValues, [paramName]: value }
+      next[index] = fx
+      return next
+    })
+  }, [onFxChainChange, onAnimGlitch])
 
-  // FX-level toggle CC
-  function handleToggleEffectCc(index) {
-    const next = [...(fxChain || [])]
-    const fx = { ...next[index] }
-    if (fx.toggleCc) {
-      fx.toggleCc = null
-    } else {
-      // Find first free CC channel
-      const usedCc = new Set(next.map(f => f.toggleCc?.cc).filter(Boolean))
-      const freeCc = CC_CHANNELS.find(c => c > 0 && !usedCc.has(c)) || 1
-      fx.toggleCc = { cc: freeCc, min: 0, max: 1 }
-    }
-    next[index] = fx
-    onFxChainChange?.(next)
-  }
+  const handleToggleEffectCc = useCallback((index) => {
+    onFxChainChange?.(prev => {
+      const next = [...prev]
+      const fx = { ...next[index] }
+      if (fx.toggleCc) {
+        fx.toggleCc = null
+      } else {
+        const usedCc = new Set(next.map(f => f.toggleCc?.cc).filter(Boolean))
+        const freeCc = CC_CHANNELS.find(c => c > 0 && !usedCc.has(c)) || 1
+        fx.toggleCc = { cc: freeCc, min: 0, max: 1 }
+      }
+      next[index] = fx
+      return next
+    })
+  }, [onFxChainChange])
 
-  // Update FX parameter config (animation, cc, osc)
-  function handleFxParamAnimChange(index, paramName, animConfig) {
-    const next = [...(fxChain || [])]
-    const fx = { ...next[index] }
-    fx.paramConfig = {
-      ...fx.paramConfig,
-      [paramName]: { ...fx.paramConfig?.[paramName], animation: animConfig }
-    }
-    next[index] = fx
-    onFxChainChange?.(next)
-  }
+  const handleFxParamAnimChange = useCallback((index, paramName, animConfig) => {
+    onFxChainChange?.(prev => {
+      const next = [...prev]
+      next[index] = {
+        ...next[index],
+        paramConfig: {
+          ...next[index].paramConfig,
+          [paramName]: { ...next[index].paramConfig?.[paramName], animation: animConfig }
+        }
+      }
+      return next
+    })
+  }, [onFxChainChange])
 
-  function handleFxParamOscChange(index, paramName, oscAddr) {
-    const next = [...(fxChain || [])]
-    const fx = { ...next[index] }
-    fx.paramConfig = {
-      ...fx.paramConfig,
-      [paramName]: { ...fx.paramConfig?.[paramName], oscAddr }
-    }
-    next[index] = fx
-    onFxChainChange?.(next)
-  }
+  const handleFxParamOscChange = useCallback((index, paramName, oscAddr) => {
+    onFxChainChange?.(prev => {
+      const next = [...prev]
+      next[index] = {
+        ...next[index],
+        paramConfig: {
+          ...next[index].paramConfig,
+          [paramName]: { ...next[index].paramConfig?.[paramName], oscAddr }
+        }
+      }
+      return next
+    })
+  }, [onFxChainChange])
 
-  const usedCc = new Set((fxChain || []).map(f => f.toggleCc?.cc).filter(Boolean))
+  const usedCc = useMemo(
+    () => new Set((fxChain || []).map(f => f.toggleCc?.cc).filter(Boolean)),
+    [fxChain]
+  )
 
   return (
     <div className="fx-panel">

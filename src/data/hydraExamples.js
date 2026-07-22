@@ -405,12 +405,6 @@ export function getRandomExample() {
   return HYDRA_EXAMPLES[Math.floor(Math.random() * HYDRA_EXAMPLES.length)]
 }
 
-/** Get examples filtered by category */
-export function getExamplesByCategory(category) {
-  if (!category || category === 'All') return HYDRA_EXAMPLES
-  return HYDRA_EXAMPLES.filter(e => e.category === category)
-}
-
 /** Default code for new Hydra tabs */
 export const DEFAULT_HYDRA_CODE = `// Hydra Shader — Livecoding Visuals
 // Ctrl+Enter: run line | Ctrl+Shift+Enter: run all

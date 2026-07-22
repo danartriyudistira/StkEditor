@@ -8,10 +8,6 @@ const DEFAULT_CONFIG = {
   bpmDiv: 4,
 }
 
-function makeDefaultConfig() {
-  return { ...DEFAULT_CONFIG }
-}
-
 const _randomCache = {}
 
 function sampleAndHold(key, time, hold) {
@@ -84,4 +80,4 @@ function computeAnimatedValue(baseValue, config, time, bpm, paramName) {
   return animMin + animated * (animMax - animMin)
 }
 
-export { DEFAULT_CONFIG, makeDefaultConfig, computeAnimatedValue }
+export { DEFAULT_CONFIG, computeAnimatedValue }
