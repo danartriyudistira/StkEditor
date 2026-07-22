@@ -110,13 +110,13 @@ export default function Toolbar({
 
         <div className="toolbar-separator" />
 
-        {/* Performance Mode */}
+        {/* TV Mode */}
         <button
           className={`toolbar-btn ${performanceMode ? 'performance-active' : ''}`}
           onClick={onPerformanceToggle}
-          title="Performance Mode (fullscreen, keyboard-only)"
+          title="TV Mode (fullscreen, keyboard-only)"
         >
-          {performanceMode ? 'Exit Perf' : 'Performance'}
+          {performanceMode ? 'Exit TV' : 'TV Mode'}
         </button>
       </div>
 

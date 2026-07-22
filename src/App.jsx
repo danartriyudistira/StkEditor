@@ -1125,7 +1125,7 @@ export default function App() {
             onMouseLeave={handlePerfBarLeave}
           >
             <button className="toolbar-btn performance-active" onClick={handlePerformanceToggle}>
-              Exit Perf
+              Exit TV
             </button>
           </div>
         ) : (
