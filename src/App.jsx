@@ -917,17 +917,39 @@ export default function App() {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = 'video/*'
+    const mode = engineMode
     input.onchange = (e) => {
       const file = e.target.files?.[0]
       if (!file) return
       const url = URL.createObjectURL(file)
-      const html = '<!DOCTYPE html>\n<html>\n<head>\n<style>\n  * { margin:0; padding:0; box-sizing:border-box; }\n  body { background:#000; display:flex; align-items:center; justify-content:center; height:100vh; overflow:hidden; }\n  video { max-width:100vw; max-height:100vh; object-fit:contain; }\n</style>\n</head>\n<body>\n  <video src="' + url + '" autoplay loop muted playsinline></video>\n</body>\n</html>'
       const id = nextTabIdRef.current++
-      setTabs(prev => [...prev, { id, name: file.name + '.html', code: html, htmlCode: '<video src="' + url + '" autoplay loop muted playsinline></video>', cssCode: 'body { background:#000; display:flex; align-items:center; justify-content:center; height:100vh; overflow:hidden; }\nvideo { max-width:100vw; max-height:100vh; object-fit:contain; }', jsCode: '', type: 'html', modified: false }])
+      let newTab
+
+      if (mode === 'hydra') {
+        const hydraCode = 's0.initVideo("' + url + '")\n// s0.initCam() // uncomment for webcam\nsrc(s0).out(o0)\nrender(o0)'
+        newTab = { id, name: file.name + '.js', code: hydraCode, type: 'hydra', modified: false }
+      } else if (mode === 'isf') {
+        const isfCode = '/*{\n  "DESCRIPTION": "Video Player",\n  "CREDIT": "",\n  "ISFVSN": "2",\n  "INPUTS": [\n    { "NAME": "inputImage", "TYPE": "image" }\n  ],\n  "CATEGORIES": [ "Custom" ]\n}\n*/\n\nvoid main() {\n  vec2 uv = isf_FragNormCoord.xy;\n  gl_FragColor = IMG_THIS_PIXEL(inputImage);\n}'
+        newTab = { id, name: file.name + '.fs', code: isfCode, type: 'isf', modified: false }
+        const video = document.createElement('video')
+        video.src = url
+        video.autoplay = true
+        video.loop = true
+        video.muted = true
+        video.playsInline = true
+        video.play()
+        setSourceType('image')
+        setSourceElement(video)
+      } else {
+        const html = '<!DOCTYPE html>\n<html>\n<head>\n<style>\n  * { margin:0; padding:0; box-sizing:border-box; }\n  body { background:#000; display:flex; align-items:center; justify-content:center; height:100vh; overflow:hidden; }\n  video { max-width:100vw; max-height:100vh; object-fit:contain; }\n</style>\n</head>\n<body>\n  <video src="' + url + '" autoplay loop muted playsinline></video>\n</body>\n</html>'
+        newTab = { id, name: file.name + '.html', code: html, htmlCode: '<video src="' + url + '" autoplay loop muted playsinline></video>', cssCode: 'body { background:#000; display:flex; align-items:center; justify-content:center; height:100vh; overflow:hidden; }\nvideo { max-width:100vw; max-height:100vh; object-fit:contain; }', jsCode: '', type: 'html', modified: false }
+      }
+
+      setTabs(prev => [...prev, newTab])
       setActiveTabId(id)
     }
     input.click()
-  }, [])
+  }, [engineMode])
 
   const handleDownload = useCallback(() => {
     const blob = new Blob([code], { type: 'text/plain' })
