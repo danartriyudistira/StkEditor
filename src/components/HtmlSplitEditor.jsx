@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import Editor from '@monaco-editor/react'
 
 let registered = false
@@ -37,38 +37,40 @@ const EDITOR_OPTIONS = {
 }
 
 const PANELS = [
-  { key: 'htmlCode', label: 'HTML', lang: 'html', defaultCode: '<h1>Hello World</h1>' },
-  { key: 'cssCode', label: 'CSS', lang: 'css', defaultCode: 'body {\n  background: #111;\n  color: #eee;\n}' },
-  { key: 'jsCode', label: 'JS', lang: 'javascript', defaultCode: 'console.log("Hello!");' },
+  { key: 'htmlCode', label: 'HTML', lang: 'html' },
+  { key: 'cssCode', label: 'CSS', lang: 'css' },
+  { key: 'jsCode', label: 'JS', lang: 'javascript' },
 ]
-
-function combineOutput(html, css, js) {
-  return '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<style>\n' + css + '\n</style>\n</head>\n<body>\n' + html + '\n<script>\n' + js + '\n</script>\n</body>\n</html>'
-}
 
 export default function HtmlSplitEditor({ htmlCode, cssCode, jsCode, onChange, onReady }) {
   const [collapsed, setCollapsed] = useState({ cssCode: false, jsCode: false })
   const [heights, setHeights] = useState({ htmlCode: 55, cssCode: 22, jsCode: 23 })
+  const savedHeightsRef = useRef({ cssCode: 22, jsCode: 23 })
   const editorsRef = useRef({})
   const firstMountRef = useRef({ htmlCode: false, cssCode: false, jsCode: false })
+  const codeRefs = useRef({ htmlCode, cssCode, jsCode })
+  codeRefs.current = { htmlCode, cssCode, jsCode }
 
-  function handleCodeChange(key, val) {
-    const codes = { htmlCode: htmlCode || '', cssCode: cssCode || '', jsCode: jsCode || '', [key]: val }
-    onChange?.(codes.htmlCode, codes.cssCode, codes.jsCode, combineOutput(codes.htmlCode, codes.cssCode, codes.jsCode))
-  }
+  const handleCodeChange = useCallback((key, val) => {
+    const codes = { ...codeRefs.current, [key]: val }
+    onChange?.(codes.htmlCode, codes.cssCode, codes.jsCode)
+  }, [onChange])
 
   function toggleCollapse(panelKey) {
     setCollapsed(prev => {
-      const next = { ...prev, [panelKey]: !prev[panelKey] }
-      if (next[panelKey]) {
-        setHeights(h => ({ ...h, [panelKey]: Math.max(h[panelKey], 1) }))
-      } else {
+      const willCollapse = !prev[panelKey]
+      if (willCollapse) {
         setHeights(h => {
-          const was = prev.cssCode ? (prev.jsCode ? 3 : 4) : (prev.jsCode ? 4 : 22)
-          return { ...h, [panelKey]: was }
+          savedHeightsRef.current[panelKey] = h[panelKey]
+          return { ...h, [panelKey]: Math.max(h[panelKey], 1) }
         })
+      } else {
+        setHeights(h => ({
+          ...h,
+          [panelKey]: savedHeightsRef.current[panelKey] || 22
+        }))
       }
-      return next
+      return { ...prev, [panelKey]: willCollapse }
     })
   }
 

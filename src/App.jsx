@@ -1297,7 +1297,7 @@ export default function App() {
                     htmlCode={activeTab.htmlCode || ''}
                     cssCode={activeTab.cssCode || ''}
                     jsCode={activeTab.jsCode || ''}
-                    onChange={(h, c, j, combined) => updateActiveTab({ htmlCode: h, cssCode: c, jsCode: j, code: combined, modified: true })}
+                    onChange={(h, c, j) => updateActiveTab({ htmlCode: h, cssCode: c, jsCode: j, code: combineHtml(h, c, j), modified: true })}
                     onReady={handleEditorReady}
                   />
                 ) : (
