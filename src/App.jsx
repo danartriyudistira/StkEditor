@@ -617,6 +617,11 @@ export default function App() {
     }
   }, [])
 
+  useEffect(() => {
+    setUniformValues({})
+    setIsfMetadata(null)
+  }, [activeTabId])
+
   const handleMetadata = useCallback((meta) => {
     setIsfMetadata(meta)
     const defaults = {}
