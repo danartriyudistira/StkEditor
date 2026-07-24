@@ -192,8 +192,8 @@ export default function App() {
   const [vjMidiLearn, setVjMidiLearn] = useState(false)
   const [shaderKeyMap, setShaderKeyMap] = useState({})
   const vjMatrixRef = useRef(null)
-  const kbdRef = useRef({ tabs, activeTabId, shaderKeyMap, vjMode, performanceMode, showOverlay })
-  kbdRef.current = { tabs, activeTabId, shaderKeyMap, vjMode, performanceMode, showOverlay }
+  const kbdRef = useRef({ tabs, activeTabId, shaderKeyMap, vjMode, performanceMode, showOverlay, engineMode })
+  kbdRef.current = { tabs, activeTabId, shaderKeyMap, vjMode, performanceMode, showOverlay, engineMode }
   const triggerRef = useRef({ tabs, shaderKeyMap, vjMode, paramAnimation, hydraParams, isfMetadata })
   triggerRef.current = { tabs, shaderKeyMap, vjMode, paramAnimation, hydraParams, isfMetadata }
   const handlerRef = useRef({})
@@ -230,6 +230,30 @@ export default function App() {
     setPerformanceMode(prev => !prev)
   }, [])
 
+  /** Ctrl+Enter in Hydra: re-evaluate full code without full engine re-mount */
+  const handleHydraRun = useCallback(() => {
+    const currentCode = codeRef.current
+    if (currentCode) previewRef.current?.runCode(currentCode)
+  }, [])
+
+  /** Ctrl+Shift+Enter in Hydra: evaluate selected line(s) */
+  const handleHydraRunLine = useCallback(() => {
+    const ed = editorRef.current
+    if (!ed) return
+    const selection = ed.getSelection()
+    const model = ed.getModel()
+    if (!model || !selection) return
+    let text
+    if (selection.isEmpty()) {
+      text = model.getLineContent(selection.startLineNumber)
+    } else {
+      text = model.getValueInRange(selection)
+    }
+    if (text && text.trim()) {
+      previewRef.current?.runCode(text)
+    }
+  }, [])
+
   useEffect(() => {
     if (performanceMode) {
       setVjMode(false)
@@ -248,6 +272,19 @@ export default function App() {
   const updateActiveTab = useCallback((updates) => {
     setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, ...updates } : t))
   }, [activeTabId])
+
+  /** Clear editor: reset to default code for current engine mode */
+  const handleClearEditor = useCallback(() => {
+    const tab = tabs.find(t => t.id === activeTabId)
+    if (!tab) return
+    if (tab.type === 'hydra') {
+      updateActiveTab({ code: DEFAULT_HYDRA_CODE, name: 'untitled.js', modified: false })
+    } else if (tab.type === 'html') {
+      updateActiveTab({ code: DEFAULT_HTML, name: 'untitled.html', htmlCode: DEFAULT_HTML_BODY, cssCode: DEFAULT_HTML_CSS, jsCode: DEFAULT_HTML_JS, modified: false })
+    } else {
+      updateActiveTab({ code: DEFAULT_SHADER, name: 'untitled.fs', modified: false })
+    }
+  }, [tabs, activeTabId, updateActiveTab])
 
   const moduleDecorationsRef = useRef([])
 
@@ -464,6 +501,30 @@ export default function App() {
     setModuleMenu({ x: e.clientX, y: e.clientY, word })
   }, [])
 
+  /** Shift+Tab: open module menu at cursor position without mouse */
+  const openModuleMenuAtCursor = useCallback(() => {
+    let word = null
+    const ed = editorRef.current
+    if (!ed) return
+    const pos = ed.getPosition()
+    if (pos) {
+      const model = ed.getModel()
+      if (model) {
+        const w = model.getWordAtPosition(pos)
+        if (w && !isNaN(Number(w.word))) {
+          word = { text: w.word, startColumn: w.startColumn, endColumn: w.endColumn, lineNumber: pos.lineNumber }
+        }
+      }
+    }
+    const domNode = ed.getDomNode()
+    if (domNode) {
+      const rect = domNode.getBoundingClientRect()
+      const centerX = rect.left + rect.width * 0.4
+      const centerY = rect.top + rect.height * 0.3
+      setModuleMenu({ x: centerX, y: centerY, word })
+    }
+  }, [])
+
   const handleNewTab = useCallback((type) => {
     const tabType = type || 'isf'
     const id = nextTabIdRef.current++
@@ -555,7 +616,36 @@ export default function App() {
       if (e.ctrlKey && e.key === '.') { e.preventDefault(); setRightOpen(v => !v) }
       if (e.ctrlKey && e.key === 's') { e.preventDefault(); h.handleExportStk?.() }
       if (e.ctrlKey && e.key === 'o') { e.preventDefault(); h.handleImportStk?.() }
-      if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); h.handleRefresh?.() }
+
+      // Ctrl+Enter : in Hydra = re-eval code, in ISF/HTML = full refresh
+      if (e.ctrlKey && !e.shiftKey && e.key === 'Enter') {
+        e.preventDefault()
+        e.stopPropagation()
+        if (k.engineMode === 'hydra') {
+          h.handleHydraRun?.()
+        } else {
+          h.handleRefresh?.()
+        }
+        return
+      }
+      // Ctrl+Shift+Enter : in Hydra = run selected line, otherwise full refresh
+      if (e.ctrlKey && e.shiftKey && e.key === 'Enter') {
+        e.preventDefault()
+        e.stopPropagation()
+        if (k.engineMode === 'hydra') {
+          h.handleHydraRunLine?.()
+        } else {
+          h.handleRefresh?.()
+        }
+        return
+      }
+      // Shift+Tab : open module menu (same as right-click)
+      if (e.shiftKey && !e.ctrlKey && e.key === 'Tab') {
+        e.preventDefault()
+        e.stopPropagation()
+        h.openModuleMenuAtCursor?.()
+        return
+      }
 
       if (k.vjMode) {
         const key = e.key.toLowerCase()
@@ -597,8 +687,8 @@ export default function App() {
         }
       }
     }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
+    window.addEventListener('keydown', handler, true)
+    return () => window.removeEventListener('keydown', handler, true)
   }, [])
 
   useEffect(() => {
@@ -1203,7 +1293,7 @@ export default function App() {
     document.addEventListener('touchend', up)
   }, [])
 
-  handlerRef.current = { handleExportStk, handleImportStk, handleRefresh, handlePerformanceToggle }
+  handlerRef.current = { handleExportStk, handleImportStk, handleRefresh, handleHydraRun, handleHydraRunLine, handlePerformanceToggle, openModuleMenuAtCursor }
 
   return (
     <ErrorBoundary>
@@ -1355,6 +1445,7 @@ export default function App() {
                   title="Switch to HTML mode"
                 >HTML</button>
                 <button className="editor-refresh" onClick={handleRefresh} title="Refresh shader">{'\u27F3'}</button>
+                <button className="editor-clear" onClick={handleClearEditor} title="Clear editor — reset to default">{'\u2715'}</button>
               </div>
             </div>
           </div>

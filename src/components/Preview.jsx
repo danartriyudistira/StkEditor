@@ -71,7 +71,14 @@ const Preview = forwardRef(function Preview({ code, uniformValues, hydraParams, 
     getThumbnail() {
       const tc = thumbCanvasRef.current
       return tc ? tc.toDataURL('image/jpeg', 0.6) : null
-    }
+    },
+    runCode(text) {
+      const eng = engineRef.current
+      if (eng && eng.isValid()) {
+        eng.loadCode(text)
+        onMetadata?.(eng.getMetadata())
+      }
+    },
   }))
 
   codeRef.current = code

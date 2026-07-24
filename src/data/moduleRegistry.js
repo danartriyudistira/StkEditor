@@ -1,60 +1,70 @@
 import { HYDRA_EXAMPLES, HYDRA_ATOMIC } from './hydraExamples.js'
 import { effects } from '../fx/effects.js'
 
+export const IPO_GROUPS = [
+  { id: 'input',   label: 'INPUT \u2014 Sumber Data Visual',      color: '#4fc3f7' },
+  { id: 'process', label: 'PROSES \u2014 Transformasi Visual',     color: '#ffca28' },
+  { id: 'output',  label: 'OUTPUT \u2014 Tampilkan Hasil',         color: '#ef5350' },
+  { id: 'examples',label: 'Contoh Sketsa Lengkap',                 color: '#7e57c2' },
+]
+
 export const MODULE_CATEGORIES = [
-  { id: 'hydra-basics', label: 'Hydra — Basics', icon: '\u25A0', color: '#4fc3f7' },
-  { id: 'hydra-source', label: 'Hydra — Source', icon: '\u25C8', color: '#bb86fc' },
-  { id: 'hydra-geometry', label: 'Hydra — Geometry', icon: '\u2B22', color: '#4caf50' },
-  { id: 'hydra-color', label: 'Hydra — Color', icon: '\u25D0', color: '#ff7043' },
-  { id: 'hydra-combination', label: 'Hydra — Combination', icon: '\u25C6', color: '#ffca28' },
-  { id: 'hydra-blend', label: 'Hydra — Blend', icon: '\u25C7', color: '#ab47bc' },
-  { id: 'hydra-modulation', label: 'Hydra — Modulation', icon: '\u25CB', color: '#26c6da' },
-  { id: 'hydra-feedback', label: 'Hydra — Feedback', icon: '\u21BA', color: '#ef5350' },
-  { id: 'hydra-audio', label: 'Hydra — Audio-Reactive', icon: '\u266A', color: '#66bb6a' },
-  { id: 'hydra-external', label: 'Hydra — External Sources', icon: '\u25A3', color: '#8d6e63' },
-  { id: 'fx-color', label: 'FX — Color', icon: '\u25D1', color: '#e57373' },
-  { id: 'fx-distort', label: 'FX — Distort', icon: '\u25B3', color: '#ba68c8' },
+  { id: 'hydra-source',    group: 'input',    label: 'Source',           icon: '\u25C7', color: '#bb86fc', desc: 'Generator pola dasar (gelombang, noise, bentuk)' },
+  { id: 'hydra-external',  group: 'input',    label: 'External Sources', icon: '\u229E', color: '#8d6e63', desc: 'Kamera, gambar, video, screen capture' },
+  { id: 'hydra-feedback',  group: 'input',    label: 'Feedback',         icon: '\u21BA', color: '#66bb6a', desc: 'Output sebelumnya sebagai input baru' },
+  { id: 'hydra-geometry',  group: 'process',  label: 'Geometry',         icon: '\u2B22', color: '#4caf50', desc: 'Transformasi koordinat (rotasi, skala, ulang)' },
+  { id: 'hydra-color',     group: 'process',  label: 'Color',            icon: '\u25D0', color: '#ff7043', desc: 'Penyesuaian warna (hue, kontras, saturasi)' },
+  { id: 'hydra-blend',     group: 'process',  label: 'Blend',            icon: '\u25C7', color: '#ab47bc', desc: 'Gabungkan dua visual (tambah, kali, layer)' },
+  { id: 'hydra-modulation',group: 'process',  label: 'Modulation',       icon: '\u25CB', color: '#26c6da', desc: 'Modulasi berbasis koordinat dari tekstur kedua' },
+  { id: 'hydra-render',    group: 'output',   label: 'Render',           icon: '\u25B6', color: '#ef5350', desc: 'Render / tampilkan hasil ke layar' },
+  { id: 'hydra-basics',    group: 'examples', label: 'Basics',           icon: '\u25A0', color: '#4fc3f7', desc: 'Contoh dasar lengkap siap pakai' },
+  { id: 'hydra-combination',group:'examples',  label: 'Combination',     icon: '\u25C6', color: '#ffca28', desc: 'Contoh kombinasi beberapa fungsi' },
+  { id: 'hydra-audio',     group: 'examples', label: 'Audio-Reactive',   icon: '\u266A', color: '#66bb6a', desc: 'Contoh reaktif audio (FFT)' },
+  { id: 'fx-color',        group: 'fx',       label: 'FX \u2014 Color',   icon: '\u25D1', color: '#e57373', desc: 'Efek warna WebGL tambahan' },
+  { id: 'fx-distort',      group: 'fx',       label: 'FX \u2014 Distort', icon: '\u25B3', color: '#ba68c8', desc: 'Efek distorsi WebGL tambahan' },
 ]
 
 const CATEGORY_MAP = {
-  'Basics': 'hydra-basics',
-  'Source': 'hydra-source',
-  'Combination': 'hydra-combination',
-  'Blend': 'hydra-blend',
-  'Modulation': 'hydra-modulation',
-  'Feedback': 'hydra-feedback',
-  'Color': 'hydra-color',
-  'Geometry': 'hydra-geometry',
-  'Audio-Reactive': 'hydra-audio',
-  'ExternalSources': 'hydra-external',
+  'Source':           'hydra-source',
+  'ExternalSources':  'hydra-external',
+  'Color':            'hydra-color',
+  'Geometry':         'hydra-geometry',
+  'Blend':            'hydra-blend',
+  'Modulation':       'hydra-modulation',
+  'Render':           'hydra-render',
+  'Basics':           'hydra-basics',
+  'Combination':      'hydra-combination',
+  'Feedback':         'hydra-feedback',
+  'Audio-Reactive':   'hydra-audio',
 }
 
 const FX_CATEGORY_MAP = {
-  'Color': 'fx-color',
+  'Color':   'fx-color',
   'Distort': 'fx-distort',
 }
 
 function stripOut(code) {
   const lines = code.split('\n')
-  let firstGen = true
-  const result = lines
+  let lastIdx = lines.length - 1
+  while (lastIdx >= 0 && lines[lastIdx].trim() === '') lastIdx--
+
+  const outOnly = lines
+    .slice(0, lastIdx + 1)
     .filter(line => line.trim() !== '.out()')
-    .filter(line => {
-      if (firstGen && line.trim()) {
-        firstGen = false
-        return false
+    .map((line, i, arr) => {
+      if (i === arr.length - 1) {
+        return line.replace(/\.out\(\)\s*$/, '')
       }
-      return true
+      return line
     })
     .join('\n')
     .trim()
-  return result || code.replace(/\.out\(\)\s*$/, '').trim()
+  return outOnly
 }
 
 export function buildModules() {
   const modules = []
 
-  // Hydra examples
   for (const ex of HYDRA_EXAMPLES) {
     const catId = CATEGORY_MAP[ex.category]
     if (!catId) continue
@@ -69,7 +79,6 @@ export function buildModules() {
     })
   }
 
-  // Hydra atomic functions
   for (const fn of HYDRA_ATOMIC) {
     const catId = CATEGORY_MAP[fn.category]
     if (!catId) continue
@@ -80,11 +89,10 @@ export function buildModules() {
       source: 'hydra',
       type: 'insert',
       snippet: fn.raw ? fn.code : stripOut(fn.code),
-      description: `Hydra ${fn.category} function`,
+      description: fn.desc || `Hydra ${fn.category} function`,
     })
   }
 
-  // FX effects
   for (const fx of effects) {
     const catId = FX_CATEGORY_MAP[fx.category]
     if (!catId) continue

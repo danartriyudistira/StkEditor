@@ -312,78 +312,82 @@ export const HYDRA_EXAMPLES = [
   },
 ]
 
-// ── ATOMIC FUNCTION MODULES ──────────────────────────────
+// ── ATOMIC FUNCTION MODULES (IPO: Input → Process → Output) ──
 
 export const HYDRA_ATOMIC = [
-  // ── Source ────────────────────────────────────────────────
-  { name: 'noise()', category: 'Source', code: `noise(10, 0.1).out()` },
-  { name: 'voronoi()', category: 'Source', code: `voronoi(5, 0.3, 0.3).out()` },
-  { name: 'osc()', category: 'Source', code: `osc(60, 0.1, 0).out()` },
-  { name: 'shape()', category: 'Source', code: `shape(3, 0.3, 0.01).out()` },
-  { name: 'gradient()', category: 'Source', code: `gradient(0).out()` },
-  { name: 'src()', category: 'Source', code: `src(o0).out()` },
-  { name: 'solid()', category: 'Source', code: `solid(1, 1, 1).out()` },
-  { name: 'prev()', category: 'Source', code: `prev().out()` },
+  // ◆ INPUT ◆ — Sumber data visual ───────────────────────────
+  { name: 'osc()',     category: 'Source', code: `osc(60, 0.1, 0.5).out()`,          desc: 'Gelombang sinus periodik' },
+  { name: 'noise()',   category: 'Source', code: `noise(10, 0.1).out()`,             desc: 'Tekstur noise acak' },
+  { name: 'voronoi()', category: 'Source', code: `voronoi(5, 0.3, 0.3).out()`,       desc: 'Pola sel Voronoi' },
+  { name: 'shape()',   category: 'Source', code: `shape(3, 0.3, 0.01).out()`,        desc: 'Bentuk poligon (3=segitiga, 4=kotak, 5=pentagon)' },
+  { name: 'gradient()',category: 'Source', code: `gradient(0).out()`,                desc: 'Gradien linear horizontal/vertikal' },
+  { name: 'solid()',   category: 'Source', code: `solid(1, 1, 1).out()`,             desc: 'Warna solid (R, G, B, [A])' },
+  { name: 'src()',     category: 'Source', code: `src(o0).out()`,                    desc: 'Output buffer sebelumnya sebagai input' },
+  { name: 'prev()',    category: 'Source', code: `prev().out()`,                     desc: 'Frame sebelumnya (shortcut src)' },
 
-  // ── Geometry ──────────────────────────────────────────────
-  { name: 'rotate()', category: 'Geometry', code: `osc(60)\n  .rotate(10, 0)\n  .out()` },
-  { name: 'scale()', category: 'Geometry', code: `osc(60)\n  .scale(1.5, 1, 1, 0.5, 0.5)\n  .out()` },
-  { name: 'pixelate()', category: 'Geometry', code: `osc(60)\n  .pixelate(20, 20)\n  .out()` },
-  { name: 'repeat()', category: 'Geometry', code: `osc(60)\n  .repeat(3, 3, 0, 0)\n  .out()` },
-  { name: 'repeatX()', category: 'Geometry', code: `osc(60)\n  .repeatX(3, 0)\n  .out()` },
-  { name: 'repeatY()', category: 'Geometry', code: `osc(60)\n  .repeatY(3, 0)\n  .out()` },
-  { name: 'kaleid()', category: 'Geometry', code: `osc(60)\n  .kaleid(4)\n  .out()` },
-  { name: 'scroll()', category: 'Geometry', code: `osc(60)\n  .scroll(0.5, 0.5, 0, 0)\n  .out()` },
-  { name: 'scrollX()', category: 'Geometry', code: `osc(60)\n  .scrollX(0.5, 0)\n  .out()` },
-  { name: 'scrollY()', category: 'Geometry', code: `osc(60)\n  .scrollY(0.5, 0)\n  .out()` },
+  // ◆ INPUT ◆ — External ──────────────────────────────────────
+  { name: 'initCam()',    category: 'ExternalSources', code: `s0.initCam()`,          raw: true, desc: 'Inisialisasi kamera webcam' },
+  { name: 'initImage()',  category: 'ExternalSources', code: `s0.initImage('rinkysplash.jpg')`, raw: true, desc: 'Muat gambar dari URL' },
+  { name: 'initVideo()',  category: 'ExternalSources', code: `s0.initVideo('bigbuckbunny.mp4')`, raw: true, desc: 'Streaming video dari URL' },
+  { name: 'initStream()', category: 'ExternalSources', code: `s0.initStream('https://example.com/stream')`, raw: true, desc: 'Stream layar / live stream' },
+  { name: 'initScreen()', category: 'ExternalSources', code: `s0.initScreen()`,       raw: true, desc: 'Tangkap layar desktop' },
+  { name: 'init()',       category: 'ExternalSources', code: `init({ type: 'src', src: '' })`, raw: true, desc: 'Inisialisasi generik' },
 
-  // ── Color ─────────────────────────────────────────────────
-  { name: 'posterize()', category: 'Color', code: `osc(60)\n  .posterize(3, 0.6)\n  .out()` },
-  { name: 'shift()', category: 'Color', code: `osc(60)\n  .shift(0.5, 0, 0, 0)\n  .out()` },
-  { name: 'invert()', category: 'Color', code: `osc(60)\n  .invert(1)\n  .out()` },
-  { name: 'contrast()', category: 'Color', code: `osc(60)\n  .contrast(1.6)\n  .out()` },
-  { name: 'brightness()', category: 'Color', code: `osc(60)\n  .brightness(0.4)\n  .out()` },
-  { name: 'luma()', category: 'Color', code: `osc(60)\n  .luma(0.5, 0.1)\n  .out()` },
-  { name: 'thresh()', category: 'Color', code: `osc(60)\n  .thresh(0.5, 0.04)\n  .out()` },
-  { name: 'color()', category: 'Color', code: `osc(60)\n  .color(1, 1, 1, 1)\n  .out()` },
-  { name: 'saturate()', category: 'Color', code: `osc(60)\n  .saturate(2)\n  .out()` },
-  { name: 'hue()', category: 'Color', code: `osc(60)\n  .hue(0.4)\n  .out()` },
-  { name: 'colorama()', category: 'Color', code: `osc(60)\n  .colorama(0.005)\n  .out()` },
-  { name: 'sum()', category: 'Color', code: `osc(60)\n  .sum(1)\n  .out()` },
-  { name: 'r()', category: 'Color', code: `osc(60)\n  .r(1, 0)\n  .out()` },
-  { name: 'g()', category: 'Color', code: `osc(60)\n  .g(1, 0)\n  .out()` },
-  { name: 'b()', category: 'Color', code: `osc(60)\n  .b(1, 0)\n  .out()` },
-  { name: 'a()', category: 'Color', code: `osc(60)\n  .a(1, 0)\n  .out()` },
+  // ◆ PROCESS ◆ — Geometry (Transformasi Koordinat) ──────────
+  { name: 'rotate()',   category: 'Geometry', code: `osc(60)\n  .rotate(10, 0)\n  .out()`,               desc: 'Rotasi sudut (derajat, kecepatan)' },
+  { name: 'scale()',    category: 'Geometry', code: `osc(60)\n  .scale(1.5, 1, 1, 0.5, 0.5)\n  .out()`,  desc: 'Perbesar/perkecil (skalaX, skalaY, pusatX, pusatY)' },
+  { name: 'pixelate()', category: 'Geometry', code: `osc(60)\n  .pixelate(20, 20)\n  .out()`,             desc: 'Efek pikselasi (pixelX, pixelY)' },
+  { name: 'repeat()',   category: 'Geometry', code: `osc(60)\n  .repeat(3, 3, 0, 0)\n  .out()`,           desc: 'Ulangi pola (repeatX, repeatY, offsetX, offsetY)' },
+  { name: 'repeatX()',  category: 'Geometry', code: `osc(60)\n  .repeatX(3, 0)\n  .out()`,                desc: 'Ulangi horizontal saja' },
+  { name: 'repeatY()',  category: 'Geometry', code: `osc(60)\n  .repeatY(3, 0)\n  .out()`,                desc: 'Ulangi vertikal saja' },
+  { name: 'kaleid()',   category: 'Geometry', code: `osc(60)\n  .kaleid(4)\n  .out()`,                    desc: 'Efek kaleidoskop (jumlah sisi)' },
+  { name: 'scroll()',   category: 'Geometry', code: `osc(60)\n  .scroll(0.5, 0.5, 0, 0)\n  .out()`,       desc: 'Geser tekstur (scrollX, scrollY, kecepatanX, kecepatanY)' },
+  { name: 'scrollX()',  category: 'Geometry', code: `osc(60)\n  .scrollX(0.5, 0)\n  .out()`,              desc: 'Geser horizontal' },
+  { name: 'scrollY()',  category: 'Geometry', code: `osc(60)\n  .scrollY(0.5, 0)\n  .out()`,              desc: 'Geser vertikal' },
 
-  // ── Blend (Combine) ───────────────────────────────────────
-  { name: 'add()', category: 'Blend', code: `osc(60)\n  .add(osc(20), 1)\n  .out()` },
-  { name: 'sub()', category: 'Blend', code: `osc(60)\n  .sub(osc(20), 1)\n  .out()` },
-  { name: 'layer()', category: 'Blend', code: `osc(60)\n  .layer(shape(4).color(1,0,0))\n  .out()` },
-  { name: 'blend()', category: 'Blend', code: `osc(60)\n  .blend(voronoi(3), 0.5)\n  .out()` },
-  { name: 'mult()', category: 'Blend', code: `osc(60)\n  .mult(noise(3), 1)\n  .out()` },
-  { name: 'diff()', category: 'Blend', code: `osc(60)\n  .diff(noise(3))\n  .out()` },
-  { name: 'mask()', category: 'Blend', code: `osc(60)\n  .mask(shape(4))\n  .out()` },
+  // ◆ PROCESS ◆ — Color (Penyesuaian Warna) ──────────────────
+  { name: 'posterize()',  category: 'Color', code: `osc(60)\n  .posterize(3, 0.6)\n  .out()`,    desc: 'Kurangi jumlah warna (bins, gamma)' },
+  { name: 'shift()',      category: 'Color', code: `osc(60)\n  .shift(0.5, 0, 0, 0)\n  .out()`,   desc: 'Geser channel RGB (r, g, b, a)' },
+  { name: 'invert()',     category: 'Color', code: `osc(60)\n  .invert(1)\n  .out()`,             desc: 'Balikkan warna (amount)' },
+  { name: 'contrast()',   category: 'Color', code: `osc(60)\n  .contrast(1.6)\n  .out()`,         desc: 'Tingkatkan kontras (amount)' },
+  { name: 'brightness()', category: 'Color', code: `osc(60)\n  .brightness(0.4)\n  .out()`,       desc: 'Atur kecerahan (amount)' },
+  { name: 'luma()',       category: 'Color', code: `osc(60)\n  .luma(0.5, 0.1)\n  .out()`,        desc: 'Threshold berbasis luminansi (threshold, tolerance)' },
+  { name: 'thresh()',     category: 'Color', code: `osc(60)\n  .thresh(0.5, 0.04)\n  .out()`,     desc: 'Threshold hitam-putih tegas (threshold, tolerance)' },
+  { name: 'color()',      category: 'Color', code: `osc(60)\n  .color(1, 1, 1, 1)\n  .out()`,     desc: 'Kalikan warna (r, g, b, a)' },
+  { name: 'saturate()',   category: 'Color', code: `osc(60)\n  .saturate(2)\n  .out()`,           desc: 'Tingkatkan saturasi (amount)' },
+  { name: 'hue()',        category: 'Color', code: `osc(60)\n  .hue(0.4)\n  .out()`,              desc: 'Geser rona warna (amount)' },
+  { name: 'colorama()',   category: 'Color', code: `osc(60)\n  .colorama(0.005)\n  .out()`,       desc: 'Pergeseran rona drastis (amount)' },
+  { name: 'sum()',        category: 'Color', code: `osc(60)\n  .sum(1)\n  .out()`,                desc: 'Jumlahkan semua channel RGB' },
+  { name: 'r()',          category: 'Color', code: `osc(60)\n  .r(1, 0)\n  .out()`,               desc: 'Atur channel merah (scale, offset)' },
+  { name: 'g()',          category: 'Color', code: `osc(60)\n  .g(1, 0)\n  .out()`,               desc: 'Atur channel hijau (scale, offset)' },
+  { name: 'b()',          category: 'Color', code: `osc(60)\n  .b(1, 0)\n  .out()`,               desc: 'Atur channel biru (scale, offset)' },
+  { name: 'a()',          category: 'Color', code: `osc(60)\n  .a(1, 0)\n  .out()`,               desc: 'Atur channel alpha (scale, offset)' },
 
-  // ── Modulate (CombineCoord) ───────────────────────────────
-  { name: 'modulate()', category: 'Modulation', code: `osc(60)\n  .modulate(noise(3), 0.1)\n  .out()` },
-  { name: 'modulateScale()', category: 'Modulation', code: `osc(60)\n  .modulateScale(noise(3), 1)\n  .out()` },
-  { name: 'modulatePixelate()', category: 'Modulation', code: `osc(60)\n  .modulatePixelate(noise(3), 10, 3)\n  .out()` },
-  { name: 'modulateRotate()', category: 'Modulation', code: `osc(60)\n  .modulateRotate(noise(3), 1, 0)\n  .out()` },
-  { name: 'modulateKaleid()', category: 'Modulation', code: `osc(60)\n  .modulateKaleid(4)\n  .out()` },
-  { name: 'modulateHue()', category: 'Modulation', code: `osc(60)\n  .modulateHue(voronoi(3), 1)\n  .out()` },
-  { name: 'modulateRepeat()', category: 'Modulation', code: `osc(60)\n  .modulateRepeat(noise(3), 3, 3, 0.5)\n  .out()` },
-  { name: 'modulateRepeatX()', category: 'Modulation', code: `osc(60)\n  .modulateRepeatX(noise(3), 3, 0.5)\n  .out()` },
-  { name: 'modulateRepeatY()', category: 'Modulation', code: `osc(60)\n  .modulateRepeatY(noise(3), 3, 0.5)\n  .out()` },
-  { name: 'modulateScrollX()', category: 'Modulation', code: `osc(60)\n  .modulateScrollX(noise(3), 0.5, 0)\n  .out()` },
-  { name: 'modulateScrollY()', category: 'Modulation', code: `osc(60)\n  .modulateScrollY(noise(3), 0.5, 0)\n  .out()` },
+  // ◆ PROCESS ◆ — Blend (Gabungkan Visual) ────────────────────
+  { name: 'add()',   category: 'Blend', code: `osc(60)\n  .add(osc(20), 1)\n  .out()`,                   desc: 'Tambah (jumlahkan) dua visual' },
+  { name: 'sub()',   category: 'Blend', code: `osc(60)\n  .sub(osc(20), 1)\n  .out()`,                   desc: 'Kurangi visual kedua dari pertama' },
+  { name: 'layer()', category: 'Blend', code: `osc(60)\n  .layer(shape(4).color(1,0,0))\n  .out()`,      desc: 'Tumpuk lapisan (layer) di atas' },
+  { name: 'blend()', category: 'Blend', code: `osc(60)\n  .blend(voronoi(3), 0.5)\n  .out()`,            desc: 'Campur dua visual (amount 0-1)' },
+  { name: 'mult()',  category: 'Blend', code: `osc(60)\n  .mult(noise(3), 1)\n  .out()`,                 desc: 'Kalikan dua visual' },
+  { name: 'diff()',  category: 'Blend', code: `osc(60)\n  .diff(noise(3))\n  .out()`,                    desc: 'Selisih absolut dua visual' },
+  { name: 'mask()',  category: 'Blend', code: `osc(60)\n  .mask(shape(4))\n  .out()`,                    desc: 'Potong dengan bentuk (alpha mask)' },
 
-  // ── External Sources ──────────────────────────────────────
-  { name: 'initCam()', category: 'ExternalSources', code: `s0.initCam()`, raw: true },
-  { name: 'initImage()', category: 'ExternalSources', code: `s0.initImage('https://example.com/image.jpg')`, raw: true },
-  { name: 'initVideo()', category: 'ExternalSources', code: `s0.initVideo('https://example.com/video.mp4')`, raw: true },
-  { name: 'initStream()', category: 'ExternalSources', code: `s0.initStream('https://example.com/stream')`, raw: true },
-  { name: 'initScreen()', category: 'ExternalSources', code: `s0.initScreen()`, raw: true },
-  { name: 'init()', category: 'ExternalSources', code: `init({ type: 'src', src: '' })`, raw: true },
+  // ◆ PROCESS ◆ — Modulation (Modulasi Berbasis Koordinat) ───
+  { name: 'modulate()',         category: 'Modulation', code: `osc(60)\n  .modulate(noise(3), 0.1)\n  .out()`,          desc: 'Geser koordinat tekstur (displacement)' },
+  { name: 'modulateScale()',    category: 'Modulation', code: `osc(60)\n  .modulateScale(noise(3), 1)\n  .out()`,        desc: 'Skala berdasarkan tekstur kedua' },
+  { name: 'modulatePixelate()', category: 'Modulation', code: `osc(60)\n  .modulatePixelate(noise(3), 10, 3)\n  .out()`, desc: 'Pikselasi dinamis berdasarkan tekstur' },
+  { name: 'modulateRotate()',   category: 'Modulation', code: `osc(60)\n  .modulateRotate(noise(3), 1, 0)\n  .out()`,    desc: 'Rotasi dinamis berdasarkan tekstur' },
+  { name: 'modulateKaleid()',   category: 'Modulation', code: `osc(60)\n  .modulateKaleid(4)\n  .out()`,                 desc: 'Kaleidoskop berbasis tekstur kedua' },
+  { name: 'modulateHue()',      category: 'Modulation', code: `osc(60)\n  .modulateHue(voronoi(3), 1)\n  .out()`,        desc: 'Rona warna dari tekstur kedua' },
+  { name: 'modulateRepeat()',   category: 'Modulation', code: `osc(60)\n  .modulateRepeat(noise(3), 3, 3, 0.5)\n  .out()`, desc: 'Pengulangan dinamis dari tekstur' },
+  { name: 'modulateRepeatX()',  category: 'Modulation', code: `osc(60)\n  .modulateRepeatX(noise(3), 3, 0.5)\n  .out()`,  desc: 'Pengulangan horizontal dinamis' },
+  { name: 'modulateRepeatY()',  category: 'Modulation', code: `osc(60)\n  .modulateRepeatY(noise(3), 3, 0.5)\n  .out()`,  desc: 'Pengulangan vertikal dinamis' },
+  { name: 'modulateScrollX()',  category: 'Modulation', code: `osc(60)\n  .modulateScrollX(noise(3), 0.5, 0)\n  .out()`,  desc: 'Geser horizontal dari tekstur' },
+  { name: 'modulateScrollY()',  category: 'Modulation', code: `osc(60)\n  .modulateScrollY(noise(3), 0.5, 0)\n  .out()`,  desc: 'Geser vertikal dari tekstur' },
+
+  // ◆ OUTPUT ◆ — Render (Tampilkan Hasil) ─────────────────────
+  { name: 'out()',    category: 'Render', code: `.out()`,              raw: true, desc: 'Render ke output buffer (o0)' },
+  { name: 'render()', category: 'Render', code: `render(o0)`, raw: true,           desc: 'Render output buffer ke layar' },
 ]
 
 export const HYDRA_CATEGORIES = [
@@ -398,6 +402,7 @@ export const HYDRA_CATEGORIES = [
   'Geometry',
   'Audio-Reactive',
   'ExternalSources',
+  'Render',
 ]
 
 /** Pick a random example from the full list */
@@ -406,8 +411,17 @@ export function getRandomExample() {
 }
 
 /** Default code for new Hydra tabs */
-export const DEFAULT_HYDRA_CODE = `// Hydra Shader — Livecoding Visuals
-// Ctrl+Enter: run line | Ctrl+Shift+Enter: run all
+export const DEFAULT_HYDRA_CODE = `// Hydra Shader — Live Coding Visual
+// Ctrl+Enter      : run seluruh kode
+// Ctrl+Shift+Enter: run baris yang dipilih
+// Shift+Tab       : buka modul (Input-Proses-Output)
+//
+// ◆ INPUT — sumber visual
+//   osc() noise() voronoi() shape() solid() gradient()
+// ◆ PROSES — transformasi
+//   rotate() kaleid() scale() pixelate() modulate() blend()
+// ◆ OUTPUT — render
+//   .out()  atau  render()
 
 osc(10, 0.1, 0.8)
   .rotate(0.5)

@@ -2695,6 +2695,23 @@
   border-color: #666;
 }
 
+.editor-clear {
+  padding: 4px 10px;
+  border: 1px solid #555;
+  border-radius: 3px;
+  background: transparent;
+  color: #999;
+  font-size: 13px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.editor-clear:hover {
+  background: #5a1a1a;
+  color: #ff6b6b;
+  border-color: #ff6b6b;
+}
+
 /* Touch Designer-style Slider */
 .td-slider {
   position: relative;
@@ -2850,6 +2867,29 @@
   margin: 2px 0;
 }
 
+.module-menu-ipo-group {
+}
+
+.module-menu-ipo-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px 4px;
+  border-left: 3px solid #4fc3f7;
+  background: #1a1a2e;
+  margin-top: 4px;
+}
+
+.module-menu-ipo-header:first-child {
+  margin-top: 0;
+}
+
+.module-menu-ipo-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
 .module-menu-cat-header {
   display: flex;
   align-items: center;
@@ -2905,6 +2945,19 @@
   background: #094771;
 }
 
+.module-menu-item--focused {
+  background: #0e639c !important;
+  outline: none;
+}
+
+.module-menu-item--focused.module-menu-cat-header {
+  background: #0e639c !important;
+}
+
+.module-menu-item--focused.module-menu-slider-create {
+  background: #0e639c !important;
+}
+
 .module-menu-item-badge {
   font-size: 9px;
   font-weight: 700;
@@ -2923,6 +2976,17 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.module-menu-item-desc {
+  font-size: 10px;
+  color: #666;
+  margin-left: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 50%;
+  flex-shrink: 1;
 }
 
 .module-menu-empty {

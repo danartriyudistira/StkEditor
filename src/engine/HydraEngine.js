@@ -140,8 +140,10 @@ export default class HydraEngine extends EngineInterface {
   getMetadata() {
     return {
       inputs: [],
-      description: 'Hydra Synth Engine',
-      categories: ['Hydra'],
+      name: 'Hydra',
+      description: 'Hydra Synth — Live Coding Visual\nKonsep IPO: Input (source) -> Proses (transform) -> Output (render)',
+      categories: ['Hydra', 'Live Coding'],
+      help: 'Ctrl+Enter: run | Ctrl+Shift+Enter: run baris | Klik Kanan: modul',
     }
   }
 
